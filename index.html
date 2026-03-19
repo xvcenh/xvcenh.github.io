@@ -1,0 +1,22 @@
+---
+layout: default
+title: 首页
+---
+
+<div class="home">
+  <h1 class="page-heading">欢迎来到我的博客</h1>
+
+  <ul class="post-list">
+    {% for post in site.posts %}
+      <li>
+        <span class="post-meta">{{ post.date | date: "%Y年%m月%d日" }}</span>
+        <h2>
+          <a class="post-link" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+        </h2>
+        {{ post.excerpt }}
+      </li>
+    {% endfor %}
+  </ul>
+
+  <p class="rss-subscribe">订阅 <a href="{{ "/feed.xml" | relative_url }}">RSS Feed</a></p>
+</div>

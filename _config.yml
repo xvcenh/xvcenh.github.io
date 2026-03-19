@@ -1,0 +1,18 @@
+title: "xvcenh 的博客"
+email: xvcenh@example.com
+description: "分享技术、生活和思考"
+baseurl: ""
+url: "https://xvcenh.github.io"
+twitter_username: xvcenh
+github_username: xvcenh
+
+# Build settings
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-paginate
+
+# 自定义设置
+posts_dir: _posts
