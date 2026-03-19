@@ -31,12 +31,12 @@ permalink: /categories/部署/
           部署问题记录
         </h2>
         <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign deploy_posts = site.categories.部署 %}
+          {% assign deploy_posts = site.categories["部署"] %}
           共 {{ deploy_posts.size }} 篇
         </span>
       </div>
       
-      {% assign deploy_posts = site.categories.部署 %}
+      {% assign deploy_posts = site.categories["部署"] %}
       {% if deploy_posts.size > 0 %}
       <div class="issues-grid">
         {% for post in deploy_posts %}

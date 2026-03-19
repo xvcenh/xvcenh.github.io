@@ -31,12 +31,12 @@ permalink: /categories/硬件/
           硬件问题记录
         </h2>
         <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign hardware_posts = site.categories.硬件 %}
+          {% assign hardware_posts = site.categories["硬件"] %}
           共 {{ hardware_posts.size }} 篇
         </span>
       </div>
       
-      {% assign hardware_posts = site.categories.硬件 %}
+      {% assign hardware_posts = site.categories["硬件"] %}
       {% if hardware_posts.size > 0 %}
       <div class="issues-grid">
         {% for post in hardware_posts %}

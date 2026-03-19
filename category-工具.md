@@ -31,12 +31,12 @@ permalink: /categories/工具/
           工具问题记录
         </h2>
         <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign tools_posts = site.categories.工具 %}
+          {% assign tools_posts = site.categories["工具"] %}
           共 {{ tools_posts.size }} 篇
         </span>
       </div>
       
-      {% assign tools_posts = site.categories.工具 %}
+      {% assign tools_posts = site.categories["工具"] %}
       {% if tools_posts.size > 0 %}
       <div class="issues-grid">
         {% for post in tools_posts %}

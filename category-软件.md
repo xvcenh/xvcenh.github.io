@@ -31,12 +31,12 @@ permalink: /categories/软件/
           软件问题记录
         </h2>
         <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign software_posts = site.categories.软件 %}
+          {% assign software_posts = site.categories["软件"] %}
           共 {{ software_posts.size }} 篇
         </span>
       </div>
       
-      {% assign software_posts = site.categories.软件 %}
+      {% assign software_posts = site.categories["软件"] %}
       {% if software_posts.size > 0 %}
       <div class="issues-grid">
         {% for post in software_posts %}

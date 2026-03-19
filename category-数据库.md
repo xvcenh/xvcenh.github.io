@@ -31,12 +31,12 @@ permalink: /categories/数据库/
           数据库问题记录
         </h2>
         <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign database_posts = site.categories.数据库 %}
+          {% assign database_posts = site.categories["数据库"] %}
           共 {{ database_posts.size }} 篇
         </span>
       </div>
       
-      {% assign database_posts = site.categories.数据库 %}
+      {% assign database_posts = site.categories["数据库"] %}
       {% if database_posts.size > 0 %}
       <div class="issues-grid">
         {% for post in database_posts %}
