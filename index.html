@@ -4,129 +4,200 @@ title: 项目问题库
 ---
 
 <!-- Hero 区域 -->
-<header class="header">
-  <div class="header-content">
-    <div class="logo">
-      <span class="logo-icon">📚</span>
-      <div>
-        <div class="logo-text">项目问题库</div>
-        <div class="logo-subtitle">团队知识积累 · 随时检索</div>
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container">
+    <div class="hero-content">
+      <h1 class="hero-title">🤖 智能项目问题库</h1>
+      <p class="hero-subtitle">团队知识 · 智能分析 · 实时检索 · 持续积累</p>
+      
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" name="q" class="search-input" placeholder="搜索问题、技术栈、错误信息或解决方案..." autocomplete="off">
+          <button type="submit" class="search-button" aria-label="搜索">
+            🔍
+          </button>
+        </div>
       </div>
     </div>
-    <nav class="nav">
-      <a href="/">首页</a>
-      <a href="/issues/">问题列表</a>
-      <a href="/categories/">分类浏览</a>
-      <a href="/search/" class="btn-upload">🔍 搜索</a>
-    </nav>
   </div>
-</header>
+</section>
 
-<main class="main-content">
-  <!-- 搜索区域 -->
-  <section class="search-section">
-    <h1 class="search-title">🔍 搜索问题记录</h1>
-    <form action="/search/" method="get" class="search-box">
-      <input type="text" name="q" class="search-input" placeholder="输入关键词、技术栈、错误信息..." autocomplete="off">
-      <button type="submit" class="search-btn">搜索</button>
-    </form>
-  </section>
-
+<main class="container">
   <!-- 统计卡片 -->
-  <section class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">📝</div>
-      <div class="stat-number">{{ site.posts | size }}</div>
-      <div class="stat-label">问题总数</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🏷️</div>
-      <div class="stat-number">{{ site.categories | size }}</div>
-      <div class="stat-label">分类数量</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">👥</div>
-      <div class="stat-number">-</div>
-      <div class="stat-label">团队成员</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📅</div>
-      <div class="stat-number">{{ site.time | date: "%Y" }}</div>
-      <div class="stat-label">持续更新</div>
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-card fade-in">
+        <div class="stat-icon">📊</div>
+        <div class="stat-number">{{ site.posts | size }}</div>
+        <div class="stat-label">问题记录</div>
+      </div>
+      <div class="stat-card fade-in">
+        <div class="stat-icon">🏷️</div>
+        <div class="stat-number">{{ site.categories | size }}</div>
+        <div class="stat-label">分类标签</div>
+      </div>
+      <div class="stat-card fade-in">
+        <div class="stat-icon">👥</div>
+        <div class="stat-number">∞</div>
+        <div class="stat-label">团队成员</div>
+      </div>
+      <div class="stat-card fade-in">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-number">100%</div>
+        <div class="stat-label">解决效率</div>
+      </div>
     </div>
   </section>
 
-  <!-- 筛选栏 -->
-  <section class="filter-bar">
-    <span class="filter-label">📂 按分类筛选:</span>
+  <!-- 分类筛选 -->
+  <section class="filter-section">
+    <h2 class="section-title">🔍 智能分类浏览</h2>
     <div class="filter-tags">
-      <a href="/" class="filter-tag active">全部</a>
-      <a href="/categories/前端/" class="filter-tag">前端</a>
-      <a href="/categories/后端/" class="filter-tag">后端</a>
-      <a href="/categories/数据库/" class="filter-tag">数据库</a>
-      <a href="/categories/部署/" class="filter-tag">部署</a>
-      <a href="/categories/工具/" class="filter-tag">工具</a>
+      <a href="/" class="filter-tag active">
+        <span>📂</span> 全部问题
+      </a>
+      <a href="/categories/前端/" class="filter-tag">
+        <span>🎨</span> 前端开发
+      </a>
+      <a href="/categories/后端/" class="filter-tag">
+        <span>⚙️</span> 后端开发
+      </a>
+      <a href="/categories/数据库/" class="filter-tag">
+        <span>💾</span> 数据库
+      </a>
+      <a href="/categories/部署/" class="filter-tag">
+        <span>🚀</span> 部署运维
+      </a>
+      <a href="/categories/工具/" class="filter-tag">
+        <span>🔧</span> 开发工具
+      </a>
+      <a href="/categories/其他/" class="filter-tag">
+        <span>📦</span> 其他问题
+      </a>
     </div>
   </section>
 
-  <!-- 问题列表 -->
-  <section class="issues-grid">
-    {% for post in site.posts limit: 12 %}
-    <article class="issue-card">
-      <div class="issue-header">
-        <h2 class="issue-title">
-          <a href="{{ post.url }}">{{ post.title }}</a>
-        </h2>
-        <span class="issue-id">#{{ forloop.index }}</span>
-      </div>
-      
-      <div class="issue-meta">
-        <span class="meta-item">
-          <span class="meta-icon">📅</span>
-          {{ post.date | date: "%Y-%m-%d" }}
-        </span>
-        {% if post.author %}
-        <span class="meta-item">
-          <span class="meta-icon">👤</span>
-          {{ post.author }}
-        </span>
+  <!-- 最新问题 -->
+  <section class="issues-section">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+      <h2 class="section-title" style="margin: 0;">🔥 最新问题记录</h2>
+      <a href="/issues/" class="btn-primary">
+        <span>查看全部</span>
+        <span>→</span>
+      </a>
+    </div>
+    
+    {% if site.posts.size > 0 %}
+    <div class="issues-grid">
+      {% for post in site.posts limit: 6 %}
+      <article class="issue-card fade-in">
+        <div class="issue-header">
+          <h3 class="issue-title">
+            <a href="{{ post.url }}">{{ post.title }}</a>
+          </h3>
+          <span class="issue-id">#{{ forloop.index }}</span>
+        </div>
+        
+        <div class="issue-meta">
+          <span class="meta-item">
+            <span class="meta-icon">📅</span>
+            {{ post.date | date: "%Y-%m-%d" }}
+          </span>
+          {% if post.author %}
+          <span class="meta-item">
+            <span class="meta-icon">👤</span>
+            {{ post.author }}
+          </span>
+          {% endif %}
+          {% if post.categories %}
+          {% for category in post.categories %}
+          <span class="category-tag {{ category }}">{{ category }}</span>
+          {% endfor %}
+          {% endif %}
+        </div>
+        
+        <p class="issue-description">{{ post.excerpt | strip_html | truncate: 150 }}</p>
+        
+        {% if post.keywords %}
+        <div class="issue-keywords">
+          {% for keyword in post.keywords limit: 4 %}
+          <span class="keyword">{{ keyword }}</span>
+          {% endfor %}
+        </div>
         {% endif %}
-        {% if post.categories %}
-        {% for category in post.categories %}
-        <span class="category-tag {{ category }}">{{ category }}</span>
-        {% endfor %}
-        {% endif %}
-      </div>
-      
-      <p class="issue-description">{{ post.excerpt | strip_html | truncate: 120 }}</p>
-      
-      {% if post.keywords %}
-      <div class="issue-keywords">
-        {% for keyword in post.keywords limit: 5 %}
-        <span class="keyword">{{ keyword }}</span>
-        {% endfor %}
-      </div>
-      {% endif %}
-    </article>
-    {% endfor %}
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">📝</div>
+      <h3 class="empty-title">暂无问题记录</h3>
+      <p class="empty-description">通过钉钉上传第一个问题文档，开始积累团队知识库</p>
+      <a href="/about/" class="btn-primary" style="margin-top: var(--space-md);">了解如何使用</a>
+    </div>
+    {% endif %}
   </section>
 
-  <!-- 分页 -->
-  {% if site.posts.size > 12 %}
-  <div class="pagination">
-    <!-- 分页链接 -->
-  </div>
-  {% endif %}
+  <!-- 功能特色 -->
+  <section class="features-section">
+    <h2 class="section-title">✨ 核心功能特色</h2>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🤖</div>
+        <h3>钉钉智能上传</h3>
+        <p>直接在钉钉群中@机器人上传文档，自动分析关键词并发布到知识库</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🔍</div>
+        <h3>智能检索系统</h3>
+        <p>支持关键词、分类、时间等多维度搜索，快速找到解决方案</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">📊</div>
+        <h3>知识图谱分析</h3>
+        <p>自动分析问题关联性，构建团队知识图谱，发现隐藏模式</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🚀</div>
+        <h3>自动部署更新</h3>
+        <p>GitHub Pages 自动构建部署，实时更新无需等待</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 使用流程 -->
+  <section class="features-section">
+    <h2 class="section-title">🔄 简单三步使用</h2>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">1️⃣</div>
+        <h3>上传问题</h3>
+        <p>在钉钉群中@机器人，上传问题文档或描述</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">2️⃣</div>
+        <h3>智能分析</h3>
+        <p>系统自动提取关键词、分类、生成结构化文章</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon">3️⃣</div>
+        <h3>团队共享</h3>
+        <p>知识库实时更新，团队成员随时检索学习</p>
+      </div>
+    </div>
+  </section>
 </main>
 
-<footer class="footer">
-  <div class="footer-content">
-    <div class="footer-links">
-      <a href="/">首页</a>
-      <a href="/about/">关于</a>
-      <a href="https://github.com/xvcenh/xvcenh.github.io">GitHub</a>
-    </div>
-    <p>© 2026 xvcenh团队 · 基于 Jekyll + GitHub Pages 构建</p>
-    <p style="margin-top: 0.5rem; opacity: 0.7;">有问题？直接在钉钉群 @机器人 上传文档</p>
-  </div>
-</footer>
+<!-- 浮动元素 -->
+<div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+  <a href="#top" class="btn-primary" style="border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+    ↑
+  </a>
+</div>
+
+<style>
+  #top {
+    scroll-margin-top: 80px;
+  }
+</style>

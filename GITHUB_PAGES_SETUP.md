@@ -1,78 +1,132 @@
 # GitHub Pages 部署指南
 
-## 1. 启用 GitHub Pages
+## 📋 前提条件
 
-1. 访问您的仓库：https://github.com/xvcenh/xvcenh.github.io
-2. 点击 "Settings"（设置）
-3. 在左侧菜单中找到 "Pages"（页面）
-4. 在 "Build and deployment"（构建和部署）部分：
-   - 选择 "Deploy from a branch"（从分支部署）
-   - 分支选择 "main"（主分支）
-   - 文件夹选择 "/ (root)"（根目录）
-5. 点击 "Save"（保存）
+1. 已创建 GitHub 仓库：`xvcenh/xvcenh.github.io`
+2. 已配置 Git 远程仓库
+3. 已安装 Git
 
-## 2. 配置自定义域名（可选）
+## 🚀 部署步骤
 
-如果您想使用自定义域名：
-1. 在 Pages 设置中添加您的域名
-2. 在您的 DNS 提供商处配置 CNAME 记录
-3. 等待 DNS 传播（可能需要几分钟到几小时）
-
-## 3. 自动部署
-
-我已经配置了 GitHub Actions 工作流，当您推送更改到 main 分支时，会自动构建和部署。
-
-工作流文件：`.github/workflows/jekyll.yml`
-
-## 4. 本地测试
-
-在推送前，建议先在本地测试：
+### 1. 推送代码到 GitHub
 
 ```bash
-# 安装依赖
-bundle install
+cd /home/annisen/BLOG/xvcenh.github.io
 
-# 本地运行
-bundle exec jekyll serve
+# 添加所有文件
+git add .
 
-# 访问 http://localhost:4000
+# 提交更改
+git commit -m "初始化项目问题库：现代化界面设计"
+
+# 推送到 GitHub
+git push origin main
 ```
 
-## 5. 常见问题
+### 2. 配置 GitHub Pages
 
-### Q: 构建失败
-- 检查 Gemfile 中的依赖是否正确
-- 确保 _config.yml 格式正确
-- 查看 GitHub Actions 日志获取详细信息
+1. 访问 https://github.com/xvcenh/xvcenh.github.io
+2. 点击 "Settings" → "Pages"
+3. 在 "Build and deployment" 部分：
+   - Source: "Deploy from a branch"
+   - Branch: "main" → "/ (root)"
+4. 点击 "Save"
 
-### Q: 页面显示 404
-- 确保 index.html 文件存在
-- 检查 baseurl 配置
-- 等待几分钟让 GitHub Pages 完成构建
+### 3. 等待构建完成
 
-### Q: 样式不生效
-- 检查 CSS 文件路径
-- 确保 assets 目录结构正确
+GitHub Actions 会自动构建 Jekyll 站点，通常需要 1-2 分钟。
+
+### 4. 访问网站
+
+构建完成后，访问：https://xvcenh.github.io
+
+## ⚙️ 配置说明
+
+### Jekyll 配置 (`_config.yml`)
+```yaml
+title: "项目问题库"
+baseurl: ""
+url: "https://xvcenh.github.io"
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-paginate
+  - jekyll-seo-tag
+```
+
+### GitHub Actions 工作流 (`.github/workflows/jekyll.yml`)
+已配置自动构建和部署工作流。
+
+## 🔧 故障排除
+
+### 问题 1：构建失败
+- 检查 `_config.yml` 语法
+- 查看 GitHub Actions 日志
+
+### 问题 2：页面空白
+- 检查 CSS/JS 路径
+- 确认资源文件已上传
+
+### 问题 3：样式不生效
 - 清除浏览器缓存
+- 检查 CSS 文件路径
 
-## 6. 监控部署状态
+## 📝 添加新文章
 
-1. 访问仓库的 "Actions" 选项卡
-2. 查看最新的工作流运行
-3. 点击运行查看详细日志
+### 方法 1：手动创建
+1. 在 `_posts/` 目录创建 Markdown 文件
+2. 文件名格式：`YYYY-MM-DD-标题.md`
+3. 推送更改到 GitHub
 
-## 7. 访问您的博客
+### 方法 2：通过钉钉自动上传
+1. 在钉钉群中@机器人
+2. 上传文档或发送问题描述
+3. 系统自动创建文章并推送
 
-部署成功后，访问：https://xvcenh.github.io
+## 🔄 更新网站
 
-## 8. 钉钉集成
+```bash
+# 本地修改后
+git add .
+git commit -m "更新内容"
+git push origin main
+```
 
-当团队成员通过钉钉上传文档时，系统会自动：
-1. 创建新的博客文章
-2. 提交到 Git 仓库
-3. 推送到 GitHub
-4. GitHub Actions 自动部署
+GitHub Pages 会自动重新构建。
 
-## 9. 联系方式
+## 📊 监控状态
 
-如有问题，请查看 GitHub 仓库或联系团队成员。
+1. **GitHub Actions**: https://github.com/xvcenh/xvcenh.github.io/actions
+2. **Pages 状态**: https://github.com/xvcenh/xvcenh.github.io/settings/pages
+3. **网站访问**: https://xvcenh.github.io
+
+## 🎯 成功指标
+
+- ✅ 网站可访问：https://xvcenh.github.io
+- ✅ 样式正常加载
+- ✅ 文章显示正常
+- ✅ 搜索功能可用
+- ✅ 响应式设计正常
+
+## 💡 高级功能
+
+### 自定义域名
+1. 购买域名
+2. 在 DNS 设置中添加 CNAME 记录
+3. 在 GitHub Pages 设置中添加自定义域名
+
+### 统计分析
+1. 添加 Google Analytics
+2. 配置在 `_config.yml` 中
+
+### 评论系统
+1. 集成 Disqus 或 Giscus
+2. 添加到文章模板中
+
+## 📞 支持
+
+如有问题，请参考：
+- [GitHub Pages 文档](https://docs.github.com/zh/pages)
+- [Jekyll 文档](https://jekyllrb.com/docs/)
+- [GitHub 社区](https://github.com/community)

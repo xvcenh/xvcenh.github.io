@@ -1,92 +1,161 @@
 ---
 layout: default
-title: 搜索问题
+title: 智能搜索
 permalink: /search/
 ---
 
-<header class="header">
-  <div class="header-content">
-    <div class="logo">
-      <a href="/" style="text-decoration: none; color: white;">
-        <span class="logo-icon">📚</span>
-        <div>
-          <div class="logo-text">项目问题库</div>
-          <div class="logo-subtitle">团队知识积累 · 随时检索</div>
+<div class="container">
+  <div style="padding: 120px 0 var(--space-2xl);">
+    
+    <!-- 搜索区域 -->
+    <div style="text-align: center; margin-bottom: var(--space-2xl);">
+      <h1 style="font-size: 2.5rem; margin-bottom: var(--space-md); color: var(--text-primary);">🔍 智能搜索</h1>
+      <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto var(--space-xl); line-height: 1.7;">
+        输入关键词、技术栈、错误信息或问题描述，快速找到解决方案
+      </p>
+      
+      <div class="search-container" style="max-width: 600px; margin: 0 auto;">
+        <div class="search-wrapper">
+          <input type="text" name="q" class="search-input" placeholder="例如：Vue 部署问题、Nginx 配置、数据库连接..." autocomplete="off" value="{{ page.query | default: '' }}">
+          <button type="submit" class="search-button" aria-label="搜索">
+            🔍
+          </button>
         </div>
-      </a>
+      </div>
     </div>
-    <nav class="nav">
-      <a href="/">首页</a>
-      <a href="/issues/">问题列表</a>
-      <a href="/categories/">分类浏览</a>
-      <a href="/search/" class="btn-upload">🔍 搜索</a>
-    </nav>
-  </div>
-</header>
-
-<main class="main-content">
-  <section class="search-section">
-    <h1 class="search-title">🔍 搜索问题记录</h1>
-    <form action="/search/" method="get" class="search-box">
-      <input type="text" name="q" class="search-input" placeholder="输入关键词、技术栈、错误信息..." autocomplete="off" value="{{ page.query | default: '' }}">
-      <button type="submit" class="search-btn">搜索</button>
-    </form>
-  </section>
-
-  {% if page.query %}
-  <section>
-    <h2 style="margin-bottom: 1.5rem;">搜索结果: "{{ page.query }}"</h2>
     
-    {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
+    <!-- 热门搜索 -->
+    <div style="margin-bottom: var(--space-2xl);">
+      <h2 style="font-size: 1.5rem; margin-bottom: var(--space-lg); color: var(--text-primary); text-align: center;">🔥 热门搜索</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: var(--space-sm); justify-content: center;">
+        <a href="/search/?q=Vue" class="filter-tag">
+          <span>🎨</span> Vue
+        </a>
+        <a href="/search/?q=Nginx" class="filter-tag">
+          <span>🚀</span> Nginx
+        </a>
+        <a href="/search/?q=数据库" class="filter-tag">
+          <span>💾</span> 数据库
+        </a>
+        <a href="/search/?q=部署" class="filter-tag">
+          <span>⚙️</span> 部署
+        </a>
+        <a href="/search/?q=API" class="filter-tag">
+          <span>🔌</span> API
+        </a>
+        <a href="/search/?q=错误" class="filter-tag">
+          <span>🐛</span> 错误处理
+        </a>
+      </div>
+    </div>
     
-    {% if results.size > 0 %}
-    <div class="issues-grid">
-      {% for post in results %}
-      <article class="issue-card">
-        <div class="issue-header">
-          <h2 class="issue-title">
-            <a href="{{ post.url }}">{{ post.title }}</a>
-          </h2>
-        </div>
-        
-        <div class="issue-meta">
-          <span class="meta-item">
-            <span class="meta-icon">📅</span>
-            {{ post.date | date: "%Y-%m-%d" }}
-          </span>
-          {% if post.categories %}
-          {% for category in post.categories %}
-          <span class="category-tag {{ category }}">{{ category }}</span>
-          {% endfor %}
+    {% if page.query %}
+    <!-- 搜索结果 -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+        <h2 style="font-size: 1.75rem; color: var(--text-primary); margin: 0;">
+          搜索结果: <span style="color: var(--primary);">"{{ page.query }}"</span>
+        </h2>
+        <span style="color: var(--text-secondary); font-size: 0.875rem;">
+          找到 {{ results.size }} 个结果
+        </span>
+      </div>
+      
+      {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
+      
+      {% if results.size > 0 %}
+      <div class="issues-grid">
+        {% for post in results %}
+        <article class="issue-card fade-in">
+          <div class="issue-header">
+            <h3 class="issue-title">
+              <a href="{{ post.url }}">{{ post.title }}</a>
+            </h3>
+            <span class="issue-id">#{{ forloop.index }}</span>
+          </div>
+          
+          <div class="issue-meta">
+            <span class="meta-item">
+              <span class="meta-icon">📅</span>
+              {{ post.date | date: "%Y-%m-%d" }}
+            </span>
+            {% if post.categories %}
+            {% for category in post.categories %}
+            <span class="category-tag {{ category }}">{{ category }}</span>
+            {% endfor %}
+            {% endif %}
+          </div>
+          
+          <p class="issue-description">{{ post.excerpt | strip_html | truncate: 150 }}</p>
+          
+          {% if post.keywords %}
+          <div class="issue-keywords">
+            {% for keyword in post.keywords limit: 4 %}
+            <span class="keyword">{{ keyword }}</span>
+            {% endfor %}
+          </div>
           {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3 class="empty-title">未找到相关问题</h3>
+        <p class="empty-description">尝试使用不同的关键词，或浏览所有问题</p>
+        <div style="display: flex; gap: var(--space-sm); justify-content: center; margin-top: var(--space-md);">
+          <a href="/" class="btn-primary">查看全部问题</a>
+          <a href="/categories/" class="btn-primary" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">浏览分类</a>
         </div>
-        
-        <p class="issue-description">{{ post.excerpt | strip_html | truncate: 120 }}</p>
-        
-        {% if post.keywords %}
-        <div class="issue-keywords">
-          {% for keyword in post.keywords limit: 5 %}
-          <span class="keyword">{{ keyword }}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </article>
-      {% endfor %}
+      </div>
+      {% endif %}
     </div>
     {% else %}
-    <div class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <h3>未找到相关问题</h3>
-      <p>尝试使用不同的关键词，或浏览所有问题</p>
-      <a href="/" class="search-btn" style="display: inline-block; margin-top: 1rem;">查看全部问题</a>
+    <!-- 搜索提示 -->
+    <div style="background: var(--bg-glass); backdrop-filter: blur(10px); border-radius: var(--radius-xl); padding: var(--space-xl); border: 1px solid var(--border-light); box-shadow: var(--shadow-glass);">
+      <h2 style="font-size: 1.75rem; margin-bottom: var(--space-lg); color: var(--text-primary); text-align: center;">💡 搜索技巧</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-lg);">
+        <div style="text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🔑</div>
+          <h3 style="font-size: 1.125rem; margin-bottom: var(--space-sm); color: var(--text-primary);">使用关键词</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">输入具体的技术栈名称或错误信息</p>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🏷️</div>
+          <h3 style="font-size: 1.125rem; margin-bottom: var(--space-sm); color: var(--text-primary);">按分类搜索</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">点击分类标签快速筛选相关问题</p>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 2rem; margin-bottom: var(--space-sm);">📝</div>
+          <h3 style="font-size: 1.125rem; margin-bottom: var(--space-sm); color: var(--text-primary);">问题描述</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">使用自然语言描述遇到的问题</p>
+        </div>
+      </div>
     </div>
     {% endif %}
-  </section>
-  {% endif %}
-</main>
-
-<footer class="footer">
-  <div class="footer-content">
-    <p>© 2026 xvcenh团队 · 基于 Jekyll + GitHub Pages 构建</p>
+    
   </div>
-</footer>
+</div>
+
+<script>
+  // 搜索表单提交
+  document.querySelector('.search-wrapper').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const input = this.querySelector('.search-input');
+    const query = input.value.trim();
+    if (query) {
+      window.location.href = '/search/?q=' + encodeURIComponent(query);
+    }
+  });
+  
+  // 热门搜索标签点击
+  document.querySelectorAll('.filter-tag').forEach(tag => {
+    tag.addEventListener('click', function(e) {
+      if (this.href.includes('/search/')) {
+        e.preventDefault();
+        const query = this.textContent.trim().replace(/[🎨🚀💾⚙️🔌🐛]/g, '').trim();
+        window.location.href = '/search/?q=' + encodeURIComponent(query);
+      }
+    });
+  });
+</script>
