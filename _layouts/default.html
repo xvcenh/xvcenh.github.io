@@ -185,8 +185,49 @@
         <div class="footer-copyright">
           © 2026 xvcenh团队 · 基于 Jekyll + GitHub Pages 构建
         </div>
+        <div id="last-updated" class="footer-updated" style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">
+          最后更新: <span id="last-updated-time">加载中...</span>
+        </div>
       </div>
     </div>
   </footer>
+  
+  <script>
+  // 加载最后更新时间
+  document.addEventListener('DOMContentLoaded', function() {
+    const timeElement = document.getElementById('last-updated-time');
+    if (!timeElement) return;
+    
+    // 尝试从时间戳文件加载
+    fetch('/assets/data/last_updated.txt')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('文件未找到');
+        }
+        return response.text();
+      })
+      .then(timestamp => {
+        // 去除空白字符
+        timestamp = timestamp.trim();
+        // 格式化显示
+        timeElement.textContent = timestamp;
+        timeElement.title = '最后自动推送时间: ' + timestamp;
+      })
+      .catch(error => {
+        // 如果文件不存在，显示当前构建时间
+        const now = new Date();
+        const formatted = now.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }).replace(/\//g, '-');
+        timeElement.textContent = formatted + ' (本地)';
+        timeElement.title = '本地时间，等待首次自动推送';
+      });
+  });
+  </script>
 </body>
 </html>
