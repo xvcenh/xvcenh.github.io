@@ -1,10 +1,8 @@
 title: "项目问题库"
 email: team@xvcenh.com
-description: "团队项目开发问题与解决方案知识库 - 方便检索、持续积累"
+description: "团队项目开发问题与解决方案知识库"
 baseurl: ""
 url: "https://xvcenh.github.io"
-twitter_username: xvcenh
-github_username: xvcenh
 author: "xvcenh团队"
 
 # Build settings
@@ -22,22 +20,19 @@ paginate_path: "/page:num/"
 
 # 自定义变量
 project_name: "项目问题库"
-team_contact: "钉钉群: openclaw龙虾使用团队"
 
 # 分类设置
 categories:
-  - name: 前端
-    color: "#42b983"
-  - name: 后端
-    color: "#ff6b6b"
+  - name: 硬件
+    color: "#2563eb"
+  - name: 软件
+    color: "#10b981"
   - name: 数据库
-    color: "#4ecdc4"
+    color: "#7c3aed"
   - name: 部署
-    color: "#a29bfe"
+    color: "#dc2626"
   - name: 工具
-    color: "#fd79a8"
-  - name: 其他
-    color: "#636e72"
+    color: "#d97706"
 
 # 导航菜单
 navigation:

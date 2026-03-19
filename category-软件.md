@@ -1,7 +1,7 @@
 ---
 layout: default
-title: 工具问题
-permalink: /categories/工具/
+title: 软件问题
+permalink: /categories/软件/
 ---
 
 <div class="container">
@@ -9,9 +9,9 @@ permalink: /categories/工具/
     
     <!-- 标题 -->
     <div style="text-align: center; margin-bottom: var(--space-xl);">
-      <h1 style="font-size: 2rem; margin-bottom: var(--space-md); color: var(--text-primary);">🛠️ 工具问题</h1>
+      <h1 style="font-size: 2rem; margin-bottom: var(--space-md); color: var(--text-primary);">💻 软件问题</h1>
       <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.7;">
-        Git、VSCode、命令行、开发环境、调试工具等工具相关问题与解决方案
+        Python、Java、Node.js、算法、性能优化等软件相关问题与解决方案
       </p>
     </div>
     
@@ -21,25 +21,25 @@ permalink: /categories/工具/
       <span style="color: var(--text-light); margin: 0 0.5rem;">/</span>
       <a href="/categories/" style="color: var(--text-secondary); text-decoration: none;">分类</a>
       <span style="color: var(--text-light); margin: 0 0.5rem;">/</span>
-      <span style="color: var(--primary); font-weight: 500;">工具</span>
+      <span style="color: var(--primary); font-weight: 500;">软件</span>
     </div>
     
     <!-- 问题列表 -->
     <div>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
         <h2 style="font-size: 1.5rem; color: var(--text-primary); margin: 0;">
-          工具问题记录
+          软件问题记录
         </h2>
         <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign tools_posts = site.categories.工具 %}
-          共 {{ tools_posts.size }} 篇
+          {% assign software_posts = site.categories.软件 %}
+          共 {{ software_posts.size }} 篇
         </span>
       </div>
       
-      {% assign tools_posts = site.categories.工具 %}
-      {% if tools_posts.size > 0 %}
+      {% assign software_posts = site.categories.软件 %}
+      {% if software_posts.size > 0 %}
       <div class="issues-grid">
-        {% for post in tools_posts %}
+        {% for post in software_posts %}
         <article class="issue-card fade-in">
           <div class="issue-header">
             <h3 class="issue-title">
@@ -75,9 +75,9 @@ permalink: /categories/工具/
       </div>
       {% else %}
       <div class="empty-state">
-        <div class="empty-icon">🛠️</div>
-        <h3 class="empty-title">暂无工具问题记录</h3>
-        <p class="empty-description">通过钉钉上传第一个工具问题，开始积累工具知识库</p>
+        <div class="empty-icon">💻</div>
+        <h3 class="empty-title">暂无软件问题记录</h3>
+        <p class="empty-description">通过钉钉上传第一个软件问题，开始积累软件知识库</p>
         <div style="display: flex; gap: var(--space-sm); justify-content: center; margin-top: var(--space-md);">
           <a href="/" class="btn-primary">返回首页</a>
           <a href="/categories/" class="btn-primary" style="background: rgba(37, 99, 235, 0.1); color: var(--primary);">浏览其他分类</a>

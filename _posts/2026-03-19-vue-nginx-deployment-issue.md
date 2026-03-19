@@ -3,7 +3,7 @@ layout: post
 title: "Vue 项目部署到 Nginx 后页面空白的解决方案"
 date: 2026-03-19 14:30:00 +0800
 author: "张工程师"
-categories: [前端, 部署]
+categories: [软件, 部署]
 keywords: [Vue, Nginx, 部署, 前端, history模式, 路由, 空白页面]
 ---
 
