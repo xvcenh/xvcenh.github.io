@@ -1,0 +1,92 @@
+---
+layout: default
+title: 搜索问题
+permalink: /search/
+---
+
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <a href="/" style="text-decoration: none; color: white;">
+        <span class="logo-icon">📚</span>
+        <div>
+          <div class="logo-text">项目问题库</div>
+          <div class="logo-subtitle">团队知识积累 · 随时检索</div>
+        </div>
+      </a>
+    </div>
+    <nav class="nav">
+      <a href="/">首页</a>
+      <a href="/issues/">问题列表</a>
+      <a href="/categories/">分类浏览</a>
+      <a href="/search/" class="btn-upload">🔍 搜索</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main-content">
+  <section class="search-section">
+    <h1 class="search-title">🔍 搜索问题记录</h1>
+    <form action="/search/" method="get" class="search-box">
+      <input type="text" name="q" class="search-input" placeholder="输入关键词、技术栈、错误信息..." autocomplete="off" value="{{ page.query | default: '' }}">
+      <button type="submit" class="search-btn">搜索</button>
+    </form>
+  </section>
+
+  {% if page.query %}
+  <section>
+    <h2 style="margin-bottom: 1.5rem;">搜索结果: "{{ page.query }}"</h2>
+    
+    {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
+    
+    {% if results.size > 0 %}
+    <div class="issues-grid">
+      {% for post in results %}
+      <article class="issue-card">
+        <div class="issue-header">
+          <h2 class="issue-title">
+            <a href="{{ post.url }}">{{ post.title }}</a>
+          </h2>
+        </div>
+        
+        <div class="issue-meta">
+          <span class="meta-item">
+            <span class="meta-icon">📅</span>
+            {{ post.date | date: "%Y-%m-%d" }}
+          </span>
+          {% if post.categories %}
+          {% for category in post.categories %}
+          <span class="category-tag {{ category }}">{{ category }}</span>
+          {% endfor %}
+          {% endif %}
+        </div>
+        
+        <p class="issue-description">{{ post.excerpt | strip_html | truncate: 120 }}</p>
+        
+        {% if post.keywords %}
+        <div class="issue-keywords">
+          {% for keyword in post.keywords limit: 5 %}
+          <span class="keyword">{{ keyword }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3>未找到相关问题</h3>
+      <p>尝试使用不同的关键词，或浏览所有问题</p>
+      <a href="/" class="search-btn" style="display: inline-block; margin-top: 1rem;">查看全部问题</a>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <p>© 2026 xvcenh团队 · 基于 Jekyll + GitHub Pages 构建</p>
+  </div>
+</footer>

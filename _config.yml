@@ -1,10 +1,11 @@
-title: "xvcenh 的博客"
-email: xvcenh@example.com
-description: "分享技术、生活和思考"
+title: "项目问题库"
+email: team@xvcenh.com
+description: "团队项目开发问题与解决方案知识库 - 方便检索、持续积累"
 baseurl: ""
 url: "https://xvcenh.github.io"
 twitter_username: xvcenh
 github_username: xvcenh
+author: "xvcenh团队"
 
 # Build settings
 markdown: kramdown
@@ -13,6 +14,40 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-paginate
+  - jekyll-seo-tag
 
-# 自定义设置
-posts_dir: _posts
+# 分页设置
+paginate: 12
+paginate_path: "/page:num/"
+
+# 自定义变量
+project_name: "项目问题库"
+team_contact: "钉钉群: openclaw龙虾使用团队"
+
+# 分类设置
+categories:
+  - name: 前端
+    color: "#42b983"
+  - name: 后端
+    color: "#ff6b6b"
+  - name: 数据库
+    color: "#4ecdc4"
+  - name: 部署
+    color: "#a29bfe"
+  - name: 工具
+    color: "#fd79a8"
+  - name: 其他
+    color: "#636e72"
+
+# 导航菜单
+navigation:
+  - name: 首页
+    url: /
+  - name: 问题列表
+    url: /issues/
+  - name: 分类浏览
+    url: /categories/
+  - name: 搜索
+    url: /search/
+  - name: 关于
+    url: /about/

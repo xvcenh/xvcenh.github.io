@@ -3,26 +3,64 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title }} - xvcenh 的博客</title>
+    <title>{{ page.title }} - 项目问题库</title>
     <link rel="stylesheet" href="/assets/css/style.css">
+    {% if page.layout == 'post' %}
+    <style>
+      .post-layout { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+      .post-header { background: var(--card-bg); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem; box-shadow: var(--shadow-md); }
+      .post-title { font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1rem; }
+      .post-meta { display: flex; flex-wrap: wrap; gap: 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+      .post-meta-item { display: flex; align-items: center; gap: 0.35rem; }
+      .post-content { background: var(--card-bg); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow-md); }
+      .post-content h2 { margin-top: 2rem; margin-bottom: 1rem; }
+      .post-content h3 { margin-top: 1.5rem; margin-bottom: 0.75rem; }
+      .post-content p { margin-bottom: 1rem; }
+      .post-content pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1rem 0; }
+      .post-content code { background: #f1f5f9; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+      .post-content pre code { background: none; padding: 0; }
+      .post-content img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
+      .post-keywords { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+      .back-link { display: inline-block; margin-bottom: 1rem; color: var(--primary-color); text-decoration: none; }
+      .back-link:hover { text-decoration: underline; }
+    </style>
+    {% endif %}
   </head>
   <body>
-    <header>
-      <h1><a href="/">xvcenh 的博客</a></h1>
-      <nav>
-        <ul>
-          <li><a href="/">首页</a></li>
-          <li><a href="/about/">关于</a></li>
-        </ul>
-      </nav>
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <a href="/" style="text-decoration: none; color: white;">
+            <span class="logo-icon">📚</span>
+            <div>
+              <div class="logo-text">项目问题库</div>
+              <div class="logo-subtitle">团队知识积累 · 随时检索</div>
+            </div>
+          </a>
+        </div>
+        <nav class="nav">
+          <a href="/">首页</a>
+          <a href="/issues/">问题列表</a>
+          <a href="/categories/">分类浏览</a>
+          <a href="/search/" class="btn-upload">🔍 搜索</a>
+        </nav>
+      </div>
     </header>
     
-    <main>
+    <main class="main-content">
       {{ content }}
     </main>
     
-    <footer>
-      <p>&copy; 2026 xvcenh. 使用 GitHub Pages 和 Jekyll 构建.</p>
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-links">
+          <a href="/">首页</a>
+          <a href="/about/">关于</a>
+          <a href="https://github.com/xvcenh/xvcenh.github.io">GitHub</a>
+        </div>
+        <p>© 2026 xvcenh团队 · 基于 Jekyll + GitHub Pages 构建</p>
+        <p style="margin-top: 0.5rem; opacity: 0.7;">有问题？直接在钉钉群 @机器人 上传文档</p>
+      </div>
     </footer>
   </body>
 </html>

@@ -1,22 +1,132 @@
 ---
 layout: default
-title: 首页
+title: 项目问题库
 ---
 
-<div class="home">
-  <h1 class="page-heading">欢迎来到我的博客</h1>
+<!-- Hero 区域 -->
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <span class="logo-icon">📚</span>
+      <div>
+        <div class="logo-text">项目问题库</div>
+        <div class="logo-subtitle">团队知识积累 · 随时检索</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/">首页</a>
+      <a href="/issues/">问题列表</a>
+      <a href="/categories/">分类浏览</a>
+      <a href="/search/" class="btn-upload">🔍 搜索</a>
+    </nav>
+  </div>
+</header>
 
-  <ul class="post-list">
-    {% for post in site.posts %}
-      <li>
-        <span class="post-meta">{{ post.date | date: "%Y年%m月%d日" }}</span>
-        <h2>
-          <a class="post-link" href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+<main class="main-content">
+  <!-- 搜索区域 -->
+  <section class="search-section">
+    <h1 class="search-title">🔍 搜索问题记录</h1>
+    <form action="/search/" method="get" class="search-box">
+      <input type="text" name="q" class="search-input" placeholder="输入关键词、技术栈、错误信息..." autocomplete="off">
+      <button type="submit" class="search-btn">搜索</button>
+    </form>
+  </section>
+
+  <!-- 统计卡片 -->
+  <section class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📝</div>
+      <div class="stat-number">{{ site.posts | size }}</div>
+      <div class="stat-label">问题总数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏷️</div>
+      <div class="stat-number">{{ site.categories | size }}</div>
+      <div class="stat-label">分类数量</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-number">-</div>
+      <div class="stat-label">团队成员</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-number">{{ site.time | date: "%Y" }}</div>
+      <div class="stat-label">持续更新</div>
+    </div>
+  </section>
+
+  <!-- 筛选栏 -->
+  <section class="filter-bar">
+    <span class="filter-label">📂 按分类筛选:</span>
+    <div class="filter-tags">
+      <a href="/" class="filter-tag active">全部</a>
+      <a href="/categories/前端/" class="filter-tag">前端</a>
+      <a href="/categories/后端/" class="filter-tag">后端</a>
+      <a href="/categories/数据库/" class="filter-tag">数据库</a>
+      <a href="/categories/部署/" class="filter-tag">部署</a>
+      <a href="/categories/工具/" class="filter-tag">工具</a>
+    </div>
+  </section>
+
+  <!-- 问题列表 -->
+  <section class="issues-grid">
+    {% for post in site.posts limit: 12 %}
+    <article class="issue-card">
+      <div class="issue-header">
+        <h2 class="issue-title">
+          <a href="{{ post.url }}">{{ post.title }}</a>
         </h2>
-        {{ post.excerpt }}
-      </li>
+        <span class="issue-id">#{{ forloop.index }}</span>
+      </div>
+      
+      <div class="issue-meta">
+        <span class="meta-item">
+          <span class="meta-icon">📅</span>
+          {{ post.date | date: "%Y-%m-%d" }}
+        </span>
+        {% if post.author %}
+        <span class="meta-item">
+          <span class="meta-icon">👤</span>
+          {{ post.author }}
+        </span>
+        {% endif %}
+        {% if post.categories %}
+        {% for category in post.categories %}
+        <span class="category-tag {{ category }}">{{ category }}</span>
+        {% endfor %}
+        {% endif %}
+      </div>
+      
+      <p class="issue-description">{{ post.excerpt | strip_html | truncate: 120 }}</p>
+      
+      {% if post.keywords %}
+      <div class="issue-keywords">
+        {% for keyword in post.keywords limit: 5 %}
+        <span class="keyword">{{ keyword }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
     {% endfor %}
-  </ul>
+  </section>
 
-  <p class="rss-subscribe">订阅 <a href="{{ "/feed.xml" | relative_url }}">RSS Feed</a></p>
-</div>
+  <!-- 分页 -->
+  {% if site.posts.size > 12 %}
+  <div class="pagination">
+    <!-- 分页链接 -->
+  </div>
+  {% endif %}
+</main>
+
+<footer class="footer">
+  <div class="footer-content">
+    <div class="footer-links">
+      <a href="/">首页</a>
+      <a href="/about/">关于</a>
+      <a href="https://github.com/xvcenh/xvcenh.github.io">GitHub</a>
+    </div>
+    <p>© 2026 xvcenh团队 · 基于 Jekyll + GitHub Pages 构建</p>
+    <p style="margin-top: 0.5rem; opacity: 0.7;">有问题？直接在钉钉群 @机器人 上传文档</p>
+  </div>
+</footer>
