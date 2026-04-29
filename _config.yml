@@ -1,9 +1,21 @@
-title: "项目问题库"
-email: team@xvcenh.com
-description: "团队项目开发问题与解决方案知识库"
+title: "xvcenh的博客"
+email: xvcenh@gmail.com
+description: "xvcenh(徐辰)的技术博客 - 记录软件开发、运维部署、数据库管理与工具使用中的问题与解决方案"
 baseurl: ""
 url: "https://xvcenh.github.io"
-author: "xvcenh团队"
+author: "xvcenh"
+lang: zh-CN
+timezone: Asia/Shanghai
+
+# SEO标签插件配置
+twitter:
+  username: xvcenh
+  card: summary_large_image
+social:
+  name: xvcenh
+  links:
+    - https://github.com/xvcenh
+    - https://xvcenh.github.io
 
 # Build settings
 markdown: kramdown
@@ -19,7 +31,7 @@ paginate: 12
 paginate_path: "/page:num/"
 
 # 自定义变量
-project_name: "项目问题库"
+project_name: "xvcenh的博客"
 
 # 分类设置
 categories:
