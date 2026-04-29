@@ -875,8 +875,8 @@
             if (isDragging) {
                 const dx = event.clientX - dragStartX;
                 const dy = event.clientY - dragStartY;
-                targetRotationOffsetX = rotationOffsetX - dx * 0.002;
-                targetRotationOffsetY = rotationOffsetY + dy * 0.002;
+                targetRotationOffsetX = rotationOffsetX - dx * 0.0008;
+                targetRotationOffsetY = rotationOffsetY + dy * 0.0008;
                 targetRotationOffsetY = Math.max(-1.2, Math.min(1.2, targetRotationOffsetY));
             }
             updateHover(event);
@@ -922,8 +922,8 @@
                 if (isDragging) {
                     const dx = event.touches[0].clientX - dragStartX;
                     const dy = event.touches[0].clientY - dragStartY;
-                    targetRotationOffsetX = rotationOffsetX - dx * 0.002;
-                    targetRotationOffsetY = rotationOffsetY + dy * 0.002;
+                    targetRotationOffsetX = rotationOffsetX - dx * 0.0008;
+                    targetRotationOffsetY = rotationOffsetY + dy * 0.0008;
                     targetRotationOffsetY = Math.max(-1.2, Math.min(1.2, targetRotationOffsetY));
                 }
                 updateHover({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
@@ -1010,8 +1010,8 @@
             cameraDistance += (targetCameraDistance - cameraDistance) * 0.06;
 
             const autoRotateSpeed = 0.12;
-            const totalRotX = globalTime * autoRotateSpeed + mouseX * 0.6 + rotationOffsetX;
-            const totalRotY = mouseY * 0.4 + rotationOffsetY;
+            const totalRotX = globalTime * autoRotateSpeed + mouseX * 0.2 + rotationOffsetX;
+            const totalRotY = mouseY * 0.15 + rotationOffsetY;
 
             const camX = Math.cos(totalRotY) * Math.sin(totalRotX) * cameraDistance;
             const camY = Math.sin(totalRotY) * cameraDistance;
