@@ -10,11 +10,15 @@ title: 项目问题库
     <title>项目问题库 - xvcenh</title>
     <style>
         :root {
-            --bg: #000010;
-            --text: #c8d6f8;
-            --accent: #64b5f6;
-            --glow: #4fc3f7;
-            --panel-bg: rgba(8, 12, 30, 0.85);
+            --bg: #f0f4fa;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --accent: #3b82f6;
+            --accent-light: #60a5fa;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --card-shadow: rgba(0,0,0,0.06);
+            --panel-bg: rgba(255, 255, 255, 0.92);
         }
 
         * {
@@ -26,6 +30,7 @@ title: 项目问题库
         body {
             background: var(--bg);
             font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            color: var(--text);
             cursor: default;
             user-select: none;
             -webkit-user-select: none;
@@ -45,6 +50,7 @@ title: 项目问题库
             height: 100vh;
             z-index: 0;
             overflow: hidden;
+            background: linear-gradient(180deg, #dbe8f8 0%, #c8daf0 40%, #b8cde8 100%);
         }
         #canvas-container {
             position: absolute;
@@ -53,6 +59,7 @@ title: 项目问题库
         }
         canvas {
             display: block;
+            background: transparent;
         }
 
         /* 滚动提示箭头 */
@@ -67,7 +74,7 @@ title: 项目问题库
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            opacity: 0.8;
+            opacity: 0.7;
             transition: opacity 0.5s;
         }
         #scroll-hint.hidden {
@@ -76,8 +83,8 @@ title: 项目问题库
         #scroll-hint .arrow {
             width: 24px;
             height: 24px;
-            border-right: 2px solid rgba(180,210,240,0.8);
-            border-bottom: 2px solid rgba(180,210,240,0.8);
+            border-right: 2px solid rgba(60,100,160,0.7);
+            border-bottom: 2px solid rgba(60,100,160,0.7);
             transform: rotate(45deg);
             animation: scroll-bounce 2s ease-in-out infinite;
         }
@@ -88,17 +95,14 @@ title: 项目问题库
         #scroll-hint span {
             font-size: 0.7rem;
             letter-spacing: 0.1em;
-            color: rgba(160,200,230,0.7);
-            text-shadow: 0 0 6px rgba(100,150,200,0.3);
+            color: #5a7a9a;
         }
 
         /* 内容区 */
         #content-section {
             position: relative;
             z-index: 5;
-            background: linear-gradient(180deg, rgba(0,0,16,0.7) 0%, rgba(0,0,20,0.95) 10%, #000015 100%);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: linear-gradient(180deg, rgba(240,244,250,0.85) 0%, #ffffff 8%, #f8fafc 100%);
             min-height: 100vh;
             padding: 60px 24px 80px;
         }
@@ -108,23 +112,22 @@ title: 项目问题库
         }
         #content-section .section-title {
             font-size: 1.6rem;
-            font-weight: 600;
-            color: #d8e8fc;
-            text-shadow: 0 0 12px rgba(130,180,230,0.4);
+            font-weight: 700;
+            color: #1e293b;
             margin-bottom: 32px;
             text-align: center;
         }
         #content-section .post-card {
-            background: rgba(10,16,40,0.8);
-            border: 1px solid rgba(80,140,210,0.2);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 12px;
             padding: 20px 24px;
             margin-bottom: 16px;
             transition: border-color 0.3s, box-shadow 0.3s;
         }
         #content-section .post-card:hover {
-            border-color: rgba(100,160,230,0.5);
-            box-shadow: 0 0 20px rgba(60,130,200,0.15);
+            border-color: #93c5fd;
+            box-shadow: 0 4px 20px rgba(59,130,246,0.08);
         }
         #content-section .post-card h3 {
             font-size: 1.1rem;
@@ -132,16 +135,16 @@ title: 项目问题库
             margin-bottom: 8px;
         }
         #content-section .post-card h3 a {
-            color: #b8d4f8;
+            color: #1e40af;
             text-decoration: none;
             transition: color 0.2s;
         }
         #content-section .post-card h3 a:hover {
-            color: #8ec8ff;
+            color: #3b82f6;
         }
         #content-section .post-meta {
             font-size: 0.78rem;
-            color: #6a8aaa;
+            color: #94a3b8;
             display: flex;
             gap: 16px;
             flex-wrap: wrap;
@@ -153,7 +156,7 @@ title: 项目问题库
         }
         #content-section .post-excerpt {
             font-size: 0.85rem;
-            color: #7a9ab8;
+            color: #64748b;
             margin-top: 10px;
             line-height: 1.6;
         }
@@ -167,23 +170,24 @@ title: 项目问题库
         #content-section .category-tag {
             padding: 6px 16px;
             border-radius: 20px;
-            border: 1px solid rgba(80,140,210,0.3);
+            border: 1px solid #cbd5e1;
             font-size: 0.8rem;
-            color: #90bcd8;
+            color: #475569;
+            background: #ffffff;
             text-decoration: none;
             transition: all 0.3s;
         }
         #content-section .category-tag:hover {
-            background: rgba(60,120,200,0.2);
-            border-color: rgba(100,160,230,0.6);
-            color: #c8e0f8;
+            background: #eff6ff;
+            border-color: #60a5fa;
+            color: #1d4ed8;
         }
         #content-section .footer-note {
             text-align: center;
             padding-top: 40px;
             font-size: 0.75rem;
-            color: #4a6a8a;
-            border-top: 1px solid rgba(60,100,150,0.15);
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
             margin-top: 32px;
         }
 
@@ -199,7 +203,7 @@ title: 项目问题库
             align-items: center;
             justify-content: space-between;
             pointer-events: none;
-            background: linear-gradient(180deg, rgba(0, 0, 16, 0.9) 30%, rgba(0, 0, 16, 0) 100%);
+            background: linear-gradient(180deg, rgba(240,244,250,0.95) 30%, rgba(240,244,250,0) 100%);
             padding-bottom: 50px;
         }
         #title-bar .logo-area {
@@ -211,33 +215,27 @@ title: 项目问题库
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            background: radial-gradient(circle at 35% 30%, #8ec8f2, #1a5f9e 70%, #0a2a4a 100%);
-            box-shadow: 0 0 28px rgba(70, 160, 240, 0.7), 0 0 60px rgba(70, 150, 230, 0.35), inset 0 0 12px rgba(180, 220, 255, 0.5);
+            background: radial-gradient(circle at 35% 30%, #a8d8f8, #3b82f6 60%, #1d4ed8 100%);
+            box-shadow: 0 0 18px rgba(59,130,246,0.4), 0 0 36px rgba(96,165,250,0.2);
             animation: logo-pulse 3s ease-in-out infinite;
             flex-shrink: 0;
         }
         @keyframes logo-pulse {
-            0%,
-            100% {
-                box-shadow: 0 0 28px rgba(70, 160, 240, 0.7), 0 0 60px rgba(70, 150, 230, 0.35);
-            }
-            50% {
-                box-shadow: 0 0 40px rgba(100, 190, 255, 0.95), 0 0 80px rgba(90, 170, 250, 0.55), 0 0 120px rgba(60, 140, 220, 0.3);
-            }
+            0%, 100% { box-shadow: 0 0 18px rgba(59,130,246,0.4), 0 0 36px rgba(96,165,250,0.2); }
+            50% { box-shadow: 0 0 28px rgba(59,130,246,0.7), 0 0 50px rgba(96,165,250,0.4); }
         }
         #title-bar h1 {
             font-size: 1.55rem;
             font-weight: 600;
             letter-spacing: 0.06em;
-            color: #d8e8fc;
-            text-shadow: 0 0 18px rgba(130, 190, 240, 0.6), 0 0 40px rgba(100, 160, 220, 0.3);
+            color: #1e40af;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.5);
             white-space: nowrap;
         }
         #title-bar .subtitle {
             font-size: 0.78rem;
-            color: #7ea8cc;
+            color: #5b7aaa;
             letter-spacing: 0.1em;
-            text-shadow: 0 0 8px rgba(100, 160, 210, 0.4);
         }
 
         /* 底部提示 */
@@ -252,8 +250,7 @@ title: 项目问题库
             gap: 20px;
             font-size: 0.75rem;
             letter-spacing: 0.05em;
-            color: rgba(160, 200, 230, 0.7);
-            text-shadow: 0 0 6px rgba(100, 150, 200, 0.3);
+            color: #5a7a9a;
         }
         #hint-bar span {
             display: flex;
@@ -264,19 +261,13 @@ title: 项目问题库
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #7eb8e0;
-            box-shadow: 0 0 8px #5aa0d0;
+            background: #3b82f6;
+            box-shadow: 0 0 6px #60a5fa;
             animation: dot-blink 2s ease-in-out infinite;
         }
         @keyframes dot-blink {
-            0%,
-            100% {
-                opacity: 0.5;
-            }
-            50% {
-                opacity: 1;
-                box-shadow: 0 0 14px #7ec8f0;
-            }
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; box-shadow: 0 0 10px #3b82f6; }
         }
 
         /* 3D标签层 */
@@ -288,20 +279,20 @@ title: 项目问题库
         }
         .orbit-label {
             position: absolute;
-            font-size: 0.7rem;
-            font-weight: 500;
+            font-size: 0.72rem;
+            font-weight: 600;
             letter-spacing: 0.04em;
-            color: #b0ccf0;
-            text-shadow: 0 0 10px rgba(100, 160, 220, 0.7), 0 0 24px rgba(80, 140, 200, 0.4);
+            color: #3b5998;
+            text-shadow: 0 0 8px rgba(59,130,246,0.3), 0 0 16px rgba(255,255,255,0.6);
             transform: translate(-50%, -50%);
             transition: color 0.3s, text-shadow 0.3s, font-size 0.3s;
             white-space: nowrap;
             pointer-events: none;
         }
         .orbit-label.highlighted {
-            color: #fff;
-            font-size: 0.85rem;
-            text-shadow: 0 0 16px rgba(160, 210, 255, 1), 0 0 36px rgba(120, 180, 240, 0.8), 0 0 54px rgba(90, 150, 220, 0.5);
+            color: #1d4ed8;
+            font-size: 0.88rem;
+            text-shadow: 0 0 12px rgba(37,99,235,0.5), 0 0 24px rgba(59,130,246,0.4), 0 0 40px rgba(255,255,255,0.7);
             z-index: 20;
         }
         .orbit-label .label-dot {
@@ -311,13 +302,13 @@ title: 项目问题库
             border-radius: 50%;
             margin-right: 5px;
             vertical-align: middle;
-            box-shadow: 0 0 6px currentColor;
+            box-shadow: 0 0 4px currentColor;
             transition: all 0.3s;
         }
         .orbit-label.highlighted .label-dot {
             width: 8px;
             height: 8px;
-            box-shadow: 0 0 14px currentColor, 0 0 28px currentColor;
+            box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
         }
 
         /* 悬停详情面板 */
@@ -328,16 +319,16 @@ title: 项目问题库
             opacity: 0;
             transform: translate(-50%, -120%);
             transition: opacity 0.25s ease-out, transform 0.25s ease-out;
-            background: var(--panel-bg);
-            border: 1px solid rgba(100, 160, 220, 0.5);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(59,130,246,0.3);
             border-radius: 12px;
             padding: 14px 20px;
-            color: #d0e0f8;
+            color: #334155;
             font-size: 0.82rem;
             letter-spacing: 0.03em;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(70, 140, 210, 0.25), inset 0 0 30px rgba(60, 130, 200, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1), 0 0 30px rgba(59,130,246,0.12);
             text-align: center;
             min-width: 130px;
         }
@@ -348,19 +339,18 @@ title: 项目问题库
         #detail-panel .panel-name {
             font-weight: 600;
             font-size: 0.95rem;
-            color: #e8f2ff;
-            text-shadow: 0 0 10px rgba(140, 200, 240, 0.6);
+            color: #1e40af;
             margin-bottom: 4px;
         }
         #detail-panel .panel-hint {
             font-size: 0.65rem;
-            color: #7eaacc;
+            color: #64748b;
             letter-spacing: 0.06em;
         }
         #detail-panel .panel-articles {
             margin-top: 6px;
             font-size: 0.68rem;
-            color: #90bcd8;
+            color: #5b7aaa;
             line-height: 1.5;
         }
     </style>
@@ -450,7 +440,7 @@ title: 项目问题库
             {% endif %}
 
             <div class="footer-note">
-                © 2026 xvcenh · <a href="https://github.com/xvcenh/xvcenh.github.io" style="color:#5a8aaa;">GitHub</a> · 基于 Jekyll + GitHub Pages 构建
+                © 2026 xvcenh · <a href="https://github.com/xvcenh/xvcenh.github.io" style="color:#64748b;">GitHub</a> · 基于 Jekyll + GitHub Pages 构建
             </div>
         </div>
     </div>
@@ -478,7 +468,8 @@ title: 项目问题库
 
         // ==================== 场景初始化 ====================
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000010, 0.000015);
+        scene.background = new THREE.Color(0xd8e6f5);
+        scene.fog = new THREE.FogExp2(0xd8e6f5, 0.000008);
 
         const camera = new THREE.PerspectiveCamera(58, container.clientWidth / container.clientHeight, 0.5, 200);
         camera.position.set(0, 6, 24);
@@ -493,15 +484,15 @@ title: 项目问题库
         container.appendChild(renderer.domElement);
 
         // ==================== 光照 ====================
-        const ambientLight = new THREE.AmbientLight(0x1a3050, 1.8);
+        const ambientLight = new THREE.AmbientLight(0x8899bb, 2.2);
         scene.add(ambientLight);
-        const pointLight1 = new THREE.PointLight(0x8899cc, 80, 60, 1.5);
+        const pointLight1 = new THREE.PointLight(0xaabbdd, 60, 60, 1.5);
         pointLight1.position.set(0, 0, 0);
         scene.add(pointLight1);
-        const pointLight2 = new THREE.PointLight(0x5577bb, 30, 45, 1.8);
+        const pointLight2 = new THREE.PointLight(0x8899cc, 20, 45, 1.8);
         pointLight2.position.set(10, 5, -8);
         scene.add(pointLight2);
-        const pointLight3 = new THREE.PointLight(0x7799cc, 20, 40, 2);
+        const pointLight3 = new THREE.PointLight(0x99aacc, 15, 40, 2);
         pointLight3.position.set(-8, -3, 10);
         scene.add(pointLight3);
 
@@ -574,18 +565,18 @@ title: 项目问题库
         }
 
         // 预生成纹理
-        const glowTexCore = createGlowTexture('rgba(140,200,255,1)', 'rgba(30,80,180,0.6)', 512);
-        const glowTexWarm = createGlowTexture('rgba(255,180,130,1)', 'rgba(200,80,30,0.5)', 256);
-        const glowTexCool = createGlowTexture('rgba(130,200,255,1)', 'rgba(30,100,200,0.5)', 256);
-        const glowTexGreen = createGlowTexture('rgba(140,230,180,1)', 'rgba(30,150,80,0.5)', 256);
-        const glowTexPurple = createGlowTexture('rgba(190,150,240,1)', 'rgba(100,40,180,0.5)', 256);
-        const glowTexGold = createGlowTexture('rgba(255,210,140,1)', 'rgba(200,140,30,0.5)', 256);
-        const glowTexSmall = createGlowTexture('rgba(180,210,240,0.9)', 'rgba(40,90,170,0.4)', 128);
-        const ringTexBlue = createRingTexture('rgba(100,170,240,0.7)');
-        const ringTexGold = createRingTexture('rgba(240,180,100,0.7)');
+        const glowTexCore = createGlowTexture('rgba(100,180,255,1)', 'rgba(30,80,200,0.4)', 512);
+        const glowTexWarm = createGlowTexture('rgba(255,170,130,1)', 'rgba(200,80,30,0.4)', 256);
+        const glowTexCool = createGlowTexture('rgba(100,190,255,1)', 'rgba(30,90,200,0.4)', 256);
+        const glowTexGreen = createGlowTexture('rgba(130,220,170,1)', 'rgba(30,140,80,0.4)', 256);
+        const glowTexPurple = createGlowTexture('rgba(180,140,240,1)', 'rgba(90,30,180,0.4)', 256);
+        const glowTexGold = createGlowTexture('rgba(255,200,140,1)', 'rgba(200,120,30,0.4)', 256);
+        const glowTexSmall = createGlowTexture('rgba(160,200,240,0.8)', 'rgba(40,80,170,0.3)', 128);
+        const ringTexBlue = createRingTexture('rgba(80,150,230,0.6)');
+        const ringTexGold = createRingTexture('rgba(230,160,80,0.6)');
 
         // ==================== 星空背景 ====================
-        const starCount = 2800;
+        const starCount = 2000;
         const starGeom = new THREE.BufferGeometry();
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
@@ -598,36 +589,28 @@ title: 项目问题库
             starPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
             starPositions[i * 3 + 2] = radius * Math.cos(phi);
             const colorChoice = Math.random();
-            if (colorChoice < 0.08) {
-                starColors[i * 3] = 0.7;
-                starColors[i * 3 + 1] = 0.75;
-                starColors[i * 3 + 2] = 1.0;
-            } else if (colorChoice < 0.18) {
-                starColors[i * 3] = 0.9;
-                starColors[i * 3 + 1] = 0.85;
-                starColors[i * 3 + 2] = 0.7;
-            } else if (colorChoice < 0.22) {
-                starColors[i * 3] = 1.0;
-                starColors[i * 3 + 1] = 0.7;
-                starColors[i * 3 + 2] = 0.5;
+            if (colorChoice < 0.02) {
+                starColors[i * 3] = 0.3; starColors[i * 3 + 1] = 0.4; starColors[i * 3 + 2] = 0.9;
+            } else if (colorChoice < 0.06) {
+                starColors[i * 3] = 0.5; starColors[i * 3 + 1] = 0.45; starColors[i * 3 + 2] = 0.35;
+            } else if (colorChoice < 0.09) {
+                starColors[i * 3] = 0.6; starColors[i * 3 + 1] = 0.3; starColors[i * 3 + 2] = 0.2;
             } else {
-                const brightness = 0.55 + Math.random() * 0.45;
-                starColors[i * 3] = brightness;
-                starColors[i * 3 + 1] = brightness;
-                starColors[i * 3 + 2] = brightness;
+                const b = 0.25 + Math.random() * 0.3;
+                starColors[i * 3] = b; starColors[i * 3 + 1] = b; starColors[i * 3 + 2] = b;
             }
-            starSizes[i] = 0.04 + Math.random() * 0.28;
+            starSizes[i] = 0.03 + Math.random() * 0.2;
         }
         starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
         starGeom.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
         starGeom.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
         const starMat = new THREE.PointsMaterial({
-            size: 0.12,
+            size: 0.1,
             vertexColors: true,
-            blending: THREE.AdditiveBlending,
+            blending: THREE.NormalBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.85,
+            opacity: 0.5,
             sizeAttenuation: true,
         });
         const starField = new THREE.Points(starGeom, starMat);
@@ -640,9 +623,9 @@ title: 项目问题库
         const coreShaderMat = new THREE.ShaderMaterial({
             uniforms: {
                 uTime: { value: 0 },
-                uColor1: { value: new THREE.Color('#4a90d9') },
-                uColor2: { value: new THREE.Color('#1a3a6e') },
-                uColor3: { value: new THREE.Color('#8ec8f8') },
+                uColor1: { value: new THREE.Color('#6098e8') },
+                uColor2: { value: new THREE.Color('#3060c0') },
+                uColor3: { value: new THREE.Color('#a0d0ff') },
             },
             vertexShader: /* glsl */ `
             varying vec3 vNormal;
@@ -703,7 +686,7 @@ title: 项目问题库
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
                 transparent: true,
-                opacity: 0.55,
+                opacity: 0.35,
             })
         );
         coreGroup.add(coreGlowMid);
@@ -713,17 +696,17 @@ title: 项目问题库
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.35,
+            opacity: 0.22,
         }));
         coreGlowOuter.scale.set(7, 7, 1);
         coreGroup.add(coreGlowOuter);
 
         const coreGlowFar = new THREE.Sprite(new THREE.SpriteMaterial({
-            map: createGlowTexture('rgba(100,160,230,0.7)', 'rgba(20,50,120,0.2)', 512),
+            map: createGlowTexture('rgba(80,140,220,0.5)', 'rgba(20,50,120,0.12)', 512),
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.2,
+            opacity: 0.12,
         }));
         coreGlowFar.scale.set(12, 12, 1);
         coreGroup.add(coreGlowFar);
@@ -746,11 +729,11 @@ title: 项目问题库
         coreDotGeom.setAttribute('position', new THREE.BufferAttribute(coreDotPositionsArr, 3));
         const coreDotMat = new THREE.PointsMaterial({
             size: 0.04,
-            color: 0xa8d4f8,
+            color: 0x80b8e8,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.75,
+            opacity: 0.6,
         });
         const coreDots = new THREE.Points(coreDotGeom, coreDotMat);
         coreDotsGroup.add(coreDots);
@@ -776,11 +759,11 @@ title: 项目问题库
         energyGeom.setAttribute('position', new THREE.BufferAttribute(energyPositionsArr, 3));
         const energyMat = new THREE.PointsMaterial({
             size: 0.06,
-            color: 0x90c8f0,
+            color: 0x80b8e0,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.45,
         });
         const energyParticles = new THREE.Points(energyGeom, energyMat);
         coreGroup.add(energyParticles);
@@ -790,7 +773,7 @@ title: 项目问题库
             name: '技术分类',
             tilt: 0.35,
             radius: 7.5,
-            color: 0x4da6e0,
+            color: 0x3b82f6,
             glowTex: glowTexCool,
             ringTex: ringTexBlue,
             planets: [
@@ -802,7 +785,7 @@ title: 项目问题库
             name: '工程实践',
             tilt: -0.28,
             radius: 10.5,
-            color: 0xe8945a,
+            color: 0xe88040,
             glowTex: glowTexWarm,
             ringTex: ringTexGold,
             planets: [
@@ -814,7 +797,7 @@ title: 项目问题库
             name: '探索发现',
             tilt: 0.42,
             radius: 13.8,
-            color: 0x5cb88d,
+            color: 0x4ca870,
             glowTex: glowTexGreen,
             ringTex: null,
             planets: [
@@ -826,7 +809,7 @@ title: 项目问题库
             name: '关于',
             tilt: -0.18,
             radius: 16.5,
-            color: 0xa880cc,
+            color: 0x9060c0,
             glowTex: glowTexPurple,
             ringTex: null,
             planets: [
@@ -859,8 +842,8 @@ title: 项目问题库
             const ringLine = new THREE.LineLoop(ringGeom, new THREE.LineBasicMaterial({
                 color: orbitDef.color,
                 transparent: true,
-                opacity: 0.35,
-                blending: THREE.AdditiveBlending,
+                opacity: 0.45,
+                blending: THREE.NormalBlending,
                 depthWrite: false,
             }));
             orbitGroup.add(ringLine);
@@ -868,8 +851,8 @@ title: 项目问题库
             const ringLine2 = new THREE.LineLoop(ringGeom, new THREE.LineBasicMaterial({
                 color: orbitDef.color,
                 transparent: true,
-                opacity: 0.12,
-                blending: THREE.AdditiveBlending,
+                opacity: 0.18,
+                blending: THREE.NormalBlending,
                 depthWrite: false,
             }));
             ringLine2.scale.set(1.015, 1.015, 1.015);
@@ -914,7 +897,7 @@ title: 项目问题库
                     blending: THREE.AdditiveBlending,
                     depthWrite: false,
                     transparent: true,
-                    opacity: 0.45,
+                    opacity: 0.3,
                 }));
                 glowSprite.scale.set(planetDef.size * 3.5, planetDef.size * 3.5, 1);
                 planetGroup.add(glowSprite);
@@ -923,8 +906,8 @@ title: 项目问题库
                 const miniRing = new THREE.Mesh(miniRingGeom, new THREE.MeshBasicMaterial({
                     color: orbitDef.color,
                     transparent: true,
-                    opacity: 0.5,
-                    blending: THREE.AdditiveBlending,
+                    opacity: 0.55,
+                    blending: THREE.NormalBlending,
                     depthWrite: false,
                 }));
                 miniRing.rotation.x = Math.PI / 2.5;
@@ -968,10 +951,10 @@ title: 项目问题库
                     speed: planetDef.speed,
                     baseScale: 1,
                     targetScale: 1,
-                    baseGlowOpacity: 0.45,
-                    targetGlowOpacity: 0.45,
-                    baseEmissiveIntensity: 0.15,
-                    targetEmissiveIntensity: 0.15,
+                    baseGlowOpacity: 0.3,
+                    targetGlowOpacity: 0.3,
+                    baseEmissiveIntensity: 0.1,
+                    targetEmissiveIntensity: 0.1,
                 };
                 allPlanetObjects.push(planetObj);
             });
@@ -1015,10 +998,10 @@ title: 项目问题库
                     hoveredPlanet = found;
                     if (hoveredPlanet !== selectedPlanet) {
                         hoveredPlanet.targetScale = hoveredPlanet.baseScale * 1.35;
-                        hoveredPlanet.targetGlowOpacity = 0.9;
-                        hoveredPlanet.targetEmissiveIntensity = 0.7;
+                        hoveredPlanet.targetGlowOpacity = 0.7;
+                        hoveredPlanet.targetEmissiveIntensity = 0.5;
                         hoveredPlanet.mesh.material.emissive = new THREE.Color(hoveredPlanet.orbitDef.color);
-                        hoveredPlanet.mesh.material.emissiveIntensity = 0.7;
+                        hoveredPlanet.mesh.material.emissiveIntensity = 0.5;
                     }
                     document.body.classList.add('pointer-cursor');
                     panelName.textContent = found.planetDef.name;
@@ -1186,9 +1169,9 @@ title: 项目问题库
                     }
                     selectedPlanet = found;
                     selectedPlanet.targetScale = selectedPlanet.baseScale * 1.5;
-                    selectedPlanet.targetGlowOpacity = 1.0;
+                    selectedPlanet.targetGlowOpacity = 0.8;
                     selectedPlanet.mesh.material.emissive = new THREE.Color(selectedPlanet.orbitDef.color);
-                    selectedPlanet.mesh.material.emissiveIntensity = 0.8;
+                    selectedPlanet.mesh.material.emissiveIntensity = 0.6;
                     savedCamDistance = cameraDistance;
                     savedRotationX = totalRotX;
                     savedRotationY = totalRotY;
@@ -1319,7 +1302,7 @@ title: 项目问题库
                 enPosArr[i * 3 + 2] = dist * Math.cos(ed.phi);
             }
             energyParticles.geometry.attributes.position.needsUpdate = true;
-            energyParticles.material.opacity = 0.35 + 0.2 * Math.sin(globalTime * 1.5);
+            energyParticles.material.opacity = 0.25 + 0.15 * Math.sin(globalTime * 1.5);
 
             allPlanetObjects.forEach((pObj) => {
                 pObj.baseAngle += pObj.speed * dt;
