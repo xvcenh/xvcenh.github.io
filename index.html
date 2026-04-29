@@ -43,6 +43,69 @@ title: 项目问题库
             cursor: pointer;
         }
 
+        /* ── Noise & Scanlines ─────────────────────── */
+        .noise-overlay {
+            position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: .025;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            background-size: 200px 200px;
+        }
+
+        /* ── Floating Shapes ───────────────────────── */
+        .floating-shapes { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
+        .shape {
+            position: absolute; border: 1.5px solid; opacity: .08;
+            transform-style: preserve-3d; will-change: transform;
+        }
+        .shape--ring {
+            width: 160px; height: 160px; border-color: #4da6e0; border-radius: 50%;
+            top: 10%; right: 5%; animation: shapeFloat1 28s ease-in-out infinite;
+        }
+        .shape--ring-sm {
+            width: 80px; height: 80px; border-color: #a880cc; border-radius: 50%;
+            bottom: 15%; left: 5%; animation: shapeFloat2 22s ease-in-out infinite;
+        }
+        .shape--diamond {
+            width: 45px; height: 45px; border-color: #e8945a;
+            top: 55%; right: 12%; transform: rotate(45deg);
+            animation: shapeFloat3 18s ease-in-out infinite;
+        }
+        .shape--cross {
+            width: 36px; height: 36px; border: none; top: 28%; left: 8%;
+            animation: shapeFloat4 24s ease-in-out infinite;
+        }
+        .shape--cross::before, .shape--cross::after {
+            content: ''; position: absolute; background: #5cb88d; opacity: .08;
+        }
+        .shape--cross::before { width: 1.5px; height: 100%; left: 50%; transform: translateX(-50%); }
+        .shape--cross::after { height: 1.5px; width: 100%; top: 50%; transform: translateY(-50%); }
+        .shape--tri {
+            width: 0; height: 0; border: none;
+            top: 5%; left: 22%;
+            border-left: 30px solid transparent; border-right: 30px solid transparent;
+            border-bottom: 52px solid rgba(77,166,224,.05);
+            animation: shapeFloat5 26s ease-in-out infinite;
+        }
+        @keyframes shapeFloat1 {
+            0%,100% { transform: translate3d(0,0,0) rotate(0deg); }
+            50% { transform: translate3d(-20px,30px,40px) rotate(180deg); }
+        }
+        @keyframes shapeFloat2 {
+            0%,100% { transform: translate3d(0,0,0) rotate(0deg); }
+            50% { transform: translate3d(25px,-20px,30px) rotate(-180deg); }
+        }
+        @keyframes shapeFloat3 {
+            0%,100% { transform: rotate(45deg) translate3d(0,0,0); }
+            50% { transform: rotate(225deg) translate3d(15px,-25px,50px); }
+        }
+        @keyframes shapeFloat4 {
+            0%,100% { transform: translate3d(0,0,0) rotate(0deg); }
+            50% { transform: translate3d(10px,20px,35px) rotate(90deg); }
+        }
+        @keyframes shapeFloat5 {
+            0%,100% { transform: translate3d(0,0,0) rotate(0); }
+            50% { transform: translate3d(20px,15px,30px) rotate(60deg); }
+        }
+
         /* 星系区域 - 粘性定位 */
         #galaxy-section {
             position: sticky;
@@ -124,11 +187,18 @@ title: 项目问题库
             border-radius: 12px;
             padding: 20px 24px;
             margin-bottom: 16px;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: transform .4s cubic-bezier(.23,1,.32,1), box-shadow .4s ease, border-color .35s ease;
+            transform-style: preserve-3d;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        #content-section .post-card.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
         #content-section .post-card:hover {
             border-color: #93c5fd;
-            box-shadow: 0 4px 20px rgba(59,130,246,0.08);
+            box-shadow: 0 12px 40px rgba(0,0,0,.08), 0 0 30px rgba(59,130,246,.06);
         }
         #content-section .post-card h3 {
             font-size: 1.1rem;
@@ -232,6 +302,33 @@ title: 项目问题库
             color: #d8e8fc;
             text-shadow: 0 0 18px rgba(130, 190, 240, 0.6), 0 0 40px rgba(100, 160, 220, 0.3);
             white-space: nowrap;
+            position: relative; display: inline-block;
+        }
+        #title-bar h1::before, #title-bar h1::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; pointer-events: none;
+        }
+        #title-bar h1::before {
+            left: 2px; text-shadow: -2px 0 #ec4899;
+            clip-path: inset(0 0 68% 0); animation: glitchTop 4s infinite linear alternate-reverse;
+        }
+        #title-bar h1::after {
+            left: -2px; text-shadow: 2px 0 #22d3ee;
+            clip-path: inset(68% 0 0 0); animation: glitchBot 3.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitchTop {
+            0%,88% { clip-path: inset(0 0 68% 0); transform: translate(0); }
+            90% { clip-path: inset(8% 0 58% 0); transform: translate(-4px,2px); }
+            93% { clip-path: inset(28% 0 38% 0); transform: translate(4px,-1px); }
+            96% { clip-path: inset(5% 0 72% 0); transform: translate(-2px,1px); }
+            100% { clip-path: inset(0 0 68% 0); transform: translate(0); }
+        }
+        @keyframes glitchBot {
+            0%,88% { clip-path: inset(68% 0 0 0); transform: translate(0); }
+            91% { clip-path: inset(58% 0 8% 0); transform: translate(3px,1px); }
+            94% { clip-path: inset(72% 0 4% 0); transform: translate(-3px,-2px); }
+            97% { clip-path: inset(55% 0 12% 0); transform: translate(2px,1px); }
+            100% { clip-path: inset(68% 0 0 0); transform: translate(0); }
         }
         #title-bar .subtitle {
             font-size: 0.78rem;
@@ -360,12 +457,25 @@ title: 项目问题库
     </style>
 </head>
 <body>
+    <div class="noise-overlay"></div>
 
     <!-- 星系区域 -->
     <div id="galaxy-section">
 
         <!-- 画布容器 -->
         <div id="canvas-container"></div>
+
+        <!-- 扫描线 -->
+        <div class="scanlines"></div>
+
+        <!-- 浮动形状 -->
+        <div class="floating-shapes">
+            <div class="shape shape--ring"></div>
+            <div class="shape shape--ring-sm"></div>
+            <div class="shape shape--diamond"></div>
+            <div class="shape shape--cross"></div>
+            <div class="shape shape--tri"></div>
+        </div>
 
         <!-- 标签覆盖层 -->
         <div id="labels-layer"></div>
@@ -382,7 +492,7 @@ title: 项目问题库
             <div class="logo-area">
                 <div class="logo-icon"></div>
                 <div>
-                    <h1>🪐 项目问题库</h1>
+                    <h1 data-text="🪐 项目问题库">🪐 项目问题库</h1>
                     <div class="subtitle">BLOG · KNOWLEDGE BASE</div>
                 </div>
             </div>
@@ -1443,6 +1553,46 @@ title: 项目问题库
         │  ⭐ ${starCount} 颗背景恒星        │
         └──────────────────────────────────────┘
         `);
+    </script>
+
+    <!-- 3D 卡片倾斜效果 -->
+    <script>
+    (function() {
+        const contentSection = document.getElementById('content-section');
+        if (!contentSection) return;
+
+        // 卡片入场动画
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, i * 80);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll('#content-section .post-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        // 3D 倾斜
+        contentSection.addEventListener('mousemove', (e) => {
+            const card = e.target.closest('.post-card');
+            if (!card) return;
+            const r = card.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width - 0.5;
+            const y = (e.clientY - r.top) / r.height - 0.5;
+            card.style.transform = `translateY(0) rotateX(${y * -6}deg) rotateY(${x * 8}deg)`;
+        });
+
+        contentSection.addEventListener('mouseout', (e) => {
+            if (e.target.classList && e.target.classList.contains('post-card')) {
+                e.target.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+            }
+        });
+    })();
     </script>
 </body>
 </html>
