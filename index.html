@@ -1,3 +1,7 @@
+---
+layout: null
+title: 项目问题库
+---
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -21,24 +25,29 @@
 
         body {
             background: var(--bg);
-            overflow: hidden;
             font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-            height: 100vh;
-            width: 100vw;
-            cursor: grab;
+            cursor: default;
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-        body:active {
+        body.grabbing {
             cursor: grabbing;
         }
         body.pointer-cursor {
             cursor: pointer;
         }
 
+        /* 星系区域 - 粘性定位 */
+        #galaxy-section {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 0;
+            overflow: hidden;
+        }
         #canvas-container {
-            position: fixed;
+            position: absolute;
             inset: 0;
             z-index: 1;
         }
@@ -46,9 +55,141 @@
             display: block;
         }
 
+        /* 滚动提示箭头 */
+        #scroll-hint {
+            position: absolute;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 12;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            opacity: 0.8;
+            transition: opacity 0.5s;
+        }
+        #scroll-hint.hidden {
+            opacity: 0;
+        }
+        #scroll-hint .arrow {
+            width: 24px;
+            height: 24px;
+            border-right: 2px solid rgba(180,210,240,0.8);
+            border-bottom: 2px solid rgba(180,210,240,0.8);
+            transform: rotate(45deg);
+            animation: scroll-bounce 2s ease-in-out infinite;
+        }
+        @keyframes scroll-bounce {
+            0%, 100% { transform: rotate(45deg) translate(0, 0); }
+            50% { transform: rotate(45deg) translate(4px, 4px); }
+        }
+        #scroll-hint span {
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            color: rgba(160,200,230,0.7);
+            text-shadow: 0 0 6px rgba(100,150,200,0.3);
+        }
+
+        /* 内容区 */
+        #content-section {
+            position: relative;
+            z-index: 5;
+            background: linear-gradient(180deg, rgba(0,0,16,0.7) 0%, rgba(0,0,20,0.95) 10%, #000015 100%);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            min-height: 100vh;
+            padding: 60px 24px 80px;
+        }
+        #content-section .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #content-section .section-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #d8e8fc;
+            text-shadow: 0 0 12px rgba(130,180,230,0.4);
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        #content-section .post-card {
+            background: rgba(10,16,40,0.8);
+            border: 1px solid rgba(80,140,210,0.2);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        #content-section .post-card:hover {
+            border-color: rgba(100,160,230,0.5);
+            box-shadow: 0 0 20px rgba(60,130,200,0.15);
+        }
+        #content-section .post-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        #content-section .post-card h3 a {
+            color: #b8d4f8;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        #content-section .post-card h3 a:hover {
+            color: #8ec8ff;
+        }
+        #content-section .post-meta {
+            font-size: 0.78rem;
+            color: #6a8aaa;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        #content-section .post-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        #content-section .post-excerpt {
+            font-size: 0.85rem;
+            color: #7a9ab8;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+        #content-section .category-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        #content-section .category-tag {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(80,140,210,0.3);
+            font-size: 0.8rem;
+            color: #90bcd8;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        #content-section .category-tag:hover {
+            background: rgba(60,120,200,0.2);
+            border-color: rgba(100,160,230,0.6);
+            color: #c8e0f8;
+        }
+        #content-section .footer-note {
+            text-align: center;
+            padding-top: 40px;
+            font-size: 0.75rem;
+            color: #4a6a8a;
+            border-top: 1px solid rgba(60,100,150,0.15);
+            margin-top: 32px;
+        }
+
         /* 顶部标题栏 */
         #title-bar {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
@@ -101,8 +242,8 @@
 
         /* 底部提示 */
         #hint-bar {
-            position: fixed;
-            bottom: 28px;
+            position: absolute;
+            bottom: 72px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
@@ -140,7 +281,7 @@
 
         /* 3D标签层 */
         #labels-layer {
-            position: fixed;
+            position: absolute;
             inset: 0;
             z-index: 5;
             pointer-events: none;
@@ -182,7 +323,7 @@
         /* 悬停详情面板 */
         #detail-panel {
             position: fixed;
-            z-index: 15;
+            z-index: 50;
             pointer-events: none;
             opacity: 0;
             transform: translate(-50%, -120%);
@@ -226,36 +367,92 @@
 </head>
 <body>
 
-    <!-- 画布容器 -->
-    <div id="canvas-container"></div>
+    <!-- 星系区域 -->
+    <div id="galaxy-section">
 
-    <!-- 标签覆盖层 -->
-    <div id="labels-layer"></div>
+        <!-- 画布容器 -->
+        <div id="canvas-container"></div>
 
-    <!-- 详情面板 -->
-    <div id="detail-panel">
-        <div class="panel-name"></div>
-        <div class="panel-hint"></div>
-        <div class="panel-articles"></div>
-    </div>
+        <!-- 标签覆盖层 -->
+        <div id="labels-layer"></div>
 
-    <!-- 顶部标题 -->
-    <div id="title-bar">
-        <div class="logo-area">
-            <div class="logo-icon"></div>
-            <div>
-                <h1>🪐 项目问题库</h1>
-                <div class="subtitle">BLOG · KNOWLEDGE BASE</div>
+        <!-- 详情面板 -->
+        <div id="detail-panel">
+            <div class="panel-name"></div>
+            <div class="panel-hint"></div>
+            <div class="panel-articles"></div>
+        </div>
+
+        <!-- 顶部标题 -->
+        <div id="title-bar">
+            <div class="logo-area">
+                <div class="logo-icon"></div>
+                <div>
+                    <h1>🪐 项目问题库</h1>
+                    <div class="subtitle">BLOG · KNOWLEDGE BASE</div>
+                </div>
             </div>
         </div>
+
+        <!-- 底部操作提示 -->
+        <div id="hint-bar">
+            <span><span class="dot"></span> 拖拽旋转</span>
+            <span>🖱 滚轮缩放</span>
+            <span>✨ 悬停探索</span>
+            <span>🪐 点击进入</span>
+        </div>
+
+        <!-- 滚动提示 -->
+        <div id="scroll-hint">
+            <div class="arrow"></div>
+            <span>向下滚动</span>
+        </div>
+
     </div>
 
-    <!-- 底部操作提示 -->
-    <div id="hint-bar">
-        <span><span class="dot"></span> 拖拽旋转</span>
-        <span>🖱 滚轮缩放</span>
-        <span>✨ 悬停探索</span>
-        <span>🪐 点击进入</span>
+    <!-- 博客内容区 -->
+    <div id="content-section">
+        <div class="container">
+
+            <!-- 分类标签 -->
+            <div class="category-tags">
+                <a href="/categories/软件/" class="category-tag">💻 软件</a>
+                <a href="/categories/硬件/" class="category-tag">🔧 硬件</a>
+                <a href="/categories/数据库/" class="category-tag">🗄 数据库</a>
+                <a href="/categories/部署/" class="category-tag">🚀 部署</a>
+                <a href="/categories/工具/" class="category-tag">🛠 工具</a>
+                <a href="/search/" class="category-tag">🔍 搜索</a>
+                <a href="/about/" class="category-tag">ℹ 关于</a>
+            </div>
+
+            <!-- 最新文章 -->
+            <h2 class="section-title">📝 最新问题记录</h2>
+
+            {% if site.posts.size > 0 %}
+            {% for post in site.posts limit: 8 %}
+            <div class="post-card">
+                <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
+                <div class="post-meta">
+                    <span>📅 {{ post.date | date: "%Y-%m-%d" }}</span>
+                    {% if post.categories %}
+                    {% for category in post.categories %}
+                    <span>🏷 {{ category }}</span>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 120 }}</p>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="post-card" style="text-align:center; color:#6a8aaa; padding:40px;">
+                <p>暂无文章记录，开始记录第一个问题吧 ✨</p>
+            </div>
+            {% endif %}
+
+            <div class="footer-note">
+                © 2026 xvcenh · <a href="https://github.com/xvcenh/xvcenh.github.io" style="color:#5a8aaa;">GitHub</a> · 基于 Jekyll + GitHub Pages 构建
+            </div>
+        </div>
     </div>
 
     <!-- Three.js Import Map -->
@@ -887,6 +1084,7 @@
         window.addEventListener('mousedown', (event) => {
             if (event.button === 0) {
                 isDragging = true;
+                document.body.classList.add('grabbing');
                 dragStartX = event.clientX;
                 dragStartY = event.clientY;
                 clickStartX = event.clientX;
@@ -898,10 +1096,12 @@
 
         window.addEventListener('mouseup', () => {
             isDragging = false;
+            document.body.classList.remove('grabbing');
         });
 
         window.addEventListener('mouseleave', () => {
             isDragging = false;
+            document.body.classList.remove('grabbing');
             if (hoveredPlanet && hoveredPlanet !== selectedPlanet) {
                 hoveredPlanet.targetScale = hoveredPlanet.baseScale;
                 hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
@@ -936,6 +1136,7 @@
         window.addEventListener('touchstart', (event) => {
             if (event.touches.length === 1) {
                 isDragging = true;
+                document.body.classList.add('grabbing');
                 dragStartX = event.touches[0].clientX;
                 dragStartY = event.touches[0].clientY;
                 rotationOffsetX = targetRotationOffsetX;
@@ -944,6 +1145,7 @@
         });
         window.addEventListener('touchend', () => {
             isDragging = false;
+            document.body.classList.remove('grabbing');
         });
 
         let selectedPlanet = null;
@@ -1036,9 +1238,11 @@
         const clock = new THREE.Clock();
         let globalTime = 0;
         let totalRotX = 0, totalRotY = 0;
+        const baseCamDist = 24;
 
         function animate(timestamp) {
-            requestAnimationFrame(animate);
+            if (!rendering) return;
+            animFrameId = requestAnimationFrame(animate);
 
             const dt = Math.min(clock.getDelta(), 0.1);
             globalTime += dt;
@@ -1179,7 +1383,42 @@
         mouseY = targetMouseY;
         cameraDistance = targetCameraDistance;
 
-        requestAnimationFrame(animate);
+        let rendering = true;
+        let animFrameId = null;
+        animFrameId = requestAnimationFrame(animate);
+
+        // ==================== 滚动缩放与资源释放 ====================
+        const scrollHint = document.getElementById('scroll-hint');
+
+        function updateScrollZoom() {
+            const scrollY = window.scrollY;
+            const maxScroll = window.innerHeight * 0.7;
+            const progress = Math.min(scrollY / maxScroll, 1);
+
+            if (!selectedPlanet) {
+                targetCameraDistance = baseCamDist + progress * 40;
+            }
+
+            if (scrollY > 50) {
+                scrollHint.classList.add('hidden');
+            } else {
+                scrollHint.classList.remove('hidden');
+            }
+
+            // 星系完全不可见时暂停渲染释放资源
+            if (scrollY > window.innerHeight * 0.9) {
+                if (rendering) {
+                    rendering = false;
+                }
+            } else {
+                if (!rendering) {
+                    rendering = true;
+                    animFrameId = requestAnimationFrame(animate);
+                }
+            }
+        }
+
+        window.addEventListener('scroll', updateScrollZoom, { passive: true });
 
         // ==================== 键盘快捷键 ====================
         window.addEventListener('keydown', (event) => {
