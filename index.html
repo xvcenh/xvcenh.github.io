@@ -1,118 +1,1163 @@
----
-layout: default
-title: 项目问题库
----
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目问题库 - xvcenh</title>
+    <style>
+        :root {
+            --bg: #000010;
+            --text: #c8d6f8;
+            --accent: #64b5f6;
+            --glow: #4fc3f7;
+            --panel-bg: rgba(8, 12, 30, 0.85);
+        }
 
-<!-- Hero 区域 -->
-<section class="hero">
-  <div class="container">
-    <div class="hero-content">
-      <h1 class="hero-title">项目问题库</h1>
-      <p class="hero-subtitle">记录、检索、解决团队开发中的问题</p>
-      
-      <div class="search-container">
-        <form action="/search/" method="get">
-          <input type="text" name="q" class="search-input" placeholder="搜索问题、技术栈、错误信息..." autocomplete="off">
-        </form>
-      </div>
-    </div>
-  </div>
-</section>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<main class="container">
-  <!-- 统计卡片 -->
-  <section class="stats-section">
-    <div class="stats-grid">
-      <div class="stat-card fade-in">
-        <div class="stat-icon">📝</div>
-        <div class="stat-number">{{ site.posts | size }}</div>
-        <div class="stat-label">问题记录</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-icon">🏷️</div>
-        <div class="stat-number">{{ site.categories | size }}</div>
-        <div class="stat-label">分类数量</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-icon">👥</div>
-        <div class="stat-number">-</div>
-        <div class="stat-label">团队成员</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-icon">📅</div>
-        <div class="stat-number">{{ site.time | date: "%Y" }}</div>
-        <div class="stat-label">持续更新</div>
-      </div>
-    </div>
-  </section>
+        body {
+            background: var(--bg);
+            overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            height: 100vh;
+            width: 100vw;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body:active {
+            cursor: grabbing;
+        }
+        body.pointer-cursor {
+            cursor: pointer;
+        }
 
-  <!-- 分类筛选 -->
-  <section class="filter-section">
-    <h2 class="section-title">按分类浏览</h2>
-    <div class="filter-tags">
-      <a href="/" class="filter-tag active">全部</a>
-      <a href="/categories/硬件/" class="filter-tag">硬件</a>
-      <a href="/categories/软件/" class="filter-tag">软件</a>
-      <a href="/categories/数据库/" class="filter-tag">数据库</a>
-      <a href="/categories/部署/" class="filter-tag">部署</a>
-      <a href="/categories/工具/" class="filter-tag">工具</a>
-    </div>
-  </section>
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+        }
 
-  <!-- 最新问题 -->
-  <section class="issues-section">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
-      <h2 class="section-title" style="margin: 0;">最新问题记录</h2>
-      <a href="/issues/" class="btn-primary">查看全部</a>
+        /* 顶部标题栏 */
+        #title-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(0, 0, 16, 0.9) 30%, rgba(0, 0, 16, 0) 100%);
+            padding-bottom: 50px;
+        }
+        #title-bar .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        #title-bar .logo-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #8ec8f2, #1a5f9e 70%, #0a2a4a 100%);
+            box-shadow: 0 0 28px rgba(70, 160, 240, 0.7), 0 0 60px rgba(70, 150, 230, 0.35), inset 0 0 12px rgba(180, 220, 255, 0.5);
+            animation: logo-pulse 3s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes logo-pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 28px rgba(70, 160, 240, 0.7), 0 0 60px rgba(70, 150, 230, 0.35);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(100, 190, 255, 0.95), 0 0 80px rgba(90, 170, 250, 0.55), 0 0 120px rgba(60, 140, 220, 0.3);
+            }
+        }
+        #title-bar h1 {
+            font-size: 1.55rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            color: #d8e8fc;
+            text-shadow: 0 0 18px rgba(130, 190, 240, 0.6), 0 0 40px rgba(100, 160, 220, 0.3);
+            white-space: nowrap;
+        }
+        #title-bar .subtitle {
+            font-size: 0.78rem;
+            color: #7ea8cc;
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 8px rgba(100, 160, 210, 0.4);
+        }
+
+        /* 底部提示 */
+        #hint-bar {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            gap: 20px;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: rgba(160, 200, 230, 0.7);
+            text-shadow: 0 0 6px rgba(100, 150, 200, 0.3);
+        }
+        #hint-bar span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #hint-bar .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #7eb8e0;
+            box-shadow: 0 0 8px #5aa0d0;
+            animation: dot-blink 2s ease-in-out infinite;
+        }
+        @keyframes dot-blink {
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 14px #7ec8f0;
+            }
+        }
+
+        /* 3D标签层 */
+        #labels-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .orbit-label {
+            position: absolute;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            color: #b0ccf0;
+            text-shadow: 0 0 10px rgba(100, 160, 220, 0.7), 0 0 24px rgba(80, 140, 200, 0.4);
+            transform: translate(-50%, -50%);
+            transition: color 0.3s, text-shadow 0.3s, font-size 0.3s;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .orbit-label.highlighted {
+            color: #fff;
+            font-size: 0.85rem;
+            text-shadow: 0 0 16px rgba(160, 210, 255, 1), 0 0 36px rgba(120, 180, 240, 0.8), 0 0 54px rgba(90, 150, 220, 0.5);
+            z-index: 20;
+        }
+        .orbit-label .label-dot {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+            box-shadow: 0 0 6px currentColor;
+            transition: all 0.3s;
+        }
+        .orbit-label.highlighted .label-dot {
+            width: 8px;
+            height: 8px;
+            box-shadow: 0 0 14px currentColor, 0 0 28px currentColor;
+        }
+
+        /* 悬停详情面板 */
+        #detail-panel {
+            position: fixed;
+            z-index: 15;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate(-50%, -120%);
+            transition: opacity 0.25s ease-out, transform 0.25s ease-out;
+            background: var(--panel-bg);
+            border: 1px solid rgba(100, 160, 220, 0.5);
+            border-radius: 12px;
+            padding: 14px 20px;
+            color: #d0e0f8;
+            font-size: 0.82rem;
+            letter-spacing: 0.03em;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(70, 140, 210, 0.25), inset 0 0 30px rgba(60, 130, 200, 0.06);
+            text-align: center;
+            min-width: 130px;
+        }
+        #detail-panel.visible {
+            opacity: 1;
+            transform: translate(-50%, -130%);
+        }
+        #detail-panel .panel-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #e8f2ff;
+            text-shadow: 0 0 10px rgba(140, 200, 240, 0.6);
+            margin-bottom: 4px;
+        }
+        #detail-panel .panel-hint {
+            font-size: 0.65rem;
+            color: #7eaacc;
+            letter-spacing: 0.06em;
+        }
+        #detail-panel .panel-articles {
+            margin-top: 6px;
+            font-size: 0.68rem;
+            color: #90bcd8;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 画布容器 -->
+    <div id="canvas-container"></div>
+
+    <!-- 标签覆盖层 -->
+    <div id="labels-layer"></div>
+
+    <!-- 详情面板 -->
+    <div id="detail-panel">
+        <div class="panel-name"></div>
+        <div class="panel-hint"></div>
+        <div class="panel-articles"></div>
     </div>
-    
-    {% if site.posts.size > 0 %}
-    <div class="issues-grid">
-      {% for post in site.posts limit: 6 %}
-      <article class="issue-card fade-in">
-        <div class="issue-header">
-          <h3 class="issue-title">
-            <a href="{{ post.url }}">{{ post.title }}</a>
-          </h3>
-          <span class="issue-id">#{{ forloop.index }}</span>
+
+    <!-- 顶部标题 -->
+    <div id="title-bar">
+        <div class="logo-area">
+            <div class="logo-icon"></div>
+            <div>
+                <h1>🪐 项目问题库</h1>
+                <div class="subtitle">BLOG · KNOWLEDGE BASE</div>
+            </div>
         </div>
-        
-        <div class="issue-meta">
-          <span class="meta-item">
-            <span>📅</span>
-            {{ post.date | date: "%Y-%m-%d" }}
-          </span>
-          {% if post.author %}
-          <span class="meta-item">
-            <span>👤</span>
-            {{ post.author }}
-          </span>
-          {% endif %}
-          {% if post.categories %}
-          {% for category in post.categories %}
-          <span class="category-tag {{ category }}">{{ category }}</span>
-          {% endfor %}
-          {% endif %}
-        </div>
-        
-        <p class="issue-description">{{ post.excerpt | strip_html | truncate: 120 }}</p>
-        
-        {% if post.keywords %}
-        <div class="issue-keywords">
-          {% for keyword in post.keywords limit: 4 %}
-          <span class="keyword">{{ keyword }}</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </article>
-      {% endfor %}
     </div>
-    {% else %}
-    <div class="empty-state">
-      <div class="empty-icon">📝</div>
-      <h3 class="empty-title">暂无问题记录</h3>
-      <p class="empty-description">通过钉钉上传第一个问题文档，开始积累团队知识库</p>
+
+    <!-- 底部操作提示 -->
+    <div id="hint-bar">
+        <span><span class="dot"></span> 拖拽旋转</span>
+        <span>🖱 滚轮缩放</span>
+        <span>✨ 悬停探索</span>
+        <span>🪐 点击进入</span>
     </div>
-    {% endif %}
-  </section>
-</main>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // ==================== DOM 元素 ====================
+        const container = document.getElementById('canvas-container');
+        const labelsLayer = document.getElementById('labels-layer');
+        const detailPanel = document.getElementById('detail-panel');
+        const panelName = detailPanel.querySelector('.panel-name');
+        const panelHint = detailPanel.querySelector('.panel-hint');
+        const panelArticles = detailPanel.querySelector('.panel-articles');
+
+        // ==================== 场景初始化 ====================
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000010, 0.000015);
+
+        const camera = new THREE.PerspectiveCamera(58, container.clientWidth / container.clientHeight, 0.5, 200);
+        camera.position.set(0, 6, 24);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.3;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        container.appendChild(renderer.domElement);
+
+        // ==================== 光照 ====================
+        const ambientLight = new THREE.AmbientLight(0x1a3050, 1.8);
+        scene.add(ambientLight);
+        const pointLight1 = new THREE.PointLight(0x8899cc, 80, 60, 1.5);
+        pointLight1.position.set(0, 0, 0);
+        scene.add(pointLight1);
+        const pointLight2 = new THREE.PointLight(0x5577bb, 30, 45, 1.8);
+        pointLight2.position.set(10, 5, -8);
+        scene.add(pointLight2);
+        const pointLight3 = new THREE.PointLight(0x7799cc, 20, 40, 2);
+        pointLight3.position.set(-8, -3, 10);
+        scene.add(pointLight3);
+
+        // ==================== 纹理生成 ====================
+        function createGlowTexture(innerColor, outerColor, size = 256) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            gradient.addColorStop(0, innerColor);
+            gradient.addColorStop(0.2, innerColor);
+            gradient.addColorStop(0.5, outerColor);
+            gradient.addColorStop(0.85, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createPlanetTexture(baseHue, size = 128) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const baseGrad = ctx.createRadialGradient(size * 0.35, size * 0.3, size * 0.05, size / 2, size / 2, size * 0.55);
+            baseGrad.addColorStop(0, `hsl(${baseHue}, 55%, 72%)`);
+            baseGrad.addColorStop(0.5, `hsl(${baseHue}, 50%, 48%)`);
+            baseGrad.addColorStop(0.85, `hsl(${baseHue}, 45%, 22%)`);
+            baseGrad.addColorStop(1, `hsl(${baseHue}, 40%, 10%)`);
+            ctx.fillStyle = baseGrad;
+            ctx.fillRect(0, 0, size, size);
+            for (let i = 0; i < 40; i++) {
+                const y = Math.random() * size;
+                const alpha = 0.04 + Math.random() * 0.1;
+                ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+                ctx.lineWidth = 0.5 + Math.random() * 3;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(size, y + (Math.random() - 0.5) * 20);
+                ctx.stroke();
+            }
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * size;
+                const y = Math.random() * size;
+                const r = 1 + Math.random() * 4;
+                const alpha = 0.03 + Math.random() * 0.12;
+                ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createRingTexture(color, size = 256) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.28, size / 2, size / 2, size * 0.48);
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(0.35, color);
+            gradient.addColorStop(0.55, color);
+            gradient.addColorStop(0.7, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // 预生成纹理
+        const glowTexCore = createGlowTexture('rgba(140,200,255,1)', 'rgba(30,80,180,0.6)', 512);
+        const glowTexWarm = createGlowTexture('rgba(255,180,130,1)', 'rgba(200,80,30,0.5)', 256);
+        const glowTexCool = createGlowTexture('rgba(130,200,255,1)', 'rgba(30,100,200,0.5)', 256);
+        const glowTexGreen = createGlowTexture('rgba(140,230,180,1)', 'rgba(30,150,80,0.5)', 256);
+        const glowTexPurple = createGlowTexture('rgba(190,150,240,1)', 'rgba(100,40,180,0.5)', 256);
+        const glowTexGold = createGlowTexture('rgba(255,210,140,1)', 'rgba(200,140,30,0.5)', 256);
+        const glowTexSmall = createGlowTexture('rgba(180,210,240,0.9)', 'rgba(40,90,170,0.4)', 128);
+        const ringTexBlue = createRingTexture('rgba(100,170,240,0.7)');
+        const ringTexGold = createRingTexture('rgba(240,180,100,0.7)');
+
+        // ==================== 星空背景 ====================
+        const starCount = 2800;
+        const starGeom = new THREE.BufferGeometry();
+        const starPositions = new Float32Array(starCount * 3);
+        const starColors = new Float32Array(starCount * 3);
+        const starSizes = new Float32Array(starCount);
+        for (let i = 0; i < starCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const radius = 35 + Math.random() * 70;
+            starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+            starPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+            starPositions[i * 3 + 2] = radius * Math.cos(phi);
+            const colorChoice = Math.random();
+            if (colorChoice < 0.08) {
+                starColors[i * 3] = 0.7;
+                starColors[i * 3 + 1] = 0.75;
+                starColors[i * 3 + 2] = 1.0;
+            } else if (colorChoice < 0.18) {
+                starColors[i * 3] = 0.9;
+                starColors[i * 3 + 1] = 0.85;
+                starColors[i * 3 + 2] = 0.7;
+            } else if (colorChoice < 0.22) {
+                starColors[i * 3] = 1.0;
+                starColors[i * 3 + 1] = 0.7;
+                starColors[i * 3 + 2] = 0.5;
+            } else {
+                const brightness = 0.55 + Math.random() * 0.45;
+                starColors[i * 3] = brightness;
+                starColors[i * 3 + 1] = brightness;
+                starColors[i * 3 + 2] = brightness;
+            }
+            starSizes[i] = 0.04 + Math.random() * 0.28;
+        }
+        starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        starGeom.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+        starGeom.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+        const starMat = new THREE.PointsMaterial({
+            size: 0.12,
+            vertexColors: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            transparent: true,
+            opacity: 0.85,
+            sizeAttenuation: true,
+        });
+        const starField = new THREE.Points(starGeom, starMat);
+        scene.add(starField);
+
+        // ==================== 中心核心 ====================
+        const coreGroup = new THREE.Group();
+        scene.add(coreGroup);
+
+        const coreShaderMat = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uColor1: { value: new THREE.Color('#4a90d9') },
+                uColor2: { value: new THREE.Color('#1a3a6e') },
+                uColor3: { value: new THREE.Color('#8ec8f8') },
+            },
+            vertexShader: /* glsl */ `
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            varying vec2 vUv;
+            void main() {
+              vec4 worldPos = modelMatrix * vec4(position, 1.0);
+              vPosition = worldPos.xyz;
+              vNormal = normalize(mat3(modelMatrix) * normal);
+              vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+              gl_Position = projectionMatrix * mvPosition;
+              vUv = uv;
+            }`,
+            fragmentShader: /* glsl */ `
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            varying vec2 vUv;
+            uniform float uTime;
+            uniform vec3 uColor1;
+            uniform vec3 uColor2;
+            uniform vec3 uColor3;
+            float hash(vec2 p) {
+              return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+            }
+            float noise(vec2 p) {
+              vec2 i = floor(p);
+              vec2 f = fract(p);
+              f = f * f * (3.0 - 2.0 * f);
+              return mix(mix(hash(i), hash(i+vec2(1,0)), f.x),
+                         mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y);
+            }
+            void main() {
+              vec3 viewDir = normalize(cameraPosition - vPosition);
+              float fresnel = 1.0 - abs(dot(viewDir, vNormal));
+              fresnel = pow(fresnel, 3.5);
+              float n = noise(vUv * 8.0 + uTime * 0.15) * 0.5 +
+                        noise(vUv * 4.0 - uTime * 0.1) * 0.3 +
+                        noise(vUv * 16.0 + uTime * 0.2) * 0.2;
+              float pulse = 1.0 + 0.15 * sin(uTime * 1.8 + n * 4.0) + 0.08 * sin(uTime * 2.7 + n * 6.0);
+              vec3 baseCol = mix(uColor2, uColor1, n * 0.6 + 0.3);
+              baseCol = mix(baseCol, uColor3, fresnel * 0.8);
+              baseCol *= pulse;
+              baseCol += uColor3 * fresnel * 0.9;
+              float innerDark = smoothstep(0.3, 0.7, fresnel);
+              baseCol = mix(baseCol, uColor2, innerDark * 0.35);
+              float sparkle = smoothstep(0.92, 1.0, n) * 0.4;
+              baseCol += sparkle * uColor3;
+              gl_FragColor = vec4(baseCol, 1.0);
+            }`,
+        });
+        const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(1.25, 64, 64), coreShaderMat);
+        coreGroup.add(coreSphere);
+
+        const coreGlowMid = new THREE.Mesh(
+            new THREE.SphereGeometry(1.55, 32, 32),
+            new THREE.MeshBasicMaterial({
+                map: glowTexCore,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+                transparent: true,
+                opacity: 0.55,
+            })
+        );
+        coreGroup.add(coreGlowMid);
+
+        const coreGlowOuter = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: glowTexCore,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            transparent: true,
+            opacity: 0.35,
+        }));
+        coreGlowOuter.scale.set(7, 7, 1);
+        coreGroup.add(coreGlowOuter);
+
+        const coreGlowFar = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: createGlowTexture('rgba(100,160,230,0.7)', 'rgba(20,50,120,0.2)', 512),
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            transparent: true,
+            opacity: 0.2,
+        }));
+        coreGlowFar.scale.set(12, 12, 1);
+        coreGroup.add(coreGlowFar);
+
+        const coreDotsGroup = new THREE.Group();
+        coreGroup.add(coreDotsGroup);
+        const coreDotCount = 180;
+        const coreDotGeom = new THREE.BufferGeometry();
+        const coreDotPositionsArr = new Float32Array(coreDotCount * 3);
+        const coreDotData = [];
+        for (let i = 0; i < coreDotCount; i++) {
+            const orbitRadius = 1.55 + Math.random() * 2.8;
+            const angle = Math.random() * Math.PI * 2;
+            const tilt = (Math.random() - 0.5) * Math.PI * 0.7;
+            coreDotData.push({ orbitRadius, angle, tilt, speed: 0.3 + Math.random() * 1.5, yOffset: (Math.random() - 0.5) * 1.2 });
+            coreDotPositionsArr[i * 3] = orbitRadius * Math.cos(angle);
+            coreDotPositionsArr[i * 3 + 1] = (Math.random() - 0.5) * 1.2;
+            coreDotPositionsArr[i * 3 + 2] = orbitRadius * Math.sin(angle);
+        }
+        coreDotGeom.setAttribute('position', new THREE.BufferAttribute(coreDotPositionsArr, 3));
+        const coreDotMat = new THREE.PointsMaterial({
+            size: 0.04,
+            color: 0xa8d4f8,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            transparent: true,
+            opacity: 0.75,
+        });
+        const coreDots = new THREE.Points(coreDotGeom, coreDotMat);
+        coreDotsGroup.add(coreDots);
+
+        const energyParticleCount = 120;
+        const energyGeom = new THREE.BufferGeometry();
+        const energyPositionsArr = new Float32Array(energyParticleCount * 3);
+        const energyData = [];
+        for (let i = 0; i < energyParticleCount; i++) {
+            const dist = 0.3 + Math.random() * 6;
+            const angle = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            energyPositionsArr[i * 3] = dist * Math.sin(phi) * Math.cos(angle);
+            energyPositionsArr[i * 3 + 1] = dist * Math.sin(phi) * Math.sin(angle);
+            energyPositionsArr[i * 3 + 2] = dist * Math.cos(phi);
+            energyData.push({
+                baseDist: dist, angle, phi,
+                speed: 0.3 + Math.random() * 1.2,
+                life: Math.random(),
+                maxDist: 3 + Math.random() * 9,
+            });
+        }
+        energyGeom.setAttribute('position', new THREE.BufferAttribute(energyPositionsArr, 3));
+        const energyMat = new THREE.PointsMaterial({
+            size: 0.06,
+            color: 0x90c8f0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            transparent: true,
+            opacity: 0.6,
+        });
+        const energyParticles = new THREE.Points(energyGeom, energyMat);
+        coreGroup.add(energyParticles);
+
+        // ==================== 轨道系统定义 - 映射到实际博客分类 ====================
+        const orbitDefinitions = [{
+            name: '技术分类',
+            tilt: 0.35,
+            radius: 7.5,
+            color: 0x4da6e0,
+            glowTex: glowTexCool,
+            ringTex: ringTexBlue,
+            planets: [
+                { name: '软件', hue: 200, size: 0.55, speed: 0.22, angleOffset: 0, articles: ['应用技巧', '开发指南', '系统优化'], link: '/categories/软件/' },
+                { name: '硬件', hue: 30, size: 0.52, speed: 0.19, angleOffset: 2.1, articles: ['设备配置', '故障排查', '性能测试'], link: '/categories/硬件/' },
+                { name: '数据库', hue: 250, size: 0.50, speed: 0.25, angleOffset: 4.2, articles: ['SQL优化', '数据建模', '备份恢复'], link: '/categories/数据库/' },
+            ],
+        }, {
+            name: '工程实践',
+            tilt: -0.28,
+            radius: 10.5,
+            color: 0xe8945a,
+            glowTex: glowTexWarm,
+            ringTex: ringTexGold,
+            planets: [
+                { name: '部署', hue: 25, size: 0.50, speed: 0.16, angleOffset: 0.8, articles: ['CI/CD', '容器化', '运维监控'], link: '/categories/部署/' },
+                { name: '工具', hue: 35, size: 0.48, speed: 0.14, angleOffset: 3.0, articles: ['效率工具', '命令行', 'IDE配置'], link: '/categories/工具/' },
+                { name: '全部文章', hue: 18, size: 0.46, speed: 0.17, angleOffset: 5.0, articles: ['浏览所有', '问题记录', '知识库'], link: '/categories/' },
+            ],
+        }, {
+            name: '探索发现',
+            tilt: 0.42,
+            radius: 13.8,
+            color: 0x5cb88d,
+            glowTex: glowTexGreen,
+            ringTex: null,
+            planets: [
+                { name: '搜索', hue: 150, size: 0.47, speed: 0.12, angleOffset: 1.5, articles: ['全文检索', '关键词', '标签筛选'], link: '/search/' },
+                { name: '新文章', hue: 160, size: 0.43, speed: 0.11, angleOffset: 3.8, articles: ['最新问题', '近期更新', '热点内容'], link: '/categories/' },
+                { name: '归档', hue: 140, size: 0.42, speed: 0.13, angleOffset: 5.6, articles: ['历史记录', '时间线', '全部文章'], link: '/categories/' },
+            ],
+        }, {
+            name: '关于',
+            tilt: -0.18,
+            radius: 16.5,
+            color: 0xa880cc,
+            glowTex: glowTexPurple,
+            ringTex: null,
+            planets: [
+                { name: '关于本站', hue: 280, size: 0.50, speed: 0.09, angleOffset: 0, articles: ['项目简介', '使用说明', '更新日志'], link: '/about/' },
+                { name: 'GitHub', hue: 290, size: 0.45, speed: 0.10, angleOffset: 2.5, articles: ['源码仓库', '问题反馈', '贡献指南'], link: 'https://github.com/xvcenh/xvcenh.github.io' },
+                { name: '联系方式', hue: 270, size: 0.43, speed: 0.08, angleOffset: 4.8, articles: ['邮件', '社交媒体', '留言'], link: '/about/' },
+            ],
+        }, ];
+
+        // ==================== 创建轨道系统 ====================
+        const allPlanetObjects = [];
+        const orbitGroups = [];
+
+        orbitDefinitions.forEach((orbitDef) => {
+            const orbitGroup = new THREE.Group();
+            orbitGroup.rotation.x = orbitDef.tilt;
+            scene.add(orbitGroup);
+            orbitGroups.push({ group: orbitGroup, radius: orbitDef.radius });
+
+            const ringPointsCount = 256;
+            const ringGeom = new THREE.BufferGeometry();
+            const ringVerts = new Float32Array(ringPointsCount * 3);
+            for (let i = 0; i < ringPointsCount; i++) {
+                const angle = (i / ringPointsCount) * Math.PI * 2;
+                ringVerts[i * 3] = Math.cos(angle) * orbitDef.radius;
+                ringVerts[i * 3 + 1] = 0;
+                ringVerts[i * 3 + 2] = Math.sin(angle) * orbitDef.radius;
+            }
+            ringGeom.setAttribute('position', new THREE.BufferAttribute(ringVerts, 3));
+            const ringLine = new THREE.LineLoop(ringGeom, new THREE.LineBasicMaterial({
+                color: orbitDef.color,
+                transparent: true,
+                opacity: 0.35,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+            }));
+            orbitGroup.add(ringLine);
+
+            const ringLine2 = new THREE.LineLoop(ringGeom, new THREE.LineBasicMaterial({
+                color: orbitDef.color,
+                transparent: true,
+                opacity: 0.12,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+            }));
+            ringLine2.scale.set(1.015, 1.015, 1.015);
+            orbitGroup.add(ringLine2);
+
+            if (orbitDef.ringTex) {
+                const ringSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                    map: orbitDef.ringTex,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    transparent: true,
+                    opacity: 0.25,
+                }));
+                ringSprite.scale.set(orbitDef.radius * 2.2, orbitDef.radius * 2.2, 1);
+                ringSprite.position.y = 0.01;
+                orbitGroup.add(ringSprite);
+            }
+
+            orbitDef.planets.forEach((planetDef) => {
+                const planetGroup = new THREE.Group();
+                planetGroup.position.set(
+                    Math.cos(planetDef.angleOffset) * orbitDef.radius,
+                    0,
+                    Math.sin(planetDef.angleOffset) * orbitDef.radius
+                );
+                orbitGroup.add(planetGroup);
+
+                const tex = createPlanetTexture(planetDef.hue);
+                const planetMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(planetDef.size, 40, 40),
+                    new THREE.MeshStandardMaterial({
+                        map: tex,
+                        roughness: 0.55,
+                        metalness: 0.15,
+                        color: new THREE.Color(`hsl(${planetDef.hue}, 40%, 55%)`),
+                    })
+                );
+                planetGroup.add(planetMesh);
+
+                const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                    map: orbitDef.glowTex,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                    transparent: true,
+                    opacity: 0.45,
+                }));
+                glowSprite.scale.set(planetDef.size * 3.5, planetDef.size * 3.5, 1);
+                planetGroup.add(glowSprite);
+
+                const miniRingGeom = new THREE.TorusGeometry(planetDef.size * 1.4, 0.03, 16, 48);
+                const miniRing = new THREE.Mesh(miniRingGeom, new THREE.MeshBasicMaterial({
+                    color: orbitDef.color,
+                    transparent: true,
+                    opacity: 0.5,
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false,
+                }));
+                miniRing.rotation.x = Math.PI / 2.5;
+                planetGroup.add(miniRing);
+
+                const moonCount = 1 + Math.floor(Math.random() * 2);
+                const moons = [];
+                for (let m = 0; m < moonCount; m++) {
+                    const moonGeom = new THREE.SphereGeometry(0.08 + Math.random() * 0.1, 16, 16);
+                    const moonMat = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color(`hsl(${planetDef.hue + 30}, 30%, 70%)`),
+                        roughness: 0.4,
+                        metalness: 0.3,
+                        emissive: new THREE.Color(`hsl(${planetDef.hue + 30}, 40%, 40%)`),
+                        emissiveIntensity: 0.5,
+                    });
+                    const moon = new THREE.Mesh(moonGeom, moonMat);
+                    const moonOrbitR = planetDef.size * 1.9 + m * 0.4;
+                    moon.position.set(moonOrbitR, 0, 0);
+                    planetGroup.add(moon);
+                    moons.push({
+                        mesh: moon,
+                        orbitRadius: moonOrbitR,
+                        speed: 1.2 + Math.random() * 2,
+                        angle: Math.random() * Math.PI * 2,
+                        tilt: (Math.random() - 0.5) * 0.8,
+                    });
+                }
+
+                const planetObj = {
+                    mesh: planetMesh,
+                    glowSprite,
+                    group: planetGroup,
+                    miniRing,
+                    moons,
+                    orbitDef,
+                    planetDef,
+                    orbitGroup,
+                    orbitRadius: orbitDef.radius,
+                    baseAngle: planetDef.angleOffset,
+                    speed: planetDef.speed,
+                    baseScale: 1,
+                    targetScale: 1,
+                    baseGlowOpacity: 0.45,
+                    targetGlowOpacity: 0.45,
+                    baseEmissiveIntensity: 0.15,
+                    targetEmissiveIntensity: 0.15,
+                };
+                allPlanetObjects.push(planetObj);
+            });
+        });
+
+        // ==================== HTML标签创建 ====================
+        const labelElements = [];
+        allPlanetObjects.forEach((pObj) => {
+            const el = document.createElement('div');
+            el.className = 'orbit-label';
+            const dotColor = '#' + new THREE.Color(pObj.orbitDef.color).getHexString();
+            el.innerHTML = `<span class="label-dot" style="background-color:${dotColor};"></span>${pObj.planetDef.name}`;
+            labelsLayer.appendChild(el);
+            labelElements.push({ el, pObj });
+        });
+
+        // ==================== 射线检测 ====================
+        const raycaster = new THREE.Raycaster();
+        raycaster.params.Points.threshold = 0.3;
+        raycaster.params.Line = { threshold: 0.2 };
+        const mouse = new THREE.Vector2();
+        let hoveredPlanet = null;
+        const allPlanetMeshes = allPlanetObjects.map(p => p.mesh);
+
+        function updateHover(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(allPlanetMeshes, false);
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                const found = allPlanetObjects.find(p => p.mesh === hitMesh);
+                if (found && hoveredPlanet !== found) {
+                    if (hoveredPlanet) {
+                        hoveredPlanet.targetScale = hoveredPlanet.baseScale;
+                        hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
+                        hoveredPlanet.targetEmissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
+                        hoveredPlanet.mesh.material.emissive = new THREE.Color(0x000000);
+                        hoveredPlanet.mesh.material.emissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
+                    }
+                    hoveredPlanet = found;
+                    hoveredPlanet.targetScale = hoveredPlanet.baseScale * 1.35;
+                    hoveredPlanet.targetGlowOpacity = 0.9;
+                    hoveredPlanet.targetEmissiveIntensity = 0.7;
+                    hoveredPlanet.mesh.material.emissive = new THREE.Color(hoveredPlanet.orbitDef.color);
+                    hoveredPlanet.mesh.material.emissiveIntensity = 0.7;
+                    document.body.classList.add('pointer-cursor');
+                    panelName.textContent = found.planetDef.name;
+                    panelHint.textContent = found.orbitDef.name + ' · 点击进入';
+                    panelArticles.textContent = found.planetDef.articles.join(' · ');
+                    detailPanel.classList.add('visible');
+                }
+                if (hoveredPlanet) {
+                    const screenPos = getScreenPosition(hoveredPlanet.group);
+                    detailPanel.style.left = screenPos.x + 'px';
+                    detailPanel.style.top = screenPos.y + 'px';
+                }
+            } else {
+                if (hoveredPlanet) {
+                    hoveredPlanet.targetScale = hoveredPlanet.baseScale;
+                    hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
+                    hoveredPlanet.targetEmissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
+                    hoveredPlanet.mesh.material.emissive = new THREE.Color(0x000000);
+                    hoveredPlanet.mesh.material.emissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
+                    hoveredPlanet = null;
+                    document.body.classList.remove('pointer-cursor');
+                    detailPanel.classList.remove('visible');
+                }
+            }
+        }
+
+        function getScreenPosition(worldObject) {
+            const vec = new THREE.Vector3();
+            worldObject.getWorldPosition(vec);
+            vec.project(camera);
+            return {
+                x: (vec.x * 0.5 + 0.5) * window.innerWidth,
+                y: (-vec.y * 0.5 + 0.5) * window.innerHeight,
+                visible: vec.z < 1,
+            };
+        }
+
+        // ==================== 鼠标/触摸交互 ====================
+        let mouseX = 0, mouseY = 0;
+        let targetMouseX = 0, targetMouseY = 0;
+        let isDragging = false;
+        let dragStartX = 0, dragStartY = 0;
+        let rotationOffsetX = 0, rotationOffsetY = 0;
+        let targetRotationOffsetX = 0, targetRotationOffsetY = 0;
+        let cameraDistance = 24;
+        let targetCameraDistance = 24;
+        const minDistance = 10;
+        const maxDistance = 50;
+
+        window.addEventListener('mousemove', (event) => {
+            targetMouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            targetMouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            if (isDragging) {
+                const dx = event.clientX - dragStartX;
+                const dy = event.clientY - dragStartY;
+                targetRotationOffsetX = rotationOffsetX - dx * 0.002;
+                targetRotationOffsetY = rotationOffsetY + dy * 0.002;
+                targetRotationOffsetY = Math.max(-1.2, Math.min(1.2, targetRotationOffsetY));
+            }
+            updateHover(event);
+        });
+
+        window.addEventListener('mousedown', (event) => {
+            if (event.button === 0) {
+                isDragging = true;
+                dragStartX = event.clientX;
+                dragStartY = event.clientY;
+                rotationOffsetX = targetRotationOffsetX;
+                rotationOffsetY = targetRotationOffsetY;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        window.addEventListener('mouseleave', () => {
+            isDragging = false;
+            if (hoveredPlanet) {
+                hoveredPlanet.targetScale = hoveredPlanet.baseScale;
+                hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
+                hoveredPlanet.targetEmissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
+                hoveredPlanet.mesh.material.emissive = new THREE.Color(0x000000);
+                hoveredPlanet.mesh.material.emissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
+                hoveredPlanet = null;
+                document.body.classList.remove('pointer-cursor');
+                detailPanel.classList.remove('visible');
+            }
+        });
+
+        window.addEventListener('wheel', (event) => {
+            targetCameraDistance += event.deltaY * 0.03;
+            targetCameraDistance = Math.max(minDistance, Math.min(maxDistance, targetCameraDistance));
+        });
+
+        window.addEventListener('touchmove', (event) => {
+            if (event.touches.length === 1) {
+                targetMouseX = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+                targetMouseY = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+                if (isDragging) {
+                    const dx = event.touches[0].clientX - dragStartX;
+                    const dy = event.touches[0].clientY - dragStartY;
+                    targetRotationOffsetX = rotationOffsetX - dx * 0.002;
+                    targetRotationOffsetY = rotationOffsetY + dy * 0.002;
+                    targetRotationOffsetY = Math.max(-1.2, Math.min(1.2, targetRotationOffsetY));
+                }
+                updateHover({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
+            }
+        }, { passive: false });
+        window.addEventListener('touchstart', (event) => {
+            if (event.touches.length === 1) {
+                isDragging = true;
+                dragStartX = event.touches[0].clientX;
+                dragStartY = event.touches[0].clientY;
+                rotationOffsetX = targetRotationOffsetX;
+                rotationOffsetY = targetRotationOffsetY;
+            }
+        });
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        let clickStartX = 0, clickStartY = 0;
+
+        window.addEventListener('click', (event) => {
+            const dx = event.clientX - clickStartX;
+            const dy = event.clientY - clickStartY;
+            clickStartX = event.clientX;
+            clickStartY = event.clientY;
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(allPlanetMeshes, false);
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                const found = allPlanetObjects.find(p => p.mesh === hitMesh);
+                if (found && found.planetDef.link) {
+                    found.glowSprite.material.opacity = 1;
+                    found.glowSprite.scale.set(found.planetDef.size * 6, found.planetDef.size * 6, 1);
+                    setTimeout(() => {
+                        found.glowSprite.scale.set(found.planetDef.size * 3.5, found.planetDef.size * 3.5, 1);
+                        found.glowSprite.material.opacity = found.targetGlowOpacity;
+                    }, 300);
+                    const link = found.planetDef.link;
+                    if (link.startsWith('http')) {
+                        window.open(link, '_blank');
+                    } else {
+                        window.location.href = link;
+                    }
+                }
+            }
+        });
+
+        // 动态添加点击反馈动画样式
+        const clickStyle = document.createElement('style');
+        clickStyle.textContent = `
+          @keyframes click-pop {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            40% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+            100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+          }
+        `;
+        document.head.appendChild(clickStyle);
+
+        // ==================== 窗口调整 ====================
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // ==================== 动画循环 ====================
+        const clock = new THREE.Clock();
+        let globalTime = 0;
+
+        function animate(timestamp) {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1);
+            globalTime += dt;
+
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
+            rotationOffsetX += (targetRotationOffsetX - rotationOffsetX) * 0.08;
+            rotationOffsetY += (targetRotationOffsetY - rotationOffsetY) * 0.08;
+            cameraDistance += (targetCameraDistance - cameraDistance) * 0.06;
+
+            const autoRotateSpeed = 0.12;
+            const totalRotX = globalTime * autoRotateSpeed + mouseX * 0.6 + rotationOffsetX;
+            const totalRotY = mouseY * 0.4 + rotationOffsetY;
+
+            const camX = Math.cos(totalRotY) * Math.sin(totalRotX) * cameraDistance;
+            const camY = Math.sin(totalRotY) * cameraDistance;
+            const camZ = Math.cos(totalRotY) * Math.cos(totalRotX) * cameraDistance;
+            camera.position.set(camX, camY, camZ);
+            camera.lookAt(0, 0, 0);
+
+            coreShaderMat.uniforms.uTime.value = globalTime;
+
+            const pulse = 1 + 0.06 * Math.sin(globalTime * 1.6) + 0.04 * Math.sin(globalTime * 2.3);
+            coreGlowMid.scale.setScalar(1.55 * pulse);
+            coreGlowOuter.scale.set(7 * pulse, 7 * pulse, 1);
+            coreGlowFar.scale.set(12 * pulse, 12 * pulse, 1);
+
+            const dotPosArr = coreDots.geometry.attributes.position.array;
+            for (let i = 0; i < coreDotCount; i++) {
+                const d = coreDotData[i];
+                d.angle += d.speed * dt;
+                const r = d.orbitRadius;
+                dotPosArr[i * 3] = r * Math.cos(d.angle);
+                dotPosArr[i * 3 + 1] = d.yOffset + 0.15 * Math.sin(globalTime * 2 + d.angle);
+                dotPosArr[i * 3 + 2] = r * Math.sin(d.angle);
+            }
+            coreDots.geometry.attributes.position.needsUpdate = true;
+            coreDots.rotation.y += dt * 0.3;
+            coreDots.rotation.x += dt * 0.15;
+
+            const enPosArr = energyParticles.geometry.attributes.position.array;
+            for (let i = 0; i < energyParticleCount; i++) {
+                const ed = energyData[i];
+                ed.life += ed.speed * dt;
+                if (ed.life > 1) {
+                    ed.life = 0;
+                    ed.baseDist = 0.3 + Math.random() * 1.5;
+                    ed.angle = Math.random() * Math.PI * 2;
+                    ed.phi = Math.acos(2 * Math.random() - 1);
+                    ed.maxDist = 3 + Math.random() * 9;
+                }
+                const dist = ed.baseDist + ed.life * ed.maxDist;
+                const fade = 1 - ed.life;
+                enPosArr[i * 3] = dist * Math.sin(ed.phi) * Math.cos(ed.angle);
+                enPosArr[i * 3 + 1] = dist * Math.sin(ed.phi) * Math.sin(ed.angle);
+                enPosArr[i * 3 + 2] = dist * Math.cos(ed.phi);
+            }
+            energyParticles.geometry.attributes.position.needsUpdate = true;
+            energyParticles.material.opacity = 0.35 + 0.2 * Math.sin(globalTime * 1.5);
+
+            allPlanetObjects.forEach((pObj) => {
+                pObj.baseAngle += pObj.speed * dt;
+                const angle = pObj.baseAngle;
+                const r = pObj.orbitRadius;
+                pObj.group.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
+
+                const currentScale = pObj.group.scale.x;
+                pObj.group.scale.setScalar(currentScale + (pObj.targetScale - currentScale) * 0.1);
+
+                const currentGlow = pObj.glowSprite.material.opacity;
+                pObj.glowSprite.material.opacity = currentGlow + (pObj.targetGlowOpacity - currentGlow) * 0.12;
+
+                pObj.mesh.rotation.y += dt * 0.5;
+                if (pObj.miniRing) {
+                    pObj.miniRing.rotation.z += dt * 0.8;
+                }
+
+                pObj.moons.forEach(moon => {
+                    moon.angle += moon.speed * dt;
+                    moon.mesh.position.set(
+                        Math.cos(moon.angle) * moon.orbitRadius,
+                        Math.sin(moon.angle * 0.7) * moon.orbitRadius * 0.5,
+                        Math.sin(moon.angle) * moon.orbitRadius
+                    );
+                });
+            });
+
+            labelElements.forEach(({ el, pObj }) => {
+                const screenPos = getScreenPosition(pObj.group);
+                if (screenPos.visible) {
+                    el.style.left = screenPos.x + 'px';
+                    el.style.top = screenPos.y + 'px';
+                    el.style.opacity = '1';
+                    if (hoveredPlanet === pObj) {
+                        el.classList.add('highlighted');
+                    } else {
+                        el.classList.remove('highlighted');
+                    }
+                } else {
+                    el.style.opacity = '0';
+                }
+            });
+
+            if (hoveredPlanet && detailPanel.classList.contains('visible')) {
+                const screenPos = getScreenPosition(hoveredPlanet.group);
+                detailPanel.style.left = screenPos.x + 'px';
+                detailPanel.style.top = screenPos.y + 'px';
+            }
+
+            starField.rotation.y += dt * 0.015;
+            starField.rotation.x += dt * 0.006;
+
+            renderer.render(scene, camera);
+        }
+
+        // ==================== 启动 ====================
+        rotationOffsetX = targetRotationOffsetX;
+        rotationOffsetY = targetRotationOffsetY;
+        mouseX = targetMouseX;
+        mouseY = targetMouseY;
+        cameraDistance = targetCameraDistance;
+
+        requestAnimationFrame(animate);
+
+        // ==================== 键盘快捷键 ====================
+        window.addEventListener('keydown', (event) => {
+            switch (event.key.toLowerCase()) {
+                case 'r':
+                    targetRotationOffsetX = 0;
+                    targetRotationOffsetY = 0;
+                    targetCameraDistance = 24;
+                    targetMouseX = 0;
+                    targetMouseY = 0;
+                    break;
+                case 'f':
+                    targetRotationOffsetY = 1.4;
+                    targetCameraDistance = 20;
+                    break;
+                case '0':
+                    targetRotationOffsetX = 0;
+                    targetRotationOffsetY = 0;
+                    targetCameraDistance = 24;
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        console.log(`
+        🪐  项目问题库 - 星际索引已就绪
+        ┌──────────────────────────────────────┐
+        │  🖱 拖拽旋转    │  滚轮缩放          │
+        │  ✨ 悬停行星    │  点击进入分类      │
+        │  ⌨ R=重置视角  │  F=俯瞰 0=默认    │
+        │  🌍 共 ${allPlanetObjects.length} 个分类节点  │
+        │  🪐 ${orbitDefinitions.length} 条轨道环        │
+        │  ⭐ ${starCount} 颗背景恒星        │
+        └──────────────────────────────────────┘
+        `);
+    </script>
+</body>
+</html>
