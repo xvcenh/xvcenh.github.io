@@ -808,7 +808,7 @@
                 const hitMesh = intersects[0].object;
                 const found = allPlanetObjects.find(p => p.mesh === hitMesh);
                 if (found && hoveredPlanet !== found) {
-                    if (hoveredPlanet) {
+                    if (hoveredPlanet && hoveredPlanet !== selectedPlanet) {
                         hoveredPlanet.targetScale = hoveredPlanet.baseScale;
                         hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
                         hoveredPlanet.targetEmissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
@@ -816,14 +816,16 @@
                         hoveredPlanet.mesh.material.emissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
                     }
                     hoveredPlanet = found;
-                    hoveredPlanet.targetScale = hoveredPlanet.baseScale * 1.35;
-                    hoveredPlanet.targetGlowOpacity = 0.9;
-                    hoveredPlanet.targetEmissiveIntensity = 0.7;
-                    hoveredPlanet.mesh.material.emissive = new THREE.Color(hoveredPlanet.orbitDef.color);
-                    hoveredPlanet.mesh.material.emissiveIntensity = 0.7;
+                    if (hoveredPlanet !== selectedPlanet) {
+                        hoveredPlanet.targetScale = hoveredPlanet.baseScale * 1.35;
+                        hoveredPlanet.targetGlowOpacity = 0.9;
+                        hoveredPlanet.targetEmissiveIntensity = 0.7;
+                        hoveredPlanet.mesh.material.emissive = new THREE.Color(hoveredPlanet.orbitDef.color);
+                        hoveredPlanet.mesh.material.emissiveIntensity = 0.7;
+                    }
                     document.body.classList.add('pointer-cursor');
                     panelName.textContent = found.planetDef.name;
-                    panelHint.textContent = found.orbitDef.name + ' · 点击进入';
+                    panelHint.textContent = (selectedPlanet === found ? '再次点击跳转 · ' : '') + found.orbitDef.name;
                     panelArticles.textContent = found.planetDef.articles.join(' · ');
                     detailPanel.classList.add('visible');
                 }
@@ -833,7 +835,7 @@
                     detailPanel.style.top = screenPos.y + 'px';
                 }
             } else {
-                if (hoveredPlanet) {
+                if (hoveredPlanet && hoveredPlanet !== selectedPlanet) {
                     hoveredPlanet.targetScale = hoveredPlanet.baseScale;
                     hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
                     hoveredPlanet.targetEmissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
@@ -887,6 +889,8 @@
                 isDragging = true;
                 dragStartX = event.clientX;
                 dragStartY = event.clientY;
+                clickStartX = event.clientX;
+                clickStartY = event.clientY;
                 rotationOffsetX = targetRotationOffsetX;
                 rotationOffsetY = targetRotationOffsetY;
             }
@@ -898,16 +902,16 @@
 
         window.addEventListener('mouseleave', () => {
             isDragging = false;
-            if (hoveredPlanet) {
+            if (hoveredPlanet && hoveredPlanet !== selectedPlanet) {
                 hoveredPlanet.targetScale = hoveredPlanet.baseScale;
                 hoveredPlanet.targetGlowOpacity = hoveredPlanet.baseGlowOpacity;
                 hoveredPlanet.targetEmissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
                 hoveredPlanet.mesh.material.emissive = new THREE.Color(0x000000);
                 hoveredPlanet.mesh.material.emissiveIntensity = hoveredPlanet.baseEmissiveIntensity;
-                hoveredPlanet = null;
-                document.body.classList.remove('pointer-cursor');
-                detailPanel.classList.remove('visible');
             }
+            hoveredPlanet = null;
+            document.body.classList.remove('pointer-cursor');
+            detailPanel.classList.remove('visible');
         });
 
         window.addEventListener('wheel', (event) => {
@@ -942,6 +946,10 @@
             isDragging = false;
         });
 
+        let selectedPlanet = null;
+        let lookTarget = new THREE.Vector3(0, 0, 0);
+        let savedCamDistance = 24;
+        let savedRotationX = 0, savedRotationY = 0;
         let clickStartX = 0, clickStartY = 0;
 
         window.addEventListener('click', (event) => {
@@ -959,21 +967,52 @@
                 const hitMesh = intersects[0].object;
                 const found = allPlanetObjects.find(p => p.mesh === hitMesh);
                 if (found && found.planetDef.link) {
-                    found.glowSprite.material.opacity = 1;
-                    found.glowSprite.scale.set(found.planetDef.size * 6, found.planetDef.size * 6, 1);
-                    setTimeout(() => {
-                        found.glowSprite.scale.set(found.planetDef.size * 3.5, found.planetDef.size * 3.5, 1);
-                        found.glowSprite.material.opacity = found.targetGlowOpacity;
-                    }, 300);
-                    const link = found.planetDef.link;
-                    if (link.startsWith('http')) {
-                        window.open(link, '_blank');
-                    } else {
-                        window.location.href = link;
+                    if (selectedPlanet === found) {
+                        // Second click: navigate
+                        const link = found.planetDef.link;
+                        if (link.startsWith('http')) {
+                            window.open(link, '_blank');
+                        } else {
+                            window.location.href = link;
+                        }
+                        return;
                     }
+                    // First click: focus on planet
+                    if (selectedPlanet) {
+                        selectedPlanet.targetScale = selectedPlanet.baseScale;
+                        selectedPlanet.targetGlowOpacity = selectedPlanet.baseGlowOpacity;
+                    }
+                    selectedPlanet = found;
+                    selectedPlanet.targetScale = selectedPlanet.baseScale * 1.5;
+                    selectedPlanet.targetGlowOpacity = 1.0;
+                    selectedPlanet.mesh.material.emissive = new THREE.Color(selectedPlanet.orbitDef.color);
+                    selectedPlanet.mesh.material.emissiveIntensity = 0.8;
+                    savedCamDistance = cameraDistance;
+                    savedRotationX = totalRotX;
+                    savedRotationY = totalRotY;
+                    flashPlanet(found);
+                }
+            } else {
+                // Click empty space: deselect
+                if (selectedPlanet) {
+                    selectedPlanet.targetScale = selectedPlanet.baseScale;
+                    selectedPlanet.targetGlowOpacity = selectedPlanet.baseGlowOpacity;
+                    selectedPlanet.mesh.material.emissive = new THREE.Color(0x000000);
+                    selectedPlanet.mesh.material.emissiveIntensity = selectedPlanet.baseEmissiveIntensity;
+                    selectedPlanet = null;
+                    targetCameraDistance = savedCamDistance;
                 }
             }
         });
+
+        function flashPlanet(pObj) {
+            pObj.glowSprite.material.opacity = 1;
+            pObj.glowSprite.scale.set(pObj.planetDef.size * 6, pObj.planetDef.size * 6, 1);
+            setTimeout(() => {
+                pObj.glowSprite.scale.set(pObj.planetDef.size * 3.5, pObj.planetDef.size * 3.5, 1);
+                pObj.glowSprite.material.opacity = pObj.targetGlowOpacity;
+            }, 300);
+        }
 
         // 动态添加点击反馈动画样式
         const clickStyle = document.createElement('style');
@@ -996,6 +1035,7 @@
         // ==================== 动画循环 ====================
         const clock = new THREE.Clock();
         let globalTime = 0;
+        let totalRotX = 0, totalRotY = 0;
 
         function animate(timestamp) {
             requestAnimationFrame(animate);
@@ -1007,17 +1047,35 @@
             mouseY += (targetMouseY - mouseY) * 0.05;
             rotationOffsetX += (targetRotationOffsetX - rotationOffsetX) * 0.08;
             rotationOffsetY += (targetRotationOffsetY - rotationOffsetY) * 0.08;
-            cameraDistance += (targetCameraDistance - cameraDistance) * 0.06;
 
             const autoRotateSpeed = 0.12;
-            const totalRotX = globalTime * autoRotateSpeed + mouseX * 0.2 + rotationOffsetX;
-            const totalRotY = mouseY * 0.15 + rotationOffsetY;
+            totalRotX = globalTime * autoRotateSpeed + mouseX * 0.2 + rotationOffsetX;
+            totalRotY = mouseY * 0.15 + rotationOffsetY;
 
-            const camX = Math.cos(totalRotY) * Math.sin(totalRotX) * cameraDistance;
-            const camY = Math.sin(totalRotY) * cameraDistance;
-            const camZ = Math.cos(totalRotY) * Math.cos(totalRotX) * cameraDistance;
-            camera.position.set(camX, camY, camZ);
-            camera.lookAt(0, 0, 0);
+            if (selectedPlanet) {
+                // Follow planet mode
+                const planetPos = new THREE.Vector3();
+                selectedPlanet.group.getWorldPosition(planetPos);
+                lookTarget.lerp(planetPos, 0.06);
+
+                const followDist = selectedPlanet.planetDef.size * 5 + 1.5;
+                const slowOrbit = globalTime * 0.25 + savedRotationX;
+                const targetCamX = planetPos.x + Math.cos(slowOrbit) * followDist;
+                const targetCamY = planetPos.y + followDist * 0.5;
+                const targetCamZ = planetPos.z + Math.sin(slowOrbit) * followDist;
+
+                camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.04);
+                camera.lookAt(lookTarget);
+            } else {
+                // Normal orbit mode
+                lookTarget.lerp(new THREE.Vector3(0, 0, 0), 0.06);
+                cameraDistance += (targetCameraDistance - cameraDistance) * 0.06;
+                const camX = Math.cos(totalRotY) * Math.sin(totalRotX) * cameraDistance;
+                const camY = Math.sin(totalRotY) * cameraDistance;
+                const camZ = Math.cos(totalRotY) * Math.cos(totalRotX) * cameraDistance;
+                camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.06);
+                camera.lookAt(lookTarget);
+            }
 
             coreShaderMat.uniforms.uTime.value = globalTime;
 
