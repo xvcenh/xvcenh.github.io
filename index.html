@@ -187,7 +187,7 @@ title: 项目问题库
             border-radius: 12px;
             padding: 20px 24px;
             margin-bottom: 16px;
-            transition: transform .4s cubic-bezier(.23,1,.32,1), box-shadow .4s ease, border-color .35s ease;
+            transition: transform .4s cubic-bezier(.23,1,.32,1), opacity .4s ease, box-shadow .4s ease, border-color .35s ease;
             transform-style: preserve-3d;
             opacity: 0;
             transform: translateY(30px);
@@ -1555,41 +1555,57 @@ title: 项目问题库
         `);
     </script>
 
-    <!-- 3D 卡片倾斜效果 -->
+    <!-- 3D 卡片效果 -->
     <script>
     (function() {
         const contentSection = document.getElementById('content-section');
         if (!contentSection) return;
+        const cards = document.querySelectorAll('#content-section .post-card');
+        if (!cards.length) return;
 
-        // 卡片入场动画
+        // 卡片入场动画 - 逐个延迟显现
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry, i) => {
+            entries.forEach((entry) => {
                 if (entry.isIntersecting) {
-                    setTimeout(() => {
-                        entry.target.classList.add('visible');
-                    }, i * 80);
-                    observer.unobserve(entry.target);
+                    const el = entry.target;
+                    const idx = parseInt(el.dataset.index) || 0;
+                    setTimeout(() => el.classList.add('visible'), idx * 60);
+                    observer.unobserve(el);
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
 
-        document.querySelectorAll('#content-section .post-card').forEach(card => {
+        cards.forEach((card, i) => {
+            card.dataset.index = i;
             observer.observe(card);
         });
 
         // 3D 倾斜
+        let tiltedCard = null;
+
         contentSection.addEventListener('mousemove', (e) => {
             const card = e.target.closest('.post-card');
-            if (!card) return;
+            if (!card || !card.classList.contains('visible')) {
+                if (tiltedCard) {
+                    tiltedCard.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+                    tiltedCard = null;
+                }
+                return;
+            }
+            if (tiltedCard && tiltedCard !== card) {
+                tiltedCard.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+            }
+            tiltedCard = card;
             const r = card.getBoundingClientRect();
             const x = (e.clientX - r.left) / r.width - 0.5;
             const y = (e.clientY - r.top) / r.height - 0.5;
             card.style.transform = `translateY(0) rotateX(${y * -6}deg) rotateY(${x * 8}deg)`;
         });
 
-        contentSection.addEventListener('mouseout', (e) => {
-            if (e.target.classList && e.target.classList.contains('post-card')) {
-                e.target.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+        contentSection.addEventListener('mouseleave', () => {
+            if (tiltedCard) {
+                tiltedCard.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+                tiltedCard = null;
             }
         });
     })();
