@@ -1,0 +1,340 @@
+---
+layout: null
+title: AI 驱动构建成果
+permalink: /ai-build/
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 驱动构建成果 — xvcenh的博客</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: rgba(255,255,255,0.04);
+    --border: rgba(255,255,255,0.08);
+    --cyan: #22d3ee;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+  .hero {
+    text-align: center;
+    padding: 80px 24px 60px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(34,211,238,0.08) 0%, transparent 70%);
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan), var(--purple), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+  }
+  .hero .subtitle {
+    color: var(--text2);
+    font-size: 1.1rem;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  h2 {
+    font-size: 1.5rem;
+    margin: 48px 0 20px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h3 {
+    font-size: 1.15rem;
+    margin: 28px 0 12px;
+    color: var(--cyan);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 18px;
+  }
+  .card h4 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .card p {
+    color: var(--text2);
+    font-size: 0.92rem;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    margin-right: 6px;
+    margin-top: 8px;
+    border: 1px solid;
+  }
+  .tag-ai { color: var(--pink); border-color: rgba(244,114,182,0.3); background: rgba(244,114,182,0.08); }
+  .tag-3d { color: var(--cyan); border-color: rgba(34,211,238,0.3); background: rgba(34,211,238,0.08); }
+  .tag-ui { color: var(--blue); border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.08); }
+  .tag-css { color: var(--purple); border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.08); }
+  .tag-perf { color: var(--green); border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.08); }
+  .tag-seo { color: var(--amber); border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.08); }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .stat .num {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .stat .label {
+    color: var(--text3);
+    font-size: 0.82rem;
+    margin-top: 4px;
+  }
+  .timeline {
+    border-left: 2px solid var(--border);
+    margin: 24px 0;
+    padding-left: 24px;
+  }
+  .timeline-item {
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--cyan);
+  }
+  .timeline-item .time {
+    font-size: 0.78rem;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+  .footer {
+    text-align: center;
+    padding: 40px;
+    color: var(--text3);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border);
+  }
+  code {
+    background: rgba(255,255,255,0.06);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+  a {
+    color: var(--cyan);
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>AI 驱动构建成果</h1>
+  <p class="subtitle">通过自然语言指令，使用 AI Coding Agent 从零构建的全功能技术博客</p>
+</div>
+
+<div class="container">
+
+  <!-- 数据统计 -->
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="num">4</div>
+      <div class="label">构建轮次</div>
+    </div>
+    <div class="stat">
+      <div class="num">20+</div>
+      <div class="label">AI 交互指令</div>
+    </div>
+    <div class="stat">
+      <div class="num">900</div>
+      <div class="label">最终代码行数</div>
+    </div>
+    <div class="stat">
+      <div class="num">6</div>
+      <div class="label">技术领域覆盖</div>
+    </div>
+  </div>
+
+  <!-- 构建时间线 -->
+  <h2>⏱ 构建过程</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="time">第 1 轮 · 基础搭建</div>
+      <p style="color:var(--text2)">
+        克隆 Jekyll 博客仓库，配置 Git 认证。<br>
+        替换默认首页为 AI 生成的 3D 星空交互界面（Three.js）。
+      </p>
+      <span class="tag tag-3d">Three.js</span><span class="tag tag-ui">交互设计</span>
+    </div>
+    <div class="timeline-item">
+      <div class="time">第 2 轮 · 交互优化</div>
+      <p style="color:var(--text2)">
+        调整拖拽旋转速度和鼠标跟随灵敏度。<br>
+        添加行星点击→镜头跟随特写→再次点击跳转的双击导航逻辑。<br>
+        修复选中星球后鼠标移开丢失高亮的 bug。
+      </p>
+      <span class="tag tag-3d">3D 交互</span><span class="tag tag-css">动画调优</span>
+    </div>
+    <div class="timeline-item">
+      <div class="time">第 3 轮 · 内容整合</div>
+      <p style="color:var(--text2)">
+        添加滚动内容区：分类标签 + Jekyll 动态文章列表。<br>
+        深色星空与浅色博客区形成双主题对比。<br>
+        滚动时星系缩放，离开视口后自动暂停 Three.js 渲染释放资源。
+      </p>
+      <span class="tag tag-perf">性能优化</span><span class="tag tag-ui">滚动设计</span>
+    </div>
+    <div class="timeline-item">
+      <div class="time">第 4 轮 · 视觉特效</div>
+      <p style="color:var(--text2)">
+        引入噪点纹理、CRT 扫描线、CSS 浮动几何形状。<br>
+        标题故障艺术效果（glitch text）。<br>
+        文章卡片逐帧入场动画 + 鼠标 3D 倾斜跟随。
+      </p>
+      <span class="tag tag-css">CSS 特效</span><span class="tag tag-ai">参考实现</span>
+    </div>
+    <div class="timeline-item">
+      <div class="time">第 5 轮 · 品牌与 SEO</div>
+      <p style="color:var(--text2)">
+        品牌化：项目名称 → "xvcenh的博客"，关于页面个人化。<br>
+        SEO 全栈优化：meta tags、Open Graph、JSON-LD、robots.txt、sitemap。<br>
+        关键搜索词：xvcenh、徐辰。
+      </p>
+      <span class="tag tag-seo">SEO</span><span class="tag tag-ai">品牌建设</span>
+    </div>
+    <div class="timeline-item">
+      <div class="time">第 6 轮 · XVCENH 拼字动画</div>
+      <p style="color:var(--text2)">
+        集成霓虹几何拼字动画：弹簧物理驱动彩色矩形散落→汇聚拼出"XVCENH"。<br>
+        替代 Three.js 星系成为首页 Hero，加载更快，品牌感更强。
+      </p>
+      <span class="tag tag-css">Canvas 动画</span><span class="tag tag-perf">轻量替代</span>
+    </div>
+  </div>
+
+  <!-- 功能清单 -->
+  <h2>⚡ 已实现功能</h2>
+
+  <div class="card">
+    <h4>🎨 XVCENH 霓虹拼字动画</h4>
+    <p>全屏 Canvas 动画，霓虹矩形通过弹簧物理拼出品牌名 "XVCENH"。星空背景 + 粒子连线 + 鼠标斥力。自动循环切换散落/汇聚状态。</p>
+    <span class="tag tag-css">Canvas 2D</span><span class="tag tag-ai">AI 生成动画</span>
+  </div>
+
+  <div class="card">
+    <h4>📜 滚动博客内容区</h4>
+    <p>粘性布局，动画区固定 + 内容区可滚动。分类标签、文章卡片由 Jekyll 动态渲染。卡片具备入场动画和 3D 倾斜交互。</p>
+    <span class="tag tag-ui">布局设计</span><span class="tag tag-ai">Jekyll 集成</span>
+  </div>
+
+  <div class="card">
+    <h4>✨ 视觉特效系统</h4>
+    <p>SVG 噪点覆盖、CSS 扫描线、5 种浮动几何形状（环/菱/十字/三角）、标题故障文字效果、星空闪烁背景。</p>
+    <span class="tag tag-css">CSS 特效</span><span class="tag tag-3d">3D 变换</span>
+  </div>
+
+  <div class="card">
+    <h4>🔍 全栈 SEO 优化</h4>
+    <p>Meta description/keywords、Open Graph / Twitter Card、JSON-LD 结构化数据、Canonical URL、Robots.txt、Sitemap 自动生成。针对 "xvcenh" "徐辰" 搜索词优化。</p>
+    <span class="tag tag-seo">SEO</span>
+  </div>
+
+  <div class="card">
+    <h4>🎯 交互细节</h4>
+    <p>拖拽感觉调优（降低灵敏度 60%）、双击行星跳转、卡片 3D 倾斜跟随、IntersectionObserver 入场动画、滚动提示箭头。</p>
+    <span class="tag tag-ui">UX 优化</span>
+  </div>
+
+  <!-- 技术栈 -->
+  <h2>🛠 技术栈</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;">
+    <span class="tag tag-3d">Jekyll</span>
+    <span class="tag tag-3d">GitHub Pages</span>
+    <span class="tag tag-css">Canvas 2D API</span>
+    <span class="tag tag-css">CSS Animations</span>
+    <span class="tag tag-css">CSS 3D Transforms</span>
+    <span class="tag tag-seo">jekyll-seo-tag</span>
+    <span class="tag tag-seo">jekyll-sitemap</span>
+    <span class="tag tag-perf">IntersectionObserver</span>
+    <span class="tag tag-ai">Liquid Templates</span>
+    <span class="tag tag-ui">Spring Physics</span>
+  </div>
+
+  <!-- AI 使用方式 -->
+  <h2>🤖 AI 驱动开发方式</h2>
+
+  <div class="card">
+    <h4>自然语言驱动</h4>
+    <p>通过直接的中文描述表达需求，无需手写代码：<br>
+    <em>"鼠标拖拽转动速度太快了"</em> → AI 自动找到拖拽系数并调优<br>
+    <em>"换成比较亮的颜色"</em> → AI 系统性修改全部 CSS 变量 + Three.js 着色器<br>
+    <em>"怎么能让大家都能搜到我"</em> → AI 完成 SEO 审计并实施全站优化</p>
+    <span class="tag tag-ai">自然语言</span>
+  </div>
+
+  <div class="card">
+    <h4>参考实现 → 自主融合</h4>
+    <p>提供 AI 生成的参考文件，AI 分析其效果原理，挑选最适合的部分融入现有项目：<br>
+    <em>参考 code (7).html</em> → 提取噪点、扫描线、浮动形状、卡片倾斜、故障文字<br>
+    <em>参考拼字动画</em> → 完整集成 Canvas 动画并替换 Three.js 星系</p>
+    <span class="tag tag-ai">代码融合</span>
+  </div>
+
+  <div class="card">
+    <h4>持续迭代优化</h4>
+    <p>6 轮迭代，每轮根据反馈调整：<br>
+    拖拽速度 → 相机跟随 → 滚动布局 → 色彩主题 → 视觉特效 → 品牌 SEO<br>
+    遇到 GitHub 网络中断时自动重试，提交失败时不丢失本地工作。</p>
+    <span class="tag tag-ai">迭代开发</span>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>本项目由 AI Coding Agent 辅助构建 · <a href="https://github.com/xvcenh/xvcenh.github.io">GitHub 仓库</a></p>
+  <p style="margin-top:8px;">访问 <a href="/">博客首页</a> 查看实际效果</p>
+</div>
+
+</body>
+</html>
