@@ -106,7 +106,7 @@
   </style>
 </head>
 <body>
-  <canvas id="bg-stars" style="position:fixed;inset:0;z-index:0;pointer-events:none;"></canvas>
+  <canvas id="bg-stars" style="position:fixed;inset:0;z-index:1;pointer-events:none;"></canvas>
   <script>
   (function(){
     var c=document.getElementById('bg-stars'),x=c.getContext('2d'),s=[],w,h;
@@ -127,7 +127,7 @@
   })();
   </script>
   <!-- 头部导航 -->
-  <header class="header">
+  <header class="header" style="position:relative;z-index:2">
     <div class="container">
       <div class="header-content">
         <a href="/" class="logo">
@@ -145,7 +145,7 @@
   </header>
 
   {% if page.layout == 'post' %}
-  <div class="container">
+  <div class="container" style="position:relative;z-index:2">
     <div class="post-layout">
       <a href="/" class="back-link">← 返回首页</a>
       
@@ -190,11 +190,11 @@
     </div>
   </div>
   {% else %}
-    {{ content }}
+    <div style="position:relative;z-index:2">{{ content }}</div>
   {% endif %}
 
   <!-- 页脚 -->
-  <footer class="footer">
+  <footer class="footer" style="position:relative;z-index:2">
     <div class="container">
       <div class="footer-content">
         <div class="footer-links">
