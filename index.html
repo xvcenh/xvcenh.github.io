@@ -126,6 +126,33 @@ title: xvcenh的博客
             overflow: hidden;
             background: #000010;
         }
+        /* 星空背景层 */
+        .stars-bg {
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1px 1px at 25% 50%, rgba(255,255,255,0.45), transparent),
+                radial-gradient(1.5px 1.5px at 38% 72%, rgba(255,255,255,0.55), transparent),
+                radial-gradient(1px 1px at 55% 18%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 68% 58%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1.5px 1.5px at 82% 35%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 14% 82%, rgba(255,255,255,0.35), transparent),
+                radial-gradient(1px 1px at 60% 80%, rgba(255,255,255,0.45), transparent),
+                radial-gradient(1px 1px at 90% 68%, rgba(255,255,255,0.4), transparent),
+                radial-gradient(1px 1px at 32% 38%, rgba(255,255,255,0.35), transparent),
+                radial-gradient(1px 1px at 75% 15%, rgba(255,255,255,0.45), transparent),
+                radial-gradient(1.5px 1.5px at 6% 52%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 46% 62%, rgba(255,255,255,0.35), transparent),
+                radial-gradient(1px 1px at 84% 75%, rgba(255,255,255,0.5), transparent),
+                radial-gradient(1px 1px at 22% 90%, rgba(255,255,255,0.3), transparent),
+                radial-gradient(1px 1px at 62% 45%, rgba(255,255,255,0.4), transparent);
+            animation: starsDrift 80s linear infinite;
+        }
+        @keyframes starsDrift {
+            0% { background-position: 0 0; }
+            50% { background-position: 30px 60px; }
+            100% { background-position: 0 0; }
+        }
         #canvas-container {
             position: absolute;
             inset: 0;
@@ -437,6 +464,7 @@ title: xvcenh的博客
 
     <!-- XVCENH 霓虹拼字区域 -->
     <div id="xvcenh-section">
+        <div class="stars-bg"></div>
         <canvas id="xvcenh-canvas"></canvas>
         <div class="scanlines"></div>
         <div id="scroll-hint">
