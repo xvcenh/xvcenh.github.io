@@ -112,12 +112,17 @@ title: xvcenh的博客
             50% { transform: translate3d(20px,15px,30px) rotate(60deg); }
         }
 
-        /* 星系区域 - 粘性定位 */
+        /* 星系区域 */
         #galaxy-section {
-            position: sticky;
-            top: 0;
+            position: relative;
             height: 100vh;
-            z-index: 0;
+            overflow: hidden;
+            background: #000010;
+        }
+        /* XVCENH 动画区域 */
+        #xvcenh-section {
+            position: relative;
+            height: 100vh;
             overflow: hidden;
             background: #000010;
         }
@@ -129,7 +134,7 @@ title: xvcenh的博客
         #xvcenh-canvas {
             position: absolute;
             inset: 0;
-            z-index: 4;
+            z-index: 1;
             pointer-events: auto;
         }
         canvas {
@@ -180,8 +185,8 @@ title: xvcenh的博客
         /* 内容区 */
         #content-section {
             position: relative;
-            z-index: 5;
-            background: linear-gradient(180deg, rgba(0,0,16,0.85) 0%, rgba(8,12,30,0.9) 5%, rgba(30,40,70,0.6) 15%, #f0f4fa 30%, #f8fafc 100%);
+            z-index: 1;
+            background: #f8fafc;
             min-height: 100vh;
             padding: 60px 24px 80px;
         }
@@ -474,14 +479,21 @@ title: xvcenh的博客
 <body>
     <div class="noise-overlay"></div>
 
-    <!-- 星系区域 -->
+    <!-- XVCENH 霓虹拼字区域 -->
+    <div id="xvcenh-section">
+        <canvas id="xvcenh-canvas"></canvas>
+        <div class="scanlines"></div>
+        <div id="scroll-hint">
+            <div class="arrow"></div>
+            <span>向下滚动探索</span>
+        </div>
+    </div>
+
+    <!-- 3D 星系区域 -->
     <div id="galaxy-section">
 
         <!-- 画布容器 -->
         <div id="canvas-container"></div>
-
-        <!-- XVCENH 动画叠加层 -->
-        <canvas id="xvcenh-canvas"></canvas>
 
         <!-- 扫描线 -->
         <div class="scanlines"></div>
@@ -522,12 +534,6 @@ title: xvcenh的博客
             <span>🖱 滚轮缩放</span>
             <span>✨ 悬停探索</span>
             <span>🪐 点击进入</span>
-        </div>
-
-        <!-- 滚动提示 -->
-        <div id="scroll-hint">
-            <div class="arrow"></div>
-            <span>向下滚动</span>
         </div>
 
     </div>
@@ -1353,11 +1359,9 @@ title: xvcenh的博客
         // ==================== 动画循环 ====================
         const clock = new THREE.Clock();
         let globalTime = 0;
-        let totalRotX = 0, totalRotY = 0;
-        const baseCamDist = 24;
+        let totalRotX = 0, totalRotY = 0, animFrameId = null;
 
         function animate(timestamp) {
-            if (!rendering) return;
             animFrameId = requestAnimationFrame(animate);
 
             const dt = Math.min(clock.getDelta(), 0.1);
@@ -1499,42 +1503,7 @@ title: xvcenh的博客
         mouseY = targetMouseY;
         cameraDistance = targetCameraDistance;
 
-        let rendering = true;
-        let animFrameId = null;
-        animFrameId = requestAnimationFrame(animate);
-
-        // ==================== 滚动缩放与资源释放 ====================
-        const scrollHint = document.getElementById('scroll-hint');
-
-        function updateScrollZoom() {
-            const scrollY = window.scrollY;
-            const maxScroll = window.innerHeight * 0.7;
-            const progress = Math.min(scrollY / maxScroll, 1);
-
-            if (!selectedPlanet) {
-                targetCameraDistance = baseCamDist + progress * 40;
-            }
-
-            if (scrollY > 50) {
-                scrollHint.classList.add('hidden');
-            } else {
-                scrollHint.classList.remove('hidden');
-            }
-
-            // 星系完全不可见时暂停渲染释放资源
-            if (scrollY > window.innerHeight * 0.9) {
-                if (rendering) {
-                    rendering = false;
-                }
-            } else {
-                if (!rendering) {
-                    rendering = true;
-                    animFrameId = requestAnimationFrame(animate);
-                }
-            }
-        }
-
-        window.addEventListener('scroll', updateScrollZoom, { passive: true });
+        requestAnimationFrame(animate);
 
         // ==================== 键盘快捷键 ====================
         window.addEventListener('keydown', (event) => {
@@ -1826,9 +1795,17 @@ title: xvcenh的博客
     })();
     </script>
 
-    <!-- 3D 卡片效果 -->
+     <!-- 3D 卡片效果 -->
     <script>
     (function() {
+        // 滚动提示
+        const scrollHint = document.getElementById('scroll-hint');
+        if (scrollHint) {
+            window.addEventListener('scroll', () => {
+                scrollHint.classList.toggle('hidden', window.scrollY > window.innerHeight * 0.5);
+            }, { passive: true });
+        }
+
         const contentSection = document.getElementById('content-section');
         if (!contentSection) return;
         const cards = document.querySelectorAll('#content-section .post-card');
