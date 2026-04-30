@@ -129,29 +129,6 @@ title: xvcenh的博客
         /* 星空背景层 */
         .stars-bg {
             position: absolute; inset: 0; z-index: 0; pointer-events: none;
-            background:
-                radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6), transparent),
-                radial-gradient(1px 1px at 25% 50%, rgba(255,255,255,0.45), transparent),
-                radial-gradient(1.5px 1.5px at 38% 72%, rgba(255,255,255,0.55), transparent),
-                radial-gradient(1px 1px at 55% 18%, rgba(255,255,255,0.4), transparent),
-                radial-gradient(1px 1px at 68% 58%, rgba(255,255,255,0.5), transparent),
-                radial-gradient(1.5px 1.5px at 82% 35%, rgba(255,255,255,0.5), transparent),
-                radial-gradient(1px 1px at 14% 82%, rgba(255,255,255,0.35), transparent),
-                radial-gradient(1px 1px at 60% 80%, rgba(255,255,255,0.45), transparent),
-                radial-gradient(1px 1px at 90% 68%, rgba(255,255,255,0.4), transparent),
-                radial-gradient(1px 1px at 32% 38%, rgba(255,255,255,0.35), transparent),
-                radial-gradient(1px 1px at 75% 15%, rgba(255,255,255,0.45), transparent),
-                radial-gradient(1.5px 1.5px at 6% 52%, rgba(255,255,255,0.5), transparent),
-                radial-gradient(1px 1px at 46% 62%, rgba(255,255,255,0.35), transparent),
-                radial-gradient(1px 1px at 84% 75%, rgba(255,255,255,0.5), transparent),
-                radial-gradient(1px 1px at 22% 90%, rgba(255,255,255,0.3), transparent),
-                radial-gradient(1px 1px at 62% 45%, rgba(255,255,255,0.4), transparent);
-            animation: starsDrift 80s linear infinite;
-        }
-        @keyframes starsDrift {
-            0% { background-position: 0 0; }
-            50% { background-position: 30px 60px; }
-            100% { background-position: 0 0; }
         }
         #canvas-container {
             position: absolute;
@@ -464,7 +441,7 @@ title: xvcenh的博客
 
     <!-- XVCENH 霓虹拼字区域 -->
     <div id="xvcenh-section">
-        <div class="stars-bg"></div>
+        <canvas class="stars-bg"></canvas>
         <canvas id="xvcenh-canvas"></canvas>
         <div class="scanlines"></div>
         <div id="scroll-hint">
@@ -1771,16 +1748,47 @@ title: xvcenh的博客
     })();
     </script>
 
-     <!-- 3D 卡片效果 -->
+    <!-- 星空 + 卡片效果 -->
     <script>
     (function() {
-        // 滚动提示
-        const scrollHint = document.getElementById('scroll-hint');
-        if (scrollHint) {
-            window.addEventListener('scroll', () => {
-                scrollHint.classList.toggle('hidden', window.scrollY > window.innerHeight * 0.5);
-            }, { passive: true });
-        }
+        // 星空粒子系统
+        (function() {
+            const c = document.querySelector('.stars-bg');
+            if (!c || c.tagName !== 'CANVAS') return;
+            const ctx = c.getContext('2d');
+            const stars = [];
+            let w, h;
+            function resize() {
+                w = c.width = window.innerWidth; h = c.height = window.innerHeight;
+            }
+            resize();
+            for (let i = 0; i < 80; i++) {
+                stars.push({
+                    x: Math.random() * w, y: Math.random() * h,
+                    r: 0.3 + Math.random() * 1.2,
+                    vx: (Math.random() - 0.5) * 0.15,
+                    vy: (Math.random() - 0.5) * 0.15,
+                    a: 0.2 + Math.random() * 0.5,
+                    blink: Math.random() * Math.PI * 2
+                });
+            }
+            window.addEventListener('resize', resize);
+            function draw() {
+                ctx.clearRect(0, 0, w, h);
+                for (const s of stars) {
+                    s.x += s.vx; s.y += s.vy;
+                    if (s.x < 0) s.x = w; if (s.x > w) s.x = 0;
+                    if (s.y < 0) s.y = h; if (s.y > h) s.y = 0;
+                    const blink = s.a + Math.sin(Date.now() * 0.001 + s.blink) * 0.2;
+                    ctx.fillStyle = `rgba(200,220,255,${Math.max(0.1, blink)})`;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
 
         const contentSection = document.getElementById('content-section');
         if (!contentSection) return;

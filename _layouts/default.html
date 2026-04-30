@@ -6,32 +6,6 @@
   <title>{{ page.title }} - xvcenh的博客</title>
   <link rel="stylesheet" href="/assets/css/style.css">
   <style>
-    /* 星空粒子背景 */
-    body::before {
-      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.4), transparent),
-        radial-gradient(1.5px 1.5px at 40% 15%, rgba(255,255,255,0.55), transparent),
-        radial-gradient(1px 1px at 55% 75%, rgba(255,255,255,0.35), transparent),
-        radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1.5px 1.5px at 85% 60%, rgba(255,255,255,0.45), transparent),
-        radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.4), transparent),
-        radial-gradient(1px 1px at 60% 8%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1px 1px at 92% 25%, rgba(255,255,255,0.35), transparent),
-        radial-gradient(1px 1px at 35% 42%, rgba(255,255,255,0.3), transparent),
-        radial-gradient(1px 1px at 78% 80%, rgba(255,255,255,0.4), transparent),
-        radial-gradient(1.5px 1.5px at 5% 48%, rgba(255,255,255,0.45), transparent),
-        radial-gradient(1px 1px at 48% 66%, rgba(255,255,255,0.35), transparent),
-        radial-gradient(1px 1px at 82% 12%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1px 1px at 20% 92%, rgba(255,255,255,0.3), transparent),
-        radial-gradient(1px 1px at 65% 48%, rgba(255,255,255,0.4), transparent);
-      animation: starShift 60s linear infinite;
-    }
-    @keyframes starShift {
-      0% { background-position: 0 0; }
-      100% { background-position: 40px 80px; }
-    }
     .post-layout {
       max-width: 800px;
       margin: 0 auto;
@@ -132,6 +106,26 @@
   </style>
 </head>
 <body>
+  <canvas id="bg-stars" style="position:fixed;inset:0;z-index:0;pointer-events:none;"></canvas>
+  <script>
+  (function(){
+    var c=document.getElementById('bg-stars'),x=c.getContext('2d'),s=[],w,h;
+    function r(){w=c.width=innerWidth;h=c.height=innerHeight}
+    r();window.addEventListener('resize',r);
+    for(var i=0;i<60;i++)s.push({x:Math.random()*w,y:Math.random()*h,r:.3+Math.random()*1,a:.2+Math.random()*.4,b:Math.random()*6.28,vx:(Math.random()-.5)*.1,vy:(Math.random()-.5)*.1});
+    (function D(){
+      x.clearRect(0,0,w,h);
+      for(var i=0;i<s.length;i++){
+        var p=s[i];p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0)p.x=w;if(p.x>w)p.x=0;if(p.y<0)p.y=h;if(p.y>h)p.y=0;
+        var blink=p.a+Math.sin(Date.now()*.0008+p.b)*.15;
+        x.fillStyle='rgba(200,220,255,'+Math.max(.08,blink)+')';
+        x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);x.fill();
+      }
+      requestAnimationFrame(D);
+    })();
+  })();
+  </script>
   <!-- 头部导航 -->
   <header class="header">
     <div class="container">

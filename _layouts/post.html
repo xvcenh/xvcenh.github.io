@@ -103,6 +103,26 @@
   </style>
 </head>
 <body>
+  <canvas id="bg-stars" style="position:fixed;inset:0;z-index:0;pointer-events:none;"></canvas>
+  <script>
+  (function(){
+    var c=document.getElementById('bg-stars'),x=c.getContext('2d'),s=[],w,h;
+    function r(){w=c.width=innerWidth;h=c.height=innerHeight}
+    r();window.addEventListener('resize',r);
+    for(var i=0;i<60;i++)s.push({x:Math.random()*w,y:Math.random()*h,r:.3+Math.random()*1,a:.2+Math.random()*.4,b:Math.random()*6.28,vx:(Math.random()-.5)*.1,vy:(Math.random()-.5)*.1});
+    (function D(){
+      x.clearRect(0,0,w,h);
+      for(var i=0;i<s.length;i++){
+        var p=s[i];p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0)p.x=w;if(p.x>w)p.x=0;if(p.y<0)p.y=h;if(p.y>h)p.y=0;
+        var blink=p.a+Math.sin(Date.now()*.0008+p.b)*.15;
+        x.fillStyle='rgba(200,220,255,'+Math.max(.08,blink)+')';
+        x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);x.fill();
+      }
+      requestAnimationFrame(D);
+    })();
+  })();
+  </script>
   <header class="header">
     <div class="header-content">
       <div class="logo">
