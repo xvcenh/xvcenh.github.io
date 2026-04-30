@@ -3,9 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ page.title }} - 项目问题库</title>
+  <title>{{ page.title }} - xvcenh的博客</title>
   <link rel="stylesheet" href="/assets/css/style.css">
   <style>
+    /* 星空粒子背景 */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1.5px 1.5px at 40% 15%, rgba(255,255,255,0.55), transparent),
+        radial-gradient(1px 1px at 55% 75%, rgba(255,255,255,0.35), transparent),
+        radial-gradient(1px 1px at 70% 35%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1.5px 1.5px at 85% 60%, rgba(255,255,255,0.45), transparent),
+        radial-gradient(1px 1px at 15% 85%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1px 1px at 60% 8%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 92% 25%, rgba(255,255,255,0.35), transparent),
+        radial-gradient(1px 1px at 35% 42%, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 78% 80%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1.5px 1.5px at 5% 48%, rgba(255,255,255,0.45), transparent),
+        radial-gradient(1px 1px at 48% 66%, rgba(255,255,255,0.35), transparent),
+        radial-gradient(1px 1px at 82% 12%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 20% 92%, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 65% 48%, rgba(255,255,255,0.4), transparent);
+      animation: starShift 60s linear infinite;
+    }
+    @keyframes starShift {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 80px; }
+    }
     .post-layout {
       max-width: 800px;
       margin: 0 auto;
