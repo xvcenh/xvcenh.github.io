@@ -1681,11 +1681,19 @@ title: xvcenh的博客
         }
 
         let mouseX = -999, mouseY = -999, mouseActive = false;
-        canvas.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; mouseActive = true; });
+        canvas.addEventListener('mousemove', e => {
+            if (canvas.getBoundingClientRect().bottom < 0) return;
+            mouseX = e.clientX; mouseY = e.clientY; mouseActive = true;
+        });
         canvas.addEventListener('mouseleave', () => mouseActive = false);
-        canvas.addEventListener('touchmove', e => { if (e.touches[0]) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; mouseActive = true; } }, { passive: true });
+        canvas.addEventListener('touchmove', e => {
+            if (canvas.getBoundingClientRect().bottom < 0) return;
+            if (e.touches[0]) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; mouseActive = true; }
+        }, { passive: true });
         canvas.addEventListener('touchend', () => mouseActive = false);
-        canvas.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+        canvas.addEventListener('click', (e) => {
+            if (canvas.getBoundingClientRect().bottom < 0) return;
+            e.stopPropagation(); toggle();
 
         function drawConnections() {
             if (isConverged) return;
