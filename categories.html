@@ -4,6 +4,8 @@ title: 分类浏览
 permalink: /categories/
 ---
 
+{% assign category_data = "硬件:🔧:硬件问题:树莓派、传感器、电路设计、嵌入式系统等|软件:💻:软件问题:Python、Java、Node.js、算法、性能优化等|数据库:🗄️:数据库问题:MySQL、PostgreSQL、MongoDB、Redis、SQL优化等|部署:🚀:部署问题:Docker、Kubernetes、Nginx、CI/CD、服务器配置等|工具:🛠️:工具问题:Git、VSCode、命令行、开发环境、调试工具等" | split: "|" %}
+
 <div class="container">
   <div style="padding: 80px 0 var(--space-xl);">
     
@@ -17,60 +19,38 @@ permalink: /categories/
     
     <!-- 分类网格 -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
-      <a href="/categories/硬件/" class="issue-card" style="text-decoration: none; display: block;">
-        <div style="font-size: 2rem; margin-bottom: var(--space-sm); color: var(--primary);">🔧</div>
-        <h3 style="font-size: 1.25rem; margin-bottom: var(--space-sm); color: var(--text-primary);">硬件问题</h3>
+      {% for cd in category_data %}
+        {% assign parts = cd | split: ":" %}
+        {% assign cat_slug = parts[0] %}
+        {% assign cat_icon = parts[1] %}
+        {% assign cat_title = parts[2] %}
+        {% assign cat_desc = parts[3] %}
+        {% assign cat_posts = site.categories[cat_slug] %}
+        {% assign cat_count = cat_posts | size %}
+      <a href="/categories/{{ cat_slug }}/" class="issue-card" style="text-decoration: none; display: block; position: relative; overflow: hidden;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div style="font-size: 2rem; color: var(--primary);">{{ cat_icon }}</div>
+          {% if cat_count > 0 %}
+          <span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600;">
+            {{ cat_count }} 篇
+          </span>
+          {% endif %}
+        </div>
+        <h3 style="font-size: 1.25rem; margin: var(--space-sm) 0; color: var(--text-primary);">{{ cat_title }}</h3>
         <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">
-          树莓派、传感器、电路设计、嵌入式系统等硬件相关问题
+          {{ cat_desc }}
         </p>
         <div style="margin-top: var(--space-md); color: var(--primary); font-weight: 500;">
-          查看所有硬件问题 →
+          查看全部 → <span style="font-size: 0.8rem; color: var(--text-light);">{% if cat_count > 0 %}{{ cat_count }} 篇文章{% else %}暂无文章{% endif %}</span>
         </div>
       </a>
-      
-      <a href="/categories/软件/" class="issue-card" style="text-decoration: none; display: block;">
-        <div style="font-size: 2rem; margin-bottom: var(--space-sm); color: var(--primary);">💻</div>
-        <h3 style="font-size: 1.25rem; margin-bottom: var(--space-sm); color: var(--text-primary);">软件问题</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">
-          Python、Java、Node.js、算法、性能优化等软件相关问题
-        </p>
-        <div style="margin-top: var(--space-md); color: var(--primary); font-weight: 500;">
-          查看所有软件问题 →
-        </div>
-      </a>
-      
-      <a href="/categories/数据库/" class="issue-card" style="text-decoration: none; display: block;">
-        <div style="font-size: 2rem; margin-bottom: var(--space-sm); color: var(--primary);">🗄️</div>
-        <h3 style="font-size: 1.25rem; margin-bottom: var(--space-sm); color: var(--text-primary);">数据库问题</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">
-          MySQL、PostgreSQL、MongoDB、Redis、SQL优化等数据库问题
-        </p>
-        <div style="margin-top: var(--space-md); color: var(--primary); font-weight: 500;">
-          查看所有数据库问题 →
-        </div>
-      </a>
-      
-      <a href="/categories/部署/" class="issue-card" style="text-decoration: none; display: block;">
-        <div style="font-size: 2rem; margin-bottom: var(--space-sm); color: var(--primary);">🚀</div>
-        <h3 style="font-size: 1.25rem; margin-bottom: var(--space-sm); color: var(--text-primary);">部署问题</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">
-          Docker、Kubernetes、Nginx、CI/CD、服务器配置等部署问题
-        </p>
-        <div style="margin-top: var(--space-md); color: var(--primary); font-weight: 500;">
-          查看所有部署问题 →
-        </div>
-      </a>
-      
-      <a href="/categories/工具/" class="issue-card" style="text-decoration: none; display: block;">
-        <div style="font-size: 2rem; margin-bottom: var(--space-sm); color: var(--primary);">🛠️</div>
-        <h3 style="font-size: 1.25rem; margin-bottom: var(--space-sm); color: var(--text-primary);">工具问题</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">
-          Git、VSCode、命令行、开发环境、调试工具等工具问题
-        </p>
-        <div style="margin-top: var(--space-md); color: var(--primary); font-weight: 500;">
-          查看所有工具问题 →
-        </div>
-      </a>
+      {% endfor %}
+    </div>
+    
+    <!-- 全部统计 -->
+    {% assign total_posts = site.posts | size %}
+    <div style="text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
+      <p>共计 <strong style="color: var(--primary);">{{ total_posts }}</strong> 篇文章，覆盖 <strong style="color: var(--primary);">{{ category_data | size }}</strong> 个分类</p>
     </div>
     
   </div>

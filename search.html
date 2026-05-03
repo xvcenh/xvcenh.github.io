@@ -14,14 +14,27 @@ permalink: /search/
         输入关键词、技术栈、错误信息或问题描述，快速找到解决方案
       </p>
       
-      <div class="search-container" style="max-width: 600px; margin: 0 auto;">
-        <div class="search-wrapper">
-          <input type="text" name="q" class="search-input" placeholder="例如：Vue 部署问题、Nginx 配置、数据库连接..." autocomplete="off" value="{{ page.query | default: '' }}">
-          <button type="submit" class="search-button" aria-label="搜索">
-            🔍
+      <form class="search-container" style="max-width: 600px; margin: 0 auto;" onsubmit="handleSearch(event)">
+        <div class="search-wrapper" style="position: relative;">
+          <input type="text" name="q" id="search-input" class="search-input"
+                 placeholder="例如：Vue 部署问题、Nginx 配置、数据库连接..."
+                 autocomplete="off" autofocus
+                 value="{{ page.query | default: '' }}">
+          <button type="submit" class="search-button" aria-label="搜索"
+                  style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+                         background: var(--primary); color: #fff; border: none;
+                         padding: 0.5rem 1rem; border-radius: var(--radius-md);
+                         cursor: pointer; font-size: 1rem; font-weight: 500;
+                         transition: background 0.2s ease;"
+                  onmouseover="this.style.background='var(--primary-dark)'"
+                  onmouseout="this.style.background='var(--primary)'">
+            🔍 搜索
           </button>
         </div>
-      </div>
+      </form>
+      <p style="color: var(--text-light); font-size: 0.8rem; margin-top: var(--space-sm);">
+        提示：按 <kbd style="background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:monospace;">/</kbd> 键快速聚焦搜索框
+      </p>
     </div>
     
     <!-- 热门搜索 -->
@@ -50,9 +63,12 @@ permalink: /search/
     </div>
     
     {% if page.query %}
+    <!-- Gather results first before display -->
+    {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
+    
     <!-- 搜索结果 -->
     <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-sm);">
         <h2 style="font-size: 1.75rem; color: var(--text-primary); margin: 0;">
           搜索结果: <span style="color: var(--primary);">"{{ page.query }}"</span>
         </h2>
@@ -60,8 +76,6 @@ permalink: /search/
           找到 {{ results.size }} 个结果
         </span>
       </div>
-      
-      {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
       
       {% if results.size > 0 %}
       <div class="issues-grid">
@@ -103,7 +117,7 @@ permalink: /search/
         <div class="empty-icon">🔍</div>
         <h3 class="empty-title">未找到相关问题</h3>
         <p class="empty-description">尝试使用不同的关键词，或浏览所有问题</p>
-        <div style="display: flex; gap: var(--space-sm); justify-content: center; margin-top: var(--space-md);">
+        <div style="display: flex; gap: var(--space-sm); justify-content: center; margin-top: var(--space-md); flex-wrap: wrap;">
           <a href="/" class="btn-primary">查看全部问题</a>
           <a href="/categories/" class="btn-primary" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">浏览分类</a>
         </div>
@@ -138,24 +152,22 @@ permalink: /search/
 </div>
 
 <script>
-  // 搜索表单提交
-  document.querySelector('.search-wrapper').addEventListener('submit', function(e) {
+  // Search form submit handler
+  function handleSearch(e) {
     e.preventDefault();
-    const input = this.querySelector('.search-input');
-    const query = input.value.trim();
+    var input = document.getElementById('search-input');
+    var query = input.value.trim();
     if (query) {
       window.location.href = '/search/?q=' + encodeURIComponent(query);
     }
-  });
+  }
   
-  // 热门搜索标签点击
-  document.querySelectorAll('.filter-tag').forEach(tag => {
-    tag.addEventListener('click', function(e) {
-      if (this.href.includes('/search/')) {
-        e.preventDefault();
-        const query = this.textContent.trim().replace(/[🎨🚀💾⚙️🔌🐛]/g, '').trim();
-        window.location.href = '/search/?q=' + encodeURIComponent(query);
-      }
-    });
+  // Keyboard shortcut: press "/" to focus search
+  document.addEventListener('keydown', function(e) {
+    if (e.key === '/' && document.activeElement !== document.getElementById('search-input') &&
+        document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      document.getElementById('search-input').focus();
+    }
   });
 </script>
