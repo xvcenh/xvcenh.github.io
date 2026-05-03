@@ -584,9 +584,16 @@ body {
   }
 
   /* ── 移动端交互优化 ── */
-  #xvcenh-section, #galaxy-section {
+  #galaxy-section {
     touch-action: none;
     -webkit-overflow-scrolling: touch;
+  }
+  /* XVCENH区域允许滚动，仅canvas内禁用touch-action */
+  #xvcenh-section {
+    -webkit-overflow-scrolling: touch;
+  }
+  #xvcenh-canvas {
+    touch-action: none;
   }
   #content-section .category-tag,
   #content-section .post-card h3 a {
