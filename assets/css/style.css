@@ -466,8 +466,8 @@ body {
   }
 
   /* ── 提示文字：桌面/移动切换 ── */
-  .hint-desktop { display: none !important; }
-  .hint-mobile { display: flex !important; }
+  #hint-bar span.hint-desktop { display: none !important; }
+  #hint-bar span.hint-mobile { display: flex !important; }
 
   /* ── 首页：标题栏 ── */
   #title-bar {
@@ -954,8 +954,8 @@ canvas {
     align-items: center;
     gap: 6px;
 }
-.hint-desktop { display: flex; align-items: center; gap: 6px; }
-.hint-mobile { display: none; }
+#hint-bar span.hint-desktop { display: flex; align-items: center; gap: 6px; }
+#hint-bar span.hint-mobile { display: none; }
 #hint-bar .dot {
     width: 6px;
     height: 6px;
