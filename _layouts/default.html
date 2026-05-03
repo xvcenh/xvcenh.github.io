@@ -59,26 +59,29 @@
       line-height: 1.7;
     }
     .post-content pre {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      padding: 1rem;
+      background: #0d1117;
+      padding: 1.25rem;
       border-radius: var(--radius-md);
       overflow-x: auto;
-      margin: 1rem 0;
-      font-size: 0.9rem;
-      border: 1px solid var(--border);
-    }
-    .post-content code {
-      background: var(--bg-secondary);
-      color: var(--primary);
-      padding: 0.2rem 0.4rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.9em;
-      font-family: 'SFMono-Regular', Consolas, monospace;
+      margin: 1.25rem 0;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      border: 1px solid #30363d;
     }
     .post-content pre code {
       background: none;
       padding: 0;
+      color: #c9d1d9;
+      font-family: 'SFMono-Regular', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+    }
+    .post-content :not(pre) > code {
+      background: rgba(96, 165, 250, 0.12);
+      color: #93c5fd;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.875em;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      border: 1px solid rgba(96, 165, 250, 0.18);
     }
     .post-content img {
       max-width: 100%;
@@ -234,6 +237,7 @@
           <a href="/" class="nav-link {% if page.url == '/' %}active{% endif %}">首页</a>
           <a href="/categories/" class="nav-link">分类</a>
           <a href="/search/" class="nav-link">搜索</a>
+          <a href="/projects/" class="nav-link {% if page.url == '/projects/' %}active{% endif %}">项目</a>
           <a href="/about/" class="nav-link">关于</a>
         </nav>
       </div>
@@ -253,6 +257,11 @@
               <span>📅</span>
               {{ page.date | date: "%Y年%m月%d日" }}
             </span>
+            {% assign word_count = content | number_of_words %}
+            <span class="post-meta-item reading-time" title="约 {{ word_count }} 字">
+              <span>⏱️</span>
+              {{ word_count | divided_by: 200 | plus: 1 }} 分钟阅读
+            </span>
             {% if page.author %}
             <span class="post-meta-item">
               <span>👤</span>
@@ -270,6 +279,14 @@
           </div>
         </header>
 
+        <!-- 目录 (JS 动态生成) -->
+        <nav class="post-toc" id="post-toc" aria-label="目录导航">
+          <details class="toc-details" id="toc-details">
+            <summary class="toc-summary">📑 目录</summary>
+            <ul class="toc-list" id="toc-list"></ul>
+          </details>
+        </nav>
+
         <div class="post-content">
           {{ content }}
           
@@ -282,6 +299,80 @@
           </div>
           {% endif %}
         </div>
+
+        <!-- 上一篇 / 下一篇 -->
+        {% assign sorted_posts = site.posts | sort: 'date' %}
+        {% assign current_idx = -1 %}
+        {% for sp in sorted_posts %}
+          {% if sp.url == page.url %}
+            {% assign current_idx = forloop.index0 %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+        {% if current_idx >= 0 %}
+        <nav class="post-nav" aria-label="文章导航">
+          {% assign prev_idx = current_idx | minus: 1 %}
+          {% if prev_idx >= 0 %}
+            {% assign prev_post = sorted_posts[prev_idx] %}
+            <a href="{{ prev_post.url }}" class="post-nav-link post-nav-prev" title="上一篇：{{ prev_post.title }}">
+              <span class="post-nav-label">← 上一篇</span>
+              <span class="post-nav-title">{{ prev_post.title }}</span>
+            </a>
+          {% else %}
+            <span class="post-nav-link post-nav-prev post-nav-empty"></span>
+          {% endif %}
+          {% assign next_idx = current_idx | plus: 1 %}
+          {% assign next_post = sorted_posts[next_idx] %}
+          {% if next_post %}
+            <a href="{{ next_post.url }}" class="post-nav-link post-nav-next" title="下一篇：{{ next_post.title }}">
+              <span class="post-nav-label">下一篇 →</span>
+              <span class="post-nav-title">{{ next_post.title }}</span>
+            </a>
+          {% else %}
+            <span class="post-nav-link post-nav-next post-nav-empty"></span>
+          {% endif %}
+        </nav>
+        {% endif %}
+
+        <!-- 相关文章 -->
+        {% assign max_related = 4 %}
+        {% assign related_count = 0 %}
+        {% assign related_posts = "" | split: "" %}
+        {% for rp in site.posts %}
+          {% if rp.url != page.url and related_count < max_related %}
+            {% assign shared_category = false %}
+            {% for cat in page.categories %}
+              {% if rp.categories contains cat %}
+                {% assign shared_category = true %}
+                {% break %}
+              {% endif %}
+            {% endfor %}
+            {% if shared_category %}
+              {% assign related_posts = related_posts | push: rp %}
+              {% assign related_count = related_count | plus: 1 %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if related_posts.size > 0 %}
+        <section class="related-posts">
+          <h3 class="related-posts-title">📎 相关文章</h3>
+          <div class="related-posts-grid">
+            {% for rp in related_posts %}
+            <a href="{{ rp.url }}" class="related-post-card">
+              <span class="related-post-date">{{ rp.date | date: "%Y-%m-%d" }}</span>
+              <span class="related-post-title">{{ rp.title }}</span>
+              {% if rp.categories %}
+              <span class="related-post-cats">
+                {% for cat in rp.categories %}
+                <span class="related-post-cat">{{ cat }}</span>
+                {% endfor %}
+              </span>
+              {% endif %}
+            </a>
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
       </article>
     </div>
   </div>
@@ -345,5 +436,50 @@
       });
   });
   </script>
+  {% if page.layout == 'post' %}
+  <script>
+  (function() {
+    var content = document.querySelector('.post-content');
+    var toc = document.getElementById('post-toc');
+    var tocList = document.getElementById('toc-list');
+    var tocDetails = document.getElementById('toc-details');
+    if (!content || !toc || !tocList) return;
+
+    var headings = content.querySelectorAll('h2, h3');
+    if (headings.length < 3) {
+      toc.style.display = 'none';
+      return;
+    }
+
+    toc.style.display = 'block';
+
+    headings.forEach(function(h, i) {
+      // Add ID if missing
+      if (!h.id) {
+        h.id = 'heading-' + (i + 1);
+      }
+
+      var li = document.createElement('li');
+      li.className = 'toc-item toc-' + h.tagName.toLowerCase();
+      var a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent.trim();
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Close TOC on mobile after click
+          if (window.innerWidth < 768 && tocDetails) {
+            tocDetails.open = false;
+          }
+        }
+      });
+      li.appendChild(a);
+      tocList.appendChild(li);
+    });
+  })();
+  </script>
+  {% endif %}
 </body>
 </html>
