@@ -1,146 +1,488 @@
----
-layout: null
-title: xvcenh的博客
----
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>xvcenh的博客</title>
-    <meta name="description" content="xvcenh(徐辰)的技术博客 - 记录软件开发、运维部署、数据库管理与工具使用中的问题与解决方案。涵盖硬件配置、软件技巧、数据库优化、部署运维等五大技术领域。">
-    <meta name="keywords" content="xvcenh,徐辰,技术博客,软件开发,运维部署,数据库,硬件,工具,博客,blog">
-    <meta name="author" content="xvcenh">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="https://xvcenh.github.io/">
-    {% seo %}
+     1|---
+     2|layout: null
+     3|title: xvcenh的博客
+     4|---
+     5|<!DOCTYPE html>
+     6|<html lang="zh-CN">
+     7|<head>
+     8|    <meta charset="UTF-8">
+     9|    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    10|    <title>xvcenh的博客</title>
+    11|    <meta name="description" content="xvcenh(徐辰)的技术博客 - 记录软件开发、运维部署、数据库管理与工具使用中的问题与解决方案。涵盖硬件配置、软件技巧、数据库优化、部署运维等五大技术领域。">
+    12|    <meta name="keywords" content="xvcenh,徐辰,技术博客,软件开发,运维部署,数据库,硬件,工具,博客,blog">
+    13|    <meta name="author" content="xvcenh">
+    14|    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    15|    <link rel="canonical" href="https://xvcenh.github.io/">
+    16|    {% seo %}
     <link rel="stylesheet" href="/assets/css/style.css">
-</head>
-<body>
-    <div class="noise-overlay"></div>
-
-    <!-- XVCENH 霓虹拼字区域 -->
-    <div id="xvcenh-section">
-        <canvas class="stars-bg"></canvas>
-        <canvas id="xvcenh-canvas"></canvas>
-        <div class="scanlines"></div>
-        <div id="scroll-hint">
-            <div class="arrow"></div>
-            <span>向下滚动探索</span>
-        </div>
-    </div>
-
-    <!-- 3D 星系区域 -->
-    <div id="galaxy-section">
-
-        <!-- 画布容器 -->
-        <div id="canvas-container"></div>
-
-        <!-- 扫描线 -->
-        <div class="scanlines"></div>
-
-        <!-- 浮动形状 -->
-        <div class="floating-shapes">
-            <div class="shape shape--ring"></div>
-            <div class="shape shape--ring-sm"></div>
-            <div class="shape shape--diamond"></div>
-            <div class="shape shape--cross"></div>
-            <div class="shape shape--tri"></div>
-        </div>
-
-        <!-- 标签覆盖层 -->
-        <div id="labels-layer"></div>
-
-        <!-- 详情面板 -->
-        <div id="detail-panel">
-            <div class="panel-name"></div>
-            <div class="panel-hint"></div>
-            <div class="panel-articles"></div>
-        </div>
-
-        <!-- 顶部标题 -->
-        <div id="title-bar">
-            <div class="logo-area">
-                <div class="logo-icon"></div>
-                <div>
-                    <h1 data-text="🪐 xvcenh的博客">🪐 xvcenh的博客</h1>
-                    <div class="subtitle">BLOG · 记录与分享</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 底部操作提示 -->
-        <div id="hint-bar">
-            <span><span class="dot"></span> 拖拽旋转</span>
-            <span>🖱 滚轮缩放</span>
-            <span>✨ 悬停探索</span>
-            <span>🪐 点击进入</span>
-        </div>
-
-    </div>
-
-    <!-- 博客内容区 -->
-    <div id="content-section">
-        <div class="container">
-
-            <!-- 分类标签 -->
-            <div class="category-tags">
-                <a href="/categories/软件/" class="category-tag">💻 软件</a>
-                <a href="/categories/硬件/" class="category-tag">🔧 硬件</a>
-                <a href="/categories/数据库/" class="category-tag">🗄 数据库</a>
-                <a href="/categories/部署/" class="category-tag">🚀 部署</a>
-                <a href="/categories/工具/" class="category-tag">🛠 工具</a>
-                <a href="/search/" class="category-tag">🔍 搜索</a>
-                <a href="/about/" class="category-tag">ℹ 关于</a>
-            </div>
-
-            <!-- 最新文章 -->
-            <h2 class="section-title">📝 最新文章</h2>
-
-            {% if site.posts.size > 0 %}
-            {% for post in site.posts limit: 8 %}
-            <div class="post-card">
-                <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
-                <div class="post-meta">
-                    <span>📅 {{ post.date | date: "%Y-%m-%d" }}</span>
-                    {% if post.categories %}
-                    {% for category in post.categories %}
-                    <span>🏷 {{ category }}</span>
-                    {% endfor %}
-                    {% endif %}
-                </div>
-                <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 120 }}</p>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="post-card" style="text-align:center; color:#6a8aaa; padding:40px;">
-                <p>暂无文章记录，开始记录第一个问题吧 ✨</p>
-            </div>
-            {% endif %}
-
-            <div class="footer-note">
-                © 2026 xvcenh · <a href="https://github.com/xvcenh/xvcenh.github.io" style="color:#64748b;">GitHub</a> · 基于 Jekyll + GitHub Pages 构建
-            </div>
-        </div>
-    </div>
-
-    <!-- Three.js Import Map -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
-
-    <!-- 3D Galaxy -->
+   439|</head>
+   440|<body>
+   441|    <div class="noise-overlay"></div>
+   442|
+   443|    <!-- XVCENH 霓虹拼字区域 -->
+   444|    <div id="xvcenh-section">
+   445|        <canvas class="stars-bg"></canvas>
+   446|        <canvas id="xvcenh-canvas"></canvas>
+   447|        <div class="scanlines"></div>
+   448|        <div id="scroll-hint">
+   449|            <div class="arrow"></div>
+   450|            <span>向下滚动探索</span>
+   451|        </div>
+   452|    </div>
+   453|
+   454|    <!-- 3D 星系区域 -->
+   455|    <div id="galaxy-section">
+   456|
+   457|        <!-- 画布容器 -->
+   458|        <div id="canvas-container"></div>
+   459|
+   460|        <!-- 扫描线 -->
+   461|        <div class="scanlines"></div>
+   462|
+   463|        <!-- 浮动形状 -->
+   464|        <div class="floating-shapes">
+   465|            <div class="shape shape--ring"></div>
+   466|            <div class="shape shape--ring-sm"></div>
+   467|            <div class="shape shape--diamond"></div>
+   468|            <div class="shape shape--cross"></div>
+   469|            <div class="shape shape--tri"></div>
+   470|        </div>
+   471|
+   472|        <!-- 标签覆盖层 -->
+   473|        <div id="labels-layer"></div>
+   474|
+   475|        <!-- 详情面板 -->
+   476|        <div id="detail-panel">
+   477|            <div class="panel-name"></div>
+   478|            <div class="panel-hint"></div>
+   479|            <div class="panel-articles"></div>
+   480|        </div>
+   481|
+   482|        <!-- 顶部标题 -->
+   483|        <div id="title-bar">
+   484|            <div class="logo-area">
+   485|                <div class="logo-icon"></div>
+   486|                <div>
+   487|                    <h1 data-text="🪐 xvcenh的博客">🪐 xvcenh的博客</h1>
+   488|                    <div class="subtitle">BLOG · 记录与分享</div>
+   489|                </div>
+   490|            </div>
+   491|        </div>
+   492|
+   493|        <!-- 底部操作提示 -->
+   494|        <div id="hint-bar">
+   495|            <span><span class="dot"></span> 拖拽旋转</span>
+   496|            <span>🖱 滚轮缩放</span>
+   497|            <span>✨ 悬停探索</span>
+   498|            <span>🪐 点击进入</span>
+   499|        </div>
+   500|
+   501|    </div>
+   502|
+   503|    <!-- 博客内容区 -->
+   504|    <div id="content-section">
+   505|        <div class="container">
+   506|
+   507|            <!-- 分类标签 -->
+   508|            <div class="category-tags">
+   509|                <a href="/categories/软件/" class="category-tag">💻 软件</a>
+   510|                <a href="/categories/硬件/" class="category-tag">🔧 硬件</a>
+   511|                <a href="/categories/数据库/" class="category-tag">🗄 数据库</a>
+   512|                <a href="/categories/部署/" class="category-tag">🚀 部署</a>
+   513|                <a href="/categories/工具/" class="category-tag">🛠 工具</a>
+   514|                <a href="/search/" class="category-tag">🔍 搜索</a>
+   515|                <a href="/about/" class="category-tag">ℹ 关于</a>
+   516|            </div>
+   517|
+   518|            <!-- 最新文章 -->
+   519|            <h2 class="section-title">📝 最新文章</h2>
+   520|
+   521|            {% if site.posts.size > 0 %}
+   522|            {% for post in site.posts limit: 8 %}
+   523|            <div class="post-card">
+   524|                <h3><a href="{{ post.url }}">{{ post.title }}</a></h3>
+   525|                <div class="post-meta">
+   526|                    <span>📅 {{ post.date | date: "%Y-%m-%d" }}</span>
+   527|                    {% if post.categories %}
+   528|                    {% for category in post.categories %}
+   529|                    <span>🏷 {{ category }}</span>
+   530|                    {% endfor %}
+   531|                    {% endif %}
+   532|                </div>
+   533|                <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 120 }}</p>
+   534|            </div>
+   535|            {% endfor %}
+   536|            {% else %}
+   537|            <div class="post-card" style="text-align:center; color:#6a8aaa; padding:40px;">
+   538|                <p>暂无文章记录，开始记录第一个问题吧 ✨</p>
+   539|            </div>
+   540|            {% endif %}
+   541|
+   542|            <div class="footer-note">
+   543|                © 2026 xvcenh · <a href="https://github.com/xvcenh/xvcenh.github.io" style="color:#64748b;">GitHub</a> · 基于 Jekyll + GitHub Pages 构建
+   544|            </div>
+   545|        </div>
+   546|    </div>
+   547|
+   548|    <!-- Three.js Import Map -->
+   549|    <script type="importmap">
+   550|        {
+   551|            "imports": {
+   552|                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+   553|                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+   554|            }
+   555|        }
+   556|    </script>
+   557|
     <script type="module" src="/assets/js/galaxy.js"></script>
-
-    <!-- XVCENH Neon Text -->
-    <script src="/assets/js/xvcenh.js" defer></script>
-
-    <!-- Star Particles + Card Effects -->
-    <script src="/assets/js/stars.js" defer></script>
-</body>
-</html>
+  1506|
+  1507|    <!-- XVCENH 几何拼字动画（叠加在3D星系之上） -->
+  1508|    <script>
+  1509|    (function() {
+  1510|        const canvas = document.getElementById('xvcenh-canvas');
+  1511|        const ctx = canvas.getContext('2d');
+  1512|
+  1513|        let W, H, centerX, centerY;
+  1514|
+  1515|        function resize() {
+  1516|            W = window.innerWidth;
+  1517|            H = window.innerHeight;
+  1518|            centerX = W / 2;
+  1519|            centerY = H / 2;
+  1520|            canvas.width = W;
+  1521|            canvas.height = H;
+  1522|        }
+  1523|        resize();
+  1524|        window.addEventListener('resize', () => { resize(); rebuildAll(); });
+  1525|
+  1526|        const neonColors = [
+  1527|            { hex: '#00e5ff', h: 192, s: 100, l: 50 },
+  1528|            { hex: '#40c4ff', h: 200, s: 100, l: 62 },
+  1529|            { hex: '#7c4dff', h: 260, s: 100, l: 65 },
+  1530|            { hex: '#e040fb', h: 290, s: 90, l: 62 },
+  1531|            { hex: '#ff4081', h: 340, s: 100, l: 62 },
+  1532|            { hex: '#ff6e40', h: 16, s: 100, l: 62 },
+  1533|            { hex: '#ffab00', h: 40, s: 100, l: 50 },
+  1534|            { hex: '#00e676', h: 150, s: 100, l: 45 },
+  1535|        ];
+  1536|
+  1537|        function lerpHue(h1, h2, t) {
+  1538|            let dh = h2 - h1; if (dh > 180) dh -= 360; if (dh < -180) dh += 360;
+  1539|            return (h1 + dh * t + 360) % 360;
+  1540|        }
+  1541|        function getColor(frac) {
+  1542|            const stops = [
+  1543|                { pos: 0.0, c: neonColors[0] }, { pos: 0.3, c: neonColors[2] },
+  1544|                { pos: 0.55, c: neonColors[3] }, { pos: 0.8, c: neonColors[5] },
+  1545|                { pos: 1.0, c: neonColors[6] },
+  1546|            ];
+  1547|            let lo = stops[0], hi = stops[stops.length - 1];
+  1548|            for (let i = 0; i < stops.length - 1; i++) {
+  1549|                if (frac >= stops[i].pos && frac <= stops[i + 1].pos) { lo = stops[i]; hi = stops[i + 1]; break; }
+  1550|            }
+  1551|            const range = hi.pos - lo.pos, t = range ? Math.min(1, Math.max(0, (frac - lo.pos) / range)) : 0;
+  1552|            const h = lerpHue(lo.c.h, hi.c.h, t), s = lo.c.s + (hi.c.s - lo.c.s) * t, l = lo.c.l + (hi.c.l - lo.c.l) * t;
+  1553|            return `hsl(${h}, ${s}%, ${l}%)`;
+  1554|        }
+  1555|
+  1556|        function defineLetterComponents() {
+  1557|            return {
+  1558|                'X': [{ dx: 0, dy: 0, w: 0.18, h: 1.08, angle: 45, round: 10 }, { dx: 0, dy: 0, w: 0.18, h: 1.08, angle: -45, round: 10 }],
+  1559|                'V': [{ dx: -0.18, dy: 0.05, w: 0.18, h: 1.1, angle: -22, round: 8 }, { dx: 0.18, dy: 0.05, w: 0.18, h: 1.1, angle: 22, round: 8 }],
+  1560|                'C': [{ dx: -0.38, dy: 0, w: 0.16, h: 0.85, angle: 0, round: 8 }, { dx: 0, dy: -0.38, w: 0.65, h: 0.16, angle: 0, round: 8 }, { dx: 0, dy: 0.38, w: 0.65, h: 0.16, angle: 0, round: 8 }],
+  1561|                'E': [{ dx: -0.42, dy: 0, w: 0.16, h: 1.0, angle: 0, round: 6 }, { dx: 0.05, dy: -0.42, w: 0.7, h: 0.16, angle: 0, round: 6 }, { dx: 0, dy: 0, w: 0.6, h: 0.16, angle: 0, round: 6 }, { dx: 0.05, dy: 0.42, w: 0.7, h: 0.16, angle: 0, round: 6 }],
+  1562|                'N': [{ dx: 0, dy: 0, w: 0.18, h: 1.12, angle: 57, round: 6 }, { dx: -0.42, dy: 0, w: 0.18, h: 1.0, angle: 0, round: 6 }, { dx: 0.42, dy: 0, w: 0.18, h: 1.0, angle: 0, round: 6 }],
+  1563|                'H': [{ dx: -0.4, dy: 0, w: 0.16, h: 1.0, angle: 0, round: 8 }, { dx: 0.4, dy: 0, w: 0.16, h: 1.0, angle: 0, round: 8 }, { dx: 0, dy: 0, w: 0.8, h: 0.24, angle: 0, round: 8 }],
+  1564|            };
+  1565|        }
+  1566|
+  1567|        let allParts = [], rawTargets = [];
+  1568|
+  1569|        function computeAllTargets(letterSet) {
+  1570|            const baseHeight = Math.min(H * 0.38, W * 0.09);
+  1571|            const spacing = baseHeight * 0.15;
+  1572|            const widthCoeff = { X: 1.0, V: 0.95, C: 1.0, E: 1.05, N: 1.05, H: 1.0 };
+  1573|            const letters = ['X', 'V', 'C', 'E', 'N', 'H'];
+  1574|            const letterWidthArr = letters.map(l => widthCoeff[l] * baseHeight);
+  1575|            const totalWidth = letterWidthArr.reduce((a, b) => a + b, 0) + spacing * (letters.length - 1);
+  1576|            let currentX = centerX - totalWidth / 2;
+  1577|            const parts = [];
+  1578|            letters.forEach((letter, idx) => {
+  1579|                const components = letterSet[letter];
+  1580|                const letterW = letterWidthArr[idx], letterH = baseHeight;
+  1581|                const letterCenterX = currentX + letterW / 2, letterCenterY = centerY;
+  1582|                const letterFrac = idx / (letters.length - 1);
+  1583|                components.forEach(comp => {
+  1584|                    parts.push({
+  1585|                        letter, color: getColor(letterFrac),
+  1586|                        targetX: letterCenterX + comp.dx * letterW, targetY: letterCenterY + comp.dy * letterH,
+  1587|                        w: comp.w * letterW, h: comp.h * letterH,
+  1588|                        angle: comp.angle * Math.PI / 180, round: comp.round || 6,
+  1589|                    });
+  1590|                });
+  1591|                currentX += letterW + spacing;
+  1592|            });
+  1593|            return parts;
+  1594|        }
+  1595|
+  1596|        class PartParticle {
+  1597|            constructor(target) {
+  1598|                this.tx = target.targetX; this.ty = target.targetY;
+  1599|                this.tw = target.w; this.th = target.h; this.tAngle = target.angle;
+  1600|                this.color = target.color; this.round = target.round;
+  1601|                this.cx = Math.random() * W; this.cy = Math.random() * H;
+  1602|                this.vx = 0; this.vy = 0;
+  1603|                this.w = this.tw * (0.9 + Math.random() * 0.2); this.h = this.th * (0.9 + Math.random() * 0.2);
+  1604|                this.angle = Math.random() * Math.PI * 2;
+  1605|                this.rotationSpeed = (Math.random() - 0.5) * 0.06;
+  1606|                this.spring = 0.018 + Math.random() * 0.03;
+  1607|                this.damping = 0.82 + Math.random() * 0.1;
+  1608|                this.alpha = 0.9 + Math.random() * 0.1;
+  1609|            }
+  1610|            setScatterTarget() {
+  1611|                const r = Math.random();
+  1612|                if (r < 0.15) { this.tx = -80 - Math.random() * 200; this.ty = Math.random() * H; }
+  1613|                else if (r < 0.3) { this.tx = W + 80 + Math.random() * 200; this.ty = Math.random() * H; }
+  1614|                else if (r < 0.45) { this.tx = Math.random() * W; this.ty = -80 - Math.random() * 200; }
+  1615|                else if (r < 0.6) { this.tx = Math.random() * W; this.ty = H + 80 + Math.random() * 200; }
+  1616|                else { this.tx = (Math.random() - 0.5) * W * 1.3 + centerX; this.ty = (Math.random() - 0.5) * H * 1.3 + centerY; }
+  1617|            }
+  1618|            update(dt, globalTime, isConverged) {
+  1619|                const dx = this.tx - this.cx, dy = this.ty - this.cy;
+  1620|                this.vx += dx * this.spring * dt * 60; this.vy += dy * this.spring * dt * 60;
+  1621|                this.vx *= this.damping; this.vy *= this.damping;
+  1622|                this.cx += this.vx * dt * 60; this.cy += this.vy * dt * 60;
+  1623|                const dist = Math.sqrt(dx * dx + dy * dy);
+  1624|                if (isConverged && dist < 6) {
+  1625|                    this.angle += (this.tAngle - this.angle) * 0.12;
+  1626|                    this.rotationSpeed *= 0.9;
+  1627|                } else { this.angle += this.rotationSpeed * dt * 60; }
+  1628|                this.w += (this.tw - this.w) * 0.15; this.h += (this.th - this.h) * 0.15;
+  1629|            }
+  1630|            draw(ctx) {
+  1631|                ctx.save();
+  1632|                ctx.globalAlpha = this.alpha;
+  1633|                ctx.shadowColor = this.color; ctx.shadowBlur = 8;
+  1634|                ctx.fillStyle = this.color;
+  1635|                ctx.translate(this.cx, this.cy); ctx.rotate(this.angle);
+  1636|                const hw = this.w / 2, hh = this.h / 2, r = Math.min(this.round, Math.min(hw, hh) * 0.5);
+  1637|                ctx.beginPath();
+  1638|                if (r > 0) {
+  1639|                    ctx.moveTo(-hw + r, -hh); ctx.lineTo(hw - r, -hh);
+  1640|                    ctx.quadraticCurveTo(hw, -hh, hw, -hh + r); ctx.lineTo(hw, hh - r);
+  1641|                    ctx.quadraticCurveTo(hw, hh, hw - r, hh); ctx.lineTo(-hw + r, hh);
+  1642|                    ctx.quadraticCurveTo(-hw, hh, -hw, hh - r); ctx.lineTo(-hw, -hh + r);
+  1643|                    ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+  1644|                } else { ctx.rect(-hw, -hh, this.w, this.h); }
+  1645|                ctx.closePath(); ctx.fill();
+  1646|                ctx.shadowBlur = 0;
+  1647|                ctx.restore();
+  1648|            }
+  1649|        }
+  1650|
+  1651|        let particles = [], isConverged = false, stateTimer = 0;
+  1652|        const CONV_TIME = 10.0, SCAT_TIME = 2.0;
+  1653|        let globalTime = 0;
+  1654|
+  1655|        function createParticles() {
+  1656|            const letterSet = defineLetterComponents();
+  1657|            const targets = computeAllTargets(letterSet);
+  1658|            rawTargets = targets.map(t => ({ tx: t.targetX, ty: t.targetY }));
+  1659|            particles = targets.map(t => {
+  1660|                const p = new PartParticle(t);
+  1661|                p.setScatterTarget(); p.cx = p.tx; p.cy = p.ty;
+  1662|                return p;
+  1663|            });
+  1664|        }
+  1665|
+  1666|        function toggle() {
+  1667|            isConverged = !isConverged;
+  1668|            stateTimer = 0;
+  1669|            if (isConverged) {
+  1670|                rawTargets.forEach((t, i) => { if (particles[i]) { particles[i].tx = t.tx; particles[i].ty = t.ty; } });
+  1671|                canvas.style.pointerEvents = 'none';
+  1672|            } else {
+  1673|                particles.forEach(p => p.setScatterTarget());
+  1674|                canvas.style.pointerEvents = 'auto';
+  1675|            }
+  1676|        }
+  1677|        function rebuildAll() {
+  1678|            createParticles();
+  1679|            if (!isConverged) particles.forEach(p => p.setScatterTarget());
+  1680|            else rawTargets.forEach((t, i) => { if (particles[i]) { particles[i].tx = t.tx; particles[i].ty = t.ty; } });
+  1681|        }
+  1682|
+  1683|        let mouseX = -999, mouseY = -999, mouseActive = false;
+  1684|        canvas.addEventListener('mousemove', e => {
+  1685|            if (canvas.getBoundingClientRect().bottom < 0) return;
+  1686|            mouseX = e.clientX; mouseY = e.clientY; mouseActive = true;
+  1687|        });
+  1688|        canvas.addEventListener('mouseleave', () => mouseActive = false);
+  1689|        canvas.addEventListener('touchmove', e => {
+  1690|            if (canvas.getBoundingClientRect().bottom < 0) return;
+  1691|            if (e.touches[0]) { mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; mouseActive = true; }
+  1692|        }, { passive: true });
+  1693|        canvas.addEventListener('touchend', () => mouseActive = false);
+  1694|        canvas.addEventListener('click', (e) => {
+  1695|            if (canvas.getBoundingClientRect().bottom < 0) return;
+  1696|            e.stopPropagation(); toggle();
+  1697|
+  1698|        function drawConnections() {
+  1699|            if (isConverged) return;
+  1700|            const maxDist = 90;
+  1701|            for (let i = 0; i < particles.length; i += 2) {
+  1702|                for (let j = i + 2; j < particles.length; j += 2) {
+  1703|                    const a = particles[i], b = particles[j];
+  1704|                    const dx = a.cx - b.cx, dy = a.cy - b.cy, dist = Math.sqrt(dx*dx + dy*dy);
+  1705|                    if (dist < maxDist) {
+  1706|                        ctx.strokeStyle = `rgba(200,220,255,${0.12 * (1 - dist/maxDist)})`;
+  1707|                        ctx.lineWidth = 0.6; ctx.beginPath();
+  1708|                        ctx.moveTo(a.cx, a.cy); ctx.lineTo(b.cx, b.cy); ctx.stroke();
+  1709|                    }
+  1710|                }
+  1711|            }
+  1712|        }
+  1713|
+  1714|        function animate(ts) {
+  1715|            requestAnimationFrame(animate);
+  1716|            const dt = Math.min(0.1, (ts - (animate.lastTs || ts)) / 1000);
+  1717|            animate.lastTs = ts; globalTime += dt;
+  1718|
+  1719|            stateTimer += dt;
+  1720|            if (stateTimer > (isConverged ? CONV_TIME : SCAT_TIME)) toggle();
+  1721|
+  1722|            for (const p of particles) p.update(dt, globalTime, isConverged);
+  1723|
+  1724|            if (mouseActive) {
+  1725|                const r = 130;
+  1726|                for (const p of particles) {
+  1727|                    const dx = p.cx - mouseX, dy = p.cy - mouseY, dist = Math.sqrt(dx*dx + dy*dy);
+  1728|                    if (dist < r && dist > 1) {
+  1729|                        const force = (1 - dist/r) * 0.5;
+  1730|                        p.vx += (dx/dist) * force; p.vy += (dy/dist) * force;
+  1731|                    }
+  1732|                }
+  1733|            }
+  1734|
+  1735|            // 透明背景，让3D星系显示出来
+  1736|            ctx.clearRect(0, 0, W, H);
+  1737|
+  1738|            drawConnections();
+  1739|            for (const p of particles) p.draw(ctx);
+  1740|        }
+  1741|
+  1742|        function init() {
+  1743|            resize();
+  1744|            createParticles();
+  1745|            isConverged = false; stateTimer = 0;
+  1746|            canvas.style.pointerEvents = 'auto';
+  1747|            animate.lastTs = performance.now();
+  1748|            requestAnimationFrame(animate);
+  1749|            setTimeout(() => { if (!isConverged) toggle(); }, 1500);
+  1750|        }
+  1751|
+  1752|        window.addEventListener('keydown', e => {
+  1753|            if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); toggle(); }
+  1754|        });
+  1755|
+  1756|        init();
+  1757|    })();
+  1758|    </script>
+  1759|
+  1760|    <!-- 星空 + 卡片效果 -->
+  1761|    <script>
+  1762|    (function() {
+  1763|        // 星空粒子系统
+  1764|        (function() {
+  1765|            const c = document.querySelector('.stars-bg');
+  1766|            if (!c || c.tagName !== 'CANVAS') return;
+  1767|            const ctx = c.getContext('2d');
+  1768|            const stars = [];
+  1769|            let w, h;
+  1770|            function resize() {
+  1771|                w = c.width = window.innerWidth; h = c.height = window.innerHeight;
+  1772|            }
+  1773|            resize();
+  1774|            for (let i = 0; i < 80; i++) {
+  1775|                stars.push({
+  1776|                    x: Math.random() * w, y: Math.random() * h,
+  1777|                    r: 0.3 + Math.random() * 1.2,
+  1778|                    vx: (Math.random() - 0.5) * 0.15,
+  1779|                    vy: (Math.random() - 0.5) * 0.15,
+  1780|                    a: 0.2 + Math.random() * 0.5,
+  1781|                    blink: Math.random() * Math.PI * 2
+  1782|                });
+  1783|            }
+  1784|            window.addEventListener('resize', resize);
+  1785|            function draw() {
+  1786|                ctx.clearRect(0, 0, w, h);
+  1787|                for (const s of stars) {
+  1788|                    s.x += s.vx; s.y += s.vy;
+  1789|                    if (s.x < 0) s.x = w; if (s.x > w) s.x = 0;
+  1790|                    if (s.y < 0) s.y = h; if (s.y > h) s.y = 0;
+  1791|                    const blink = s.a + Math.sin(Date.now() * 0.001 + s.blink) * 0.2;
+  1792|                    ctx.fillStyle = `rgba(200,220,255,${Math.max(0.1, blink)})`;
+  1793|                    ctx.beginPath();
+  1794|                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+  1795|                    ctx.fill();
+  1796|                }
+  1797|                requestAnimationFrame(draw);
+  1798|            }
+  1799|            draw();
+  1800|        })();
+  1801|
+  1802|        const contentSection = document.getElementById('content-section');
+  1803|        if (!contentSection) return;
+  1804|        const cards = document.querySelectorAll('#content-section .post-card');
+  1805|        if (!cards.length) return;
+  1806|
+  1807|        // 卡片入场动画 - 逐个延迟显现
+  1808|        const observer = new IntersectionObserver((entries) => {
+  1809|            entries.forEach((entry) => {
+  1810|                if (entry.isIntersecting) {
+  1811|                    const el = entry.target;
+  1812|                    const idx = parseInt(el.dataset.index) || 0;
+  1813|                    setTimeout(() => el.classList.add('visible'), idx * 60);
+  1814|                    observer.unobserve(el);
+  1815|                }
+  1816|            });
+  1817|        }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+  1818|
+  1819|        cards.forEach((card, i) => {
+  1820|            card.dataset.index = i;
+  1821|            observer.observe(card);
+  1822|        });
+  1823|
+  1824|        // 3D 倾斜
+  1825|        let tiltedCard = null;
+  1826|
+  1827|        contentSection.addEventListener('mousemove', (e) => {
+  1828|            const card = e.target.closest('.post-card');
+  1829|            if (!card || !card.classList.contains('visible')) {
+  1830|                if (tiltedCard) {
+  1831|                    tiltedCard.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+  1832|                    tiltedCard = null;
+  1833|                }
+  1834|                return;
+  1835|            }
+  1836|            if (tiltedCard && tiltedCard !== card) {
+  1837|                tiltedCard.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+  1838|            }
+  1839|            tiltedCard = card;
+  1840|            const r = card.getBoundingClientRect();
+  1841|            const x = (e.clientX - r.left) / r.width - 0.5;
+  1842|            const y = (e.clientY - r.top) / r.height - 0.5;
+  1843|            card.style.transform = `translateY(0) rotateX(${y * -6}deg) rotateY(${x * 8}deg)`;
+  1844|        });
+  1845|
+  1846|        contentSection.addEventListener('mouseleave', () => {
+  1847|            if (tiltedCard) {
+  1848|                tiltedCard.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+  1849|                tiltedCard = null;
+  1850|            }
+  1851|        });
+  1852|    })();
+  1853|    </script>
+  1854|</body>
+  1855|</html>
+  1856|
