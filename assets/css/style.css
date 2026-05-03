@@ -442,30 +442,159 @@ body {
   margin: 0 auto;
 }
 
-/* 响应式设计 */
+/* 响应式设计 - 统一移动端适配 */
 @media (max-width: 768px) {
+  /* ── 通用布局 ── */
   .header-content {
     flex-direction: column;
     gap: var(--space-sm);
     height: auto;
     padding: var(--space-sm) 0;
   }
-  
   .nav {
     flex-wrap: wrap;
     justify-content: center;
   }
-  
   .hero-title {
     font-size: 2rem;
   }
-  
   .issues-grid {
     grid-template-columns: 1fr;
   }
-  
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* ── 提示文字：桌面/移动切换 ── */
+  .hint-desktop { display: none !important; }
+  .hint-mobile { display: flex !important; }
+
+  /* ── 首页：标题栏 ── */
+  #title-bar {
+    padding: 12px 16px;
+    padding-bottom: 36px;
+  }
+  #title-bar h1 {
+    font-size: 1.15rem;
+  }
+  #title-bar .logo-icon {
+    width: 34px;
+    height: 34px;
+  }
+  #title-bar .subtitle {
+    font-size: 0.68rem;
+  }
+
+  /* ── 首页：操作提示 ── */
+  #hint-bar {
+    bottom: 50px;
+    gap: 10px;
+    font-size: 0.68rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ── 首页：内容区 ── */
+  #content-section {
+    padding: 40px 16px 60px;
+  }
+  #content-section .section-title {
+    font-size: 1.3rem;
+  }
+  #content-section .post-card {
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  #content-section .post-card h3 {
+    font-size: 1.05rem;
+  }
+  #content-section .post-card h3 a {
+    line-height: 1.45;
+  }
+  #content-section .post-meta {
+    font-size: 0.72rem;
+    gap: 10px;
+  }
+  #content-section .post-excerpt {
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  #content-section .category-tags {
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+  #content-section .category-tag {
+    padding: 8px 14px;
+    font-size: 0.75rem;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+  #content-section .footer-note {
+    font-size: 0.7rem;
+    padding-top: 32px;
+    margin-top: 24px;
+  }
+
+  /* ── 首页：滚动提示 ── */
+  #scroll-hint {
+    bottom: 28px;
+  }
+  #scroll-hint span {
+    font-size: 0.65rem;
+  }
+
+  /* ── 星系标签 ── */
+  .orbit-label {
+    font-size: 0.58rem;
+  }
+  .orbit-label.highlighted {
+    font-size: 0.7rem;
+  }
+  #detail-panel {
+    min-width: 110px;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+  }
+
+  /* ── 文章页：前后导航 ── */
+  .post-nav {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .post-nav-next {
+    text-align: left;
+  }
+
+  /* ── 文章页：相关文章 ── */
+  .related-posts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── 文章页：代码块 ── */
+  .post-content pre {
+    padding: 1rem;
+    font-size: 0.8rem;
+    margin: 1rem 0;
+  }
+
+  /* ── TOC：手风琴 ── */
+  .post-toc {
+    padding: var(--space-sm);
+  }
+
+  /* ── 移动端交互优化 ── */
+  #xvcenh-section, #galaxy-section {
+    touch-action: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  #content-section .category-tag,
+  #content-section .post-card h3 a {
+    touch-action: manipulation;
+  }
+  body {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 
@@ -825,6 +954,8 @@ canvas {
     align-items: center;
     gap: 6px;
 }
+.hint-desktop { display: flex; align-items: center; gap: 6px; }
+.hint-mobile { display: none; }
 #hint-bar .dot {
     width: 6px;
     height: 6px;
@@ -921,62 +1052,6 @@ canvas {
     font-size: 0.68rem;
     color: #90bcd8;
     line-height: 1.5;
-}
-
-/* Homepage Responsive */
-@media (max-width: 768px) {
-    #title-bar {
-        padding: 12px 16px;
-        padding-bottom: 36px;
-    }
-    #title-bar h1 {
-        font-size: 1.2rem;
-    }
-    #title-bar .logo-icon {
-        width: 34px;
-        height: 34px;
-    }
-    #title-bar .subtitle {
-        font-size: 0.68rem;
-    }
-    #hint-bar {
-        bottom: 50px;
-        gap: 12px;
-        font-size: 0.68rem;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    #content-section {
-        padding: 40px 16px 60px;
-    }
-    #content-section .section-title {
-        font-size: 1.3rem;
-    }
-    #content-section .post-card {
-        padding: 16px 18px;
-    }
-    #content-section .category-tags {
-        gap: 6px;
-        margin-bottom: 28px;
-    }
-    #content-section .category-tag {
-        padding: 4px 12px;
-        font-size: 0.72rem;
-    }
-    #scroll-hint {
-        bottom: 24px;
-    }
-    .orbit-label {
-        font-size: 0.6rem;
-    }
-    .orbit-label.highlighted {
-        font-size: 0.72rem;
-    }
-    #detail-panel {
-        min-width: 110px;
-        padding: 10px 14px;
-        font-size: 0.72rem;
-    }
 }
 
 /* ===== Code Block Syntax Highlighting ===== */
@@ -1172,17 +1247,6 @@ canvas {
   pointer-events: none;
 }
 
-@media (max-width: 768px) {
-  .post-nav {
-    flex-direction: column;
-    gap: var(--space-sm);
-  }
-
-  .post-nav-next {
-    text-align: left;
-  }
-}
-
 /* ===== Related Posts ===== */
 .related-posts {
   margin-top: var(--space-lg);
@@ -1247,10 +1311,4 @@ canvas {
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-}
-
-@media (max-width: 768px) {
-  .related-posts-grid {
-    grid-template-columns: 1fr;
-  }
 }
