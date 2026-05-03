@@ -584,16 +584,10 @@ body {
   }
 
   /* ── 移动端交互优化 ── */
+  /* 仅星系区域需要touch-action:none（3D拖拽），XVCENH区域允许正常滚动 */
   #galaxy-section {
     touch-action: none;
     -webkit-overflow-scrolling: touch;
-  }
-  /* XVCENH区域允许滚动，仅canvas内禁用touch-action */
-  #xvcenh-section {
-    -webkit-overflow-scrolling: touch;
-  }
-  #xvcenh-canvas {
-    touch-action: none;
   }
   #content-section .category-tag,
   #content-section .post-card h3 a {
@@ -762,7 +756,7 @@ body.pointer-cursor {
     position: absolute;
     inset: 0;
     z-index: 1;
-    pointer-events: auto;
+    pointer-events: none;
     background: transparent;
 }
 canvas {

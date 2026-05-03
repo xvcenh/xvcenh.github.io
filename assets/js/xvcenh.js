@@ -186,6 +186,7 @@
         canvas.addEventListener('click', (e) => {
             if (canvas.getBoundingClientRect().bottom < 0) return;
             e.stopPropagation(); toggle();
+        });
 
         function drawConnections() {
             if (isConverged) return;
@@ -235,7 +236,8 @@
             resize();
             createParticles();
             isConverged = false; stateTimer = 0;
-            canvas.style.pointerEvents = 'auto';
+            // 初始不拦截触摸，等1.5秒后toggle才启用交互
+            canvas.style.pointerEvents = 'none';
             animate.lastTs = performance.now();
             requestAnimationFrame(animate);
             setTimeout(() => { if (!isConverged) toggle(); }, 1500);
