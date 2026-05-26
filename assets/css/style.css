@@ -629,18 +629,8 @@ body {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* ===== Homepage Styles ===== */
-:root {
-    --bg: #f0f4fa;
-    --text: #1e293b;
-    --text-light: #64748b;
-    --accent: #3b82f6;
-    --card-bg: #ffffff;
-    --card-border: #e2e8f0;
-    --panel-bg: rgba(8, 12, 30, 0.9);
-    --panel-text: #c8d6f8;
-    --panel-text-light: #7ea8cc;
-}
+/* ===== Homepage Styles (scoped to index.html) ===== */
+/* Variables moved to index.html inline styles to avoid overriding dark theme */
 
 * {
     margin: 0;
@@ -649,9 +639,9 @@ body {
 }
 
 body {
-    background: var(--bg);
+    background: var(--bg-primary);
     font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
-    color: var(--text);
+    color: var(--text-primary);
     cursor: default;
     -webkit-tap-highlight-color: transparent;
 }
