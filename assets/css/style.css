@@ -1313,3 +1313,82 @@ canvas {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
 }
+
+/* ===== 开源工具网格 ===== */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.tool-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.tool-card:hover {
+  border-color: var(--primary);
+  background: rgba(96, 165, 250, 0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.tool-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tool-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.tool-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.tool-arrow {
+  font-size: 1.25rem;
+  color: var(--text-light);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.tool-card:hover .tool-arrow {
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+@media (max-width: 640px) {
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tool-card {
+    padding: var(--space-sm) var(--space-md);
+  }
+}
