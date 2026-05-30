@@ -1,0 +1,579 @@
+---
+layout: null
+title: 技术图谱
+permalink: /tech-graph/
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术图谱 — xvcenh的博客</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --border: rgba(255,255,255,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+  canvas { display: block; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+
+  /* ── 顶部栏 ── */
+  .top-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px;
+    background: linear-gradient(180deg, rgba(10,15,30,0.95) 0%, rgba(10,15,30,0) 100%);
+    pointer-events: none;
+  }
+  .top-bar > * { pointer-events: auto; }
+  .top-bar h1 {
+    font-size: 1.25rem; font-weight: 600;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .top-bar .back {
+    color: var(--text2); text-decoration: none; font-size: 0.85rem;
+    padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .top-bar .back:hover { color: #60a5fa; border-color: rgba(96,165,250,0.3); }
+
+  /* ── 图例 ── */
+  .legend {
+    position: fixed; bottom: 20px; left: 20px; z-index: 10;
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 12px 16px; border-radius: 12px;
+    background: rgba(15,23,42,0.85); backdrop-filter: blur(10px);
+    border: 1px solid var(--border); font-size: 0.75rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; color: var(--text2); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── 提示框 ── */
+  .tooltip {
+    position: fixed; z-index: 20; pointer-events: none;
+    opacity: 0; transition: opacity 0.2s;
+    background: rgba(15,23,42,0.92); backdrop-filter: blur(12px);
+    border: 1px solid rgba(96,165,250,0.3); border-radius: 12px;
+    padding: 14px 18px; min-width: 180px; max-width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(96,165,250,0.1);
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip-name { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+  .tooltip-cat { font-size: 0.72rem; color: var(--text3); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .tooltip-projects { font-size: 0.8rem; color: var(--text2); line-height: 1.5; }
+  .tooltip-projects span { color: #93c5fd; }
+
+  /* ── 提示文字 ── */
+  .hint {
+    position: fixed; bottom: 20px; right: 20px; z-index: 10;
+    font-size: 0.72rem; color: var(--text3); text-align: right;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .top-bar { padding: 12px 16px; }
+    .top-bar h1 { font-size: 1rem; }
+    .legend { bottom: 12px; left: 12px; font-size: 0.68rem; padding: 8px 12px; gap: 8px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="/" class="back">← 返回首页</a>
+  <h1>🕸 技术图谱</h1>
+  <div style="width:80px;"></div>
+</div>
+
+<canvas id="graph"></canvas>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-name" id="tt-name"></div>
+  <div class="tooltip-cat" id="tt-cat"></div>
+  <div class="tooltip-projects" id="tt-projects"></div>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="hint">
+  🖱 拖拽节点 · 滚轮缩放 · 悬停查看详情<br>
+  📱 拖拽移动 · 双指缩放 · 点击查看详情
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// 数据定义
+// ══════════════════════════════════════════════
+const CATEGORIES = {
+  language:  { label: '编程语言', color: '#60a5fa' },
+  framework: { label: '框架/库',  color: '#a78bfa' },
+  tool:      { label: '工具',     color: '#34d399' },
+  platform:  { label: '平台',     color: '#fbbf24' },
+  concept:   { label: '概念/领域', color: '#f472b6' },
+};
+
+const NODES = [
+  // 语言
+  { id: 'python',     label: 'Python',     cat: 'language',  size: 22 },
+  { id: 'javascript', label: 'JavaScript', cat: 'language',  size: 20 },
+  { id: 'html',       label: 'HTML/CSS',   cat: 'language',  size: 18 },
+  // 框架/库
+  { id: 'svg',        label: 'SVG',        cat: 'framework', size: 20 },
+  { id: 'smil',       label: 'SMIL',       cat: 'framework', size: 12 },
+  { id: 'canvas',     label: 'Canvas',     cat: 'framework', size: 14 },
+  { id: 'threejs',    label: 'Three.js',   cat: 'framework', size: 14 },
+  { id: 'vue',        label: 'Vue',        cat: 'framework', size: 15 },
+  { id: 'jekyll',     label: 'Jekyll',     cat: 'framework', size: 14 },
+  // 工具
+  { id: 'git',        label: 'Git',        cat: 'tool',      size: 16 },
+  { id: 'docker',     label: 'Docker',     cat: 'tool',      size: 16 },
+  { id: 'nginx',      label: 'Nginx',      cat: 'tool',      size: 14 },
+  { id: 'cli',        label: 'CLI',        cat: 'tool',      size: 15 },
+  { id: 'github',     label: 'GitHub',     cat: 'tool',      size: 16 },
+  { id: 'cursor',     label: 'Cursor',     cat: 'tool',      size: 13 },
+  { id: 'copilot',    label: 'Copilot',    cat: 'tool',      size: 13 },
+  // 平台
+  { id: 'ghpages',    label: 'GitHub Pages', cat: 'platform', size: 15 },
+  { id: 'terminal',   label: 'Terminal',    cat: 'platform', size: 14 },
+  { id: 'linux',      label: 'Linux',       cat: 'platform', size: 14 },
+  // 概念
+  { id: 'ai',         label: 'AI/LLM',     cat: 'concept',   size: 22 },
+  { id: 'scene',      label: '场景合成',    cat: 'concept',   size: 14 },
+  { id: 'simulation', label: '社会模拟',    cat: 'concept',   size: 13 },
+  { id: 'devtools',   label: 'DevTools',    cat: 'concept',   size: 13 },
+  { id: 'game',       label: 'Game Dev',    cat: 'concept',   size: 13 },
+  { id: 'seo',        label: 'SEO',         cat: 'concept',   size: 12 },
+  { id: 'animation',  label: 'Animation',   cat: 'concept',   size: 13 },
+];
+
+const EDGES = [
+  // 语言间
+  ['python', 'javascript'],
+  ['javascript', 'html'],
+  ['html', 'svg'],
+  // 框架关联
+  ['svg', 'smil'],
+  ['svg', 'html'],
+  ['svg', 'canvas'],
+  ['canvas', 'animation'],
+  ['threejs', 'javascript'],
+  ['threejs', 'canvas'],
+  ['threejs', 'animation'],
+  ['vue', 'javascript'],
+  ['vue', 'html'],
+  ['jekyll', 'html'],
+  ['jekyll', 'ghpages'],
+  // 工具关联
+  ['git', 'github'],
+  ['github', 'ghpages'],
+  ['docker', 'nginx'],
+  ['docker', 'linux'],
+  ['cli', 'terminal'],
+  ['cli', 'python'],
+  ['terminal', 'linux'],
+  ['cursor', 'ai'],
+  ['copilot', 'ai'],
+  ['cursor', 'copilot'],
+  // AI 关联
+  ['ai', 'python'],
+  ['ai', 'javascript'],
+  ['ai', 'devtools'],
+  // 概念关联
+  ['scene', 'svg'],
+  ['scene', 'ai'],
+  ['simulation', 'ai'],
+  ['simulation', 'python'],
+  ['simulation', 'terminal'],
+  ['devtools', 'cli'],
+  ['game', 'svg'],
+  ['game', 'canvas'],
+  ['game', 'animation'],
+  ['seo', 'jekyll'],
+  ['seo', 'ghpages'],
+];
+
+const PROJECTS = {
+  'svg-scene-engine': { color: '#8b5cf6', techs: ['html', 'javascript', 'svg', 'ai', 'scene', 'animation', 'canvas'] },
+  'svg-asset-library': { color: '#ec4899', techs: ['svg', 'html', 'smil', 'game', 'animation'] },
+  'claudescan':        { color: '#f59e0b', techs: ['python', 'cli', 'ai', 'devtools', 'git'] },
+  'liltown':           { color: '#10b981', techs: ['python', 'terminal', 'ai', 'simulation', 'cli'] },
+  'xvcenh.github.io':  { color: '#60a5fa', techs: ['html', 'javascript', 'jekyll', 'ghpages', 'vue', 'threejs', 'canvas', 'seo', 'animation'] },
+};
+
+// ══════════════════════════════════════════════
+// 图引擎
+// ══════════════════════════════════════════════
+const canvas = document.getElementById('graph');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+let W, H, dpr;
+
+// 视图变换
+let viewX = 0, viewY = 0, viewScale = 1;
+
+// 交互状态
+let hoveredNode = null;
+let draggedNode = null;
+let isPanning = false;
+let panStartX, panStartY, viewStartX, viewStartY;
+let lastTouchDist = 0;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// 初始化节点位置
+const nodes = NODES.map((n, i) => {
+  const angle = (i / NODES.length) * Math.PI * 2;
+  const radius = 180 + Math.random() * 120;
+  return {
+    ...n,
+    x: W / 2 + Math.cos(angle) * radius + (Math.random() - 0.5) * 60,
+    y: H / 2 + Math.sin(angle) * radius + (Math.random() - 0.5) * 60,
+    vx: 0, vy: 0,
+    color: CATEGORIES[n.cat].color,
+    // 找出所属项目
+    projects: Object.entries(PROJECTS)
+      .filter(([, p]) => p.techs.includes(n.id))
+      .map(([name]) => name),
+  };
+});
+
+const nodeMap = {};
+nodes.forEach(n => nodeMap[n.id] = n);
+
+const edges = EDGES.map(([a, b]) => ({
+  source: nodeMap[a],
+  target: nodeMap[b],
+}));
+
+// ── 力导向模拟 ──
+const DAMPING = 0.85;
+const REPULSION = 8000;
+const ATTRACTION = 0.008;
+const EDGE_LENGTH = 160;
+const CENTER_PULL = 0.0008;
+
+function simulate() {
+  const cx = W / 2, cy = H / 2;
+
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+    if (a === draggedNode) continue;
+
+    // 排斥力
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y;
+      let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      let force = REPULSION / (dist * dist);
+      let fx = (dx / dist) * force, fy = (dy / dist) * force;
+      a.vx += fx; a.vy += fy;
+      if (b !== draggedNode) { b.vx -= fx; b.vy -= fy; }
+    }
+
+    // 中心引力
+    a.vx += (cx - a.x) * CENTER_PULL;
+    a.vy += (cy - a.y) * CENTER_PULL;
+  }
+
+  // 边引力
+  for (const e of edges) {
+    let dx = e.target.x - e.source.x, dy = e.target.y - e.source.y;
+    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    let force = (dist - EDGE_LENGTH) * ATTRACTION;
+    let fx = (dx / dist) * force, fy = (dy / dist) * force;
+    if (e.source !== draggedNode) { e.source.vx += fx; e.source.vy += fy; }
+    if (e.target !== draggedNode) { e.target.vx -= fx; e.target.vy -= fy; }
+  }
+
+  // 更新位置
+  for (const n of nodes) {
+    if (n === draggedNode) continue;
+    n.vx *= DAMPING;
+    n.vy *= DAMPING;
+    n.x += n.vx;
+    n.y += n.vy;
+    // 边界
+    const margin = 80;
+    n.x = Math.max(margin, Math.min(W - margin, n.x));
+    n.y = Math.max(margin, Math.min(H - margin, n.y));
+  }
+}
+
+// ── 绘制 ──
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(viewX, viewY);
+  ctx.scale(viewScale, viewScale);
+
+  const highlightSet = new Set();
+  if (hoveredNode) {
+    highlightSet.add(hoveredNode.id);
+    for (const e of edges) {
+      if (e.source === hoveredNode) highlightSet.add(e.target.id);
+      if (e.target === hoveredNode) highlightSet.add(e.source.id);
+    }
+  }
+
+  // 绘制边
+  for (const e of edges) {
+    const isHl = hoveredNode && (e.source === hoveredNode || e.target === hoveredNode);
+    ctx.beginPath();
+    ctx.moveTo(e.source.x, e.source.y);
+    ctx.lineTo(e.target.x, e.target.y);
+    ctx.strokeStyle = isHl
+      ? 'rgba(96,165,250,0.5)'
+      : 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = isHl ? 2 : 1;
+    ctx.stroke();
+
+    // 连线上的小粒子动画
+    if (isHl) {
+      const t = (Date.now() % 2000) / 2000;
+      const px = e.source.x + (e.target.x - e.source.x) * t;
+      const py = e.source.y + (e.target.y - e.source.y) * t;
+      ctx.beginPath();
+      ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(96,165,250,0.8)';
+      ctx.fill();
+    }
+  }
+
+  // 绘制节点
+  for (const n of nodes) {
+    const isHl = highlightSet.has(n.id);
+    const isDimmed = hoveredNode && !isHl;
+    const alpha = isDimmed ? 0.2 : 1;
+    const r = n.size * (isHl ? 1.2 : 1);
+
+    // 光晕
+    if (isHl || !hoveredNode) {
+      const glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 2.5);
+      glow.addColorStop(0, n.color + (isHl ? '40' : '18'));
+      glow.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r * 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    }
+
+    // 节点圆
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = isDimmed ? n.color + '33' : n.color + 'cc';
+    ctx.fill();
+    ctx.strokeStyle = isHl ? '#fff' : n.color + '66';
+    ctx.lineWidth = isHl ? 2.5 : 1;
+    ctx.stroke();
+
+    // 标签
+    ctx.font = `${isHl ? '600' : '500'} ${isHl ? 13 : 11}px 'Segoe UI','PingFang SC',sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = isDimmed ? 'rgba(226,232,240,0.15)' : 'rgba(226,232,240,0.9)';
+    ctx.fillText(n.label, n.x, n.y + r + 14);
+  }
+
+  ctx.restore();
+}
+
+// ── 主循环 ──
+let simSteps = 0;
+function loop() {
+  if (simSteps < 300) { simulate(); simSteps++; }
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ══════════════════════════════════════════════
+// 交互
+// ══════════════════════════════════════════════
+function screenToWorld(sx, sy) {
+  return { x: (sx - viewX) / viewScale, y: (sy - viewY) / viewScale };
+}
+
+function findNode(sx, sy) {
+  const { x, y } = screenToWorld(sx, sy);
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    const dx = x - n.x, dy = y - n.y;
+    if (dx * dx + dy * dy < (n.size + 8) * (n.size + 8)) return n;
+  }
+  return null;
+}
+
+function showTooltip(n, sx, sy) {
+  const tt = document.getElementById('tt-name');
+  document.getElementById('tt-name').textContent = n.label;
+  document.getElementById('tt-cat').textContent = CATEGORIES[n.cat].label;
+  document.getElementById('tt-cat').style.color = n.color;
+  document.getElementById('tt-projects').innerHTML = n.projects
+    .map(p => `<span>• ${p}</span>`).join('<br>');
+  tooltip.style.left = Math.min(sx + 16, W - 280) + 'px';
+  tooltip.style.top = Math.max(sy - 60, 10) + 'px';
+  tooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+  tooltip.classList.remove('visible');
+}
+
+// 鼠标事件
+canvas.addEventListener('mousemove', (e) => {
+  if (draggedNode) {
+    const { x, y } = screenToWorld(e.clientX, e.clientY);
+    draggedNode.x = x;
+    draggedNode.y = y;
+    draggedNode.vx = 0;
+    draggedNode.vy = 0;
+    simSteps = Math.min(simSteps, 280); // 重新激活模拟
+    showTooltip(draggedNode, e.clientX, e.clientY);
+    return;
+  }
+  if (isPanning) {
+    viewX = viewStartX + (e.clientX - panStartX);
+    viewY = viewStartY + (e.clientY - panStartY);
+    return;
+  }
+  const n = findNode(e.clientX, e.clientY);
+  hoveredNode = n;
+  canvas.style.cursor = n ? 'pointer' : 'grab';
+  if (n) showTooltip(n, e.clientX, e.clientY);
+  else hideTooltip();
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  const n = findNode(e.clientX, e.clientY);
+  if (n) {
+    draggedNode = n;
+    simSteps = 280;
+  } else {
+    isPanning = true;
+    panStartX = e.clientX; panStartY = e.clientY;
+    viewStartX = viewX; viewStartY = viewY;
+    canvas.style.cursor = 'grabbing';
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  draggedNode = null;
+  isPanning = false;
+  canvas.style.cursor = hoveredNode ? 'pointer' : 'grab';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredNode = null;
+  draggedNode = null;
+  isPanning = false;
+  hideTooltip();
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const zoom = e.deltaY > 0 ? 0.92 : 1.08;
+  const newScale = Math.max(0.3, Math.min(3, viewScale * zoom));
+  const ratio = newScale / viewScale;
+  viewX = e.clientX - (e.clientX - viewX) * ratio;
+  viewY = e.clientY - (e.clientY - viewY) * ratio;
+  viewScale = newScale;
+}, { passive: false });
+
+// 触摸事件
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 1) {
+    const t = e.touches[0];
+    const n = findNode(t.clientX, t.clientY);
+    if (n) {
+      draggedNode = n;
+      simSteps = 280;
+      showTooltip(n, t.clientX, t.clientY);
+    } else {
+      isPanning = true;
+      panStartX = t.clientX; panStartY = t.clientY;
+      viewStartX = viewX; viewStartY = viewY;
+    }
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+  }
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1) {
+    const t = e.touches[0];
+    if (draggedNode) {
+      const { x, y } = screenToWorld(t.clientX, t.clientY);
+      draggedNode.x = x; draggedNode.y = y;
+      draggedNode.vx = 0; draggedNode.vy = 0;
+      simSteps = Math.min(simSteps, 280);
+    } else if (isPanning) {
+      viewX = viewStartX + (t.clientX - panStartX);
+      viewY = viewStartY + (t.clientY - panStartY);
+    }
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (lastTouchDist > 0) {
+      const zoom = dist / lastTouchDist;
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const newScale = Math.max(0.3, Math.min(3, viewScale * zoom));
+      const ratio = newScale / viewScale;
+      viewX = cx - (cx - viewX) * ratio;
+      viewY = cy - (cy - viewY) * ratio;
+      viewScale = newScale;
+    }
+    lastTouchDist = dist;
+  }
+  e.preventDefault();
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  if (e.touches.length === 0) {
+    draggedNode = null;
+    isPanning = false;
+    lastTouchDist = 0;
+    hideTooltip();
+  }
+});
+
+// ── 图例 ──
+const legendEl = document.getElementById('legend');
+for (const [key, cat] of Object.entries(CATEGORIES)) {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${cat.color}"></div>${cat.label}`;
+  legendEl.appendChild(item);
+}
+</script>
+</body>
+</html>
