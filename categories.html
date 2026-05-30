@@ -14,41 +14,67 @@ permalink: /categories/
 
 <div class="subpage-body">
 
-  {% assign category_data = "硬件:🔧:硬件问题:树莓派、传感器、电路设计、嵌入式系统|#60a5fa|硬件问题记录:软件:💻:软件问题:Python、Java、Node.js、算法、性能优化|#34d399|软件问题记录:数据库:🗄️:数据库问题:MySQL、PostgreSQL、MongoDB、Redis|#a78bfa|数据库问题记录:部署:🚀:部署问题:Docker、Kubernetes、Nginx、CI/CD|#f87171|部署问题记录:工具:🛠️:工具问题:Git、VSCode、命令行、调试工具|#fbbf24|工具问题记录" | split: ":" %}
-
-  {% assign cat_names = "硬件,软件,数据库,部署,工具" | split: "," %}
-  {% assign cat_icons = "🔧,💻,🗄️,🚀,🛠️" | split: "," %}
-  {% assign cat_colors = "#60a5fa,#34d399,#a78bfa,#f87171,#fbbf24" | split: "," %}
-  {% assign cat_descs = "树莓派、传感器、电路设计、嵌入式系统|Python、Java、Node.js、算法、性能优化|MySQL、PostgreSQL、MongoDB、Redis、SQL优化|Docker、Kubernetes、Nginx、CI/CD、服务器配置|Git、VSCode、命令行、开发环境、调试工具" | split: "|" %}
+  {% assign hardware_posts = site.categories["硬件"] %}
+  {% assign software_posts = site.categories["软件"] %}
+  {% assign database_posts = site.categories["数据库"] %}
+  {% assign deploy_posts = site.categories["部署"] %}
+  {% assign tools_posts = site.categories["工具"] %}
 
   <div class="category-grid">
-    {% for i in (0..4) %}
-      {% assign cat_name = cat_names[i] %}
-      {% assign cat_icon = cat_icons[i] %}
-      {% assign cat_color = cat_colors[i] %}
-      {% assign cat_desc = cat_descs[i] %}
-      {% assign cat_posts = site.categories[cat_name] %}
-      {% assign cat_count = cat_posts | size %}
-    <a href="/categories/{{ cat_name }}/" class="glass-card stagger-{{ forloop.index }}" style="text-decoration: none; display: block;">
+    <!-- 硬件 -->
+    <a href="/categories/硬件/" class="glass-card stagger-1" style="text-decoration: none; display: block;">
       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: {{ cat_color }}22; border: 1px solid {{ cat_color }}33;">
-          {{ cat_icon }}
-        </div>
-        {% if cat_count > 0 %}
-        <span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">
-          {{ cat_count }} 篇
-        </span>
-        {% endif %}
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #60a5fa22; border: 1px solid #60a5fa33;">🔧</div>
+        {% if hardware_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ hardware_posts.size }} 篇</span>{% endif %}
       </div>
-      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">{{ cat_name }}</h3>
-      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">
-        {{ cat_desc }}
-      </p>
-      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">
-        查看全部 →
-      </div>
+      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">硬件</h3>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">树莓派、传感器、电路设计、嵌入式系统</p>
+      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
     </a>
-    {% endfor %}
+
+    <!-- 软件 -->
+    <a href="/categories/软件/" class="glass-card stagger-2" style="text-decoration: none; display: block;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #34d39922; border: 1px solid #34d39933;">💻</div>
+        {% if software_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ software_posts.size }} 篇</span>{% endif %}
+      </div>
+      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">软件</h3>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">Python、Java、Node.js、算法、性能优化</p>
+      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+    </a>
+
+    <!-- 数据库 -->
+    <a href="/categories/数据库/" class="glass-card stagger-3" style="text-decoration: none; display: block;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #a78bfa22; border: 1px solid #a78bfa33;">🗄️</div>
+        {% if database_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ database_posts.size }} 篇</span>{% endif %}
+      </div>
+      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">数据库</h3>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">MySQL、PostgreSQL、MongoDB、Redis、SQL优化</p>
+      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+    </a>
+
+    <!-- 部署 -->
+    <a href="/categories/部署/" class="glass-card stagger-4" style="text-decoration: none; display: block;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #f8717122; border: 1px solid #f8717133;">🚀</div>
+        {% if deploy_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ deploy_posts.size }} 篇</span>{% endif %}
+      </div>
+      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">部署</h3>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">Docker、Kubernetes、Nginx、CI/CD、服务器配置</p>
+      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+    </a>
+
+    <!-- 工具 -->
+    <a href="/categories/工具/" class="glass-card stagger-5" style="text-decoration: none; display: block;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #fbbf2422; border: 1px solid #fbbf2433;">🛠️</div>
+        {% if tools_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ tools_posts.size }} 篇</span>{% endif %}
+      </div>
+      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">工具</h3>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">Git、VSCode、命令行、开发环境、调试工具</p>
+      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+    </a>
   </div>
 
   {% assign total_posts = site.posts | size %}
