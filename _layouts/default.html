@@ -135,6 +135,33 @@
       background: rgba(96, 165, 250, 0.08);
     }
 
+    /* ===== Nav hover effects ===== */
+    .nav-link {
+      position: relative;
+      transition: color 0.25s ease, background 0.25s ease, transform 0.2s ease;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+      transition: width 0.25s ease, left 0.25s ease;
+    }
+    .nav-link:hover::after,
+    .nav-link.active::after {
+      width: calc(100% - 2rem);
+      left: 1rem;
+    }
+    .nav-link:hover {
+      transform: translateY(-1px);
+      color: var(--primary-light);
+      background: rgba(96, 165, 250, 0.08);
+    }
+
     /* ===== Pure CSS Hamburger Menu ===== */
     .nav-toggle {
       display: none;
@@ -225,11 +252,15 @@
   <header class="header" style="position:relative;z-index:2">
     <div class="container">
       <div class="header-content">
-        <a href="/" class="logo">
-          <div class="logo-icon">📚</div>
-          <div class="logo-text">问题库</div>
-        </a>
+      <a href="/" class="logo">
+        <div class="logo-icon">📚</div>
+        <div class="logo-text">问题库</div>
+      </a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle">
+        <label for="nav-toggle" class="hamburger" aria-label="Toggle navigation menu">
+          <span></span><span></span><span></span>
+        </label>
+        <nav class="nav">
         <label for="nav-toggle" class="hamburger" aria-label="Toggle navigation menu">
           <span></span><span></span><span></span>
         </label>
@@ -245,7 +276,7 @@
   </header>
 
   {% if page.layout == 'post' %}
-  <div class="container" style="position:relative;z-index:2">
+  <div class="container subpage-content" style="position:relative;z-index:2">
     <div class="post-layout">
       <a href="/" class="back-link">← 返回首页</a>
       
@@ -377,7 +408,7 @@
     </div>
   </div>
   {% else %}
-    <div style="position:relative;z-index:2">{{ content }}</div>
+    <div class="subpage-content" style="position:relative;z-index:2">{{ content }}</div>
   {% endif %}
 
   <!-- 页脚 -->

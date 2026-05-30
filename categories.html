@@ -4,54 +4,56 @@ title: 分类浏览
 permalink: /categories/
 ---
 
-{% assign category_data = "硬件:🔧:硬件问题:树莓派、传感器、电路设计、嵌入式系统等|软件:💻:软件问题:Python、Java、Node.js、算法、性能优化等|数据库:🗄️:数据库问题:MySQL、PostgreSQL、MongoDB、Redis、SQL优化等|部署:🚀:部署问题:Docker、Kubernetes、Nginx、CI/CD、服务器配置等|工具:🛠️:工具问题:Git、VSCode、命令行、开发环境、调试工具等" | split: "|" %}
-
-<div class="container">
-  <div style="padding: 80px 0 var(--space-xl);">
-    
-    <!-- 标题 -->
-    <div style="text-align: center; margin-bottom: var(--space-xl);">
-      <h1 style="font-size: 2rem; margin-bottom: var(--space-md); color: var(--text-primary);">分类浏览</h1>
-      <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.7;">
-        按技术分类浏览问题记录，快速找到解决方案
-      </p>
-    </div>
-    
-    <!-- 分类网格 -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-xl);">
-      {% for cd in category_data %}
-        {% assign parts = cd | split: ":" %}
-        {% assign cat_slug = parts[0] %}
-        {% assign cat_icon = parts[1] %}
-        {% assign cat_title = parts[2] %}
-        {% assign cat_desc = parts[3] %}
-        {% assign cat_posts = site.categories[cat_slug] %}
-        {% assign cat_count = cat_posts | size %}
-      <a href="/categories/{{ cat_slug }}/" class="issue-card" style="text-decoration: none; display: block; position: relative; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div style="font-size: 2rem; color: var(--primary);">{{ cat_icon }}</div>
-          {% if cat_count > 0 %}
-          <span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600;">
-            {{ cat_count }} 篇
-          </span>
-          {% endif %}
-        </div>
-        <h3 style="font-size: 1.25rem; margin: var(--space-sm) 0; color: var(--text-primary);">{{ cat_title }}</h3>
-        <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">
-          {{ cat_desc }}
-        </p>
-        <div style="margin-top: var(--space-md); color: var(--primary); font-weight: 500;">
-          查看全部 → <span style="font-size: 0.8rem; color: var(--text-light);">{% if cat_count > 0 %}{{ cat_count }} 篇文章{% else %}暂无文章{% endif %}</span>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    
-    <!-- 全部统计 -->
-    {% assign total_posts = site.posts | size %}
-    <div style="text-align: center; color: var(--text-secondary); font-size: 0.9rem;">
-      <p>共计 <strong style="color: var(--primary);">{{ total_posts }}</strong> 篇文章，覆盖 <strong style="color: var(--primary);">{{ category_data | size }}</strong> 个分类</p>
-    </div>
-    
+<div class="subpage-hero">
+  <div class="subpage-hero-icon" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
+    📂
   </div>
+  <h1>分类浏览</h1>
+  <p>按技术分类浏览问题记录，快速找到解决方案</p>
+</div>
+
+<div class="subpage-body">
+
+  {% assign category_data = "硬件:🔧:硬件问题:树莓派、传感器、电路设计、嵌入式系统|#60a5fa|硬件问题记录:软件:💻:软件问题:Python、Java、Node.js、算法、性能优化|#34d399|软件问题记录:数据库:🗄️:数据库问题:MySQL、PostgreSQL、MongoDB、Redis|#a78bfa|数据库问题记录:部署:🚀:部署问题:Docker、Kubernetes、Nginx、CI/CD|#f87171|部署问题记录:工具:🛠️:工具问题:Git、VSCode、命令行、调试工具|#fbbf24|工具问题记录" | split: ":" %}
+
+  {% assign cat_names = "硬件,软件,数据库,部署,工具" | split: "," %}
+  {% assign cat_icons = "🔧,💻,🗄️,🚀,🛠️" | split: "," %}
+  {% assign cat_colors = "#60a5fa,#34d399,#a78bfa,#f87171,#fbbf24" | split: "," %}
+  {% assign cat_descs = "树莓派、传感器、电路设计、嵌入式系统|Python、Java、Node.js、算法、性能优化|MySQL、PostgreSQL、MongoDB、Redis、SQL优化|Docker、Kubernetes、Nginx、CI/CD、服务器配置|Git、VSCode、命令行、开发环境、调试工具" | split: "|" %}
+
+  <div class="category-grid">
+    {% for i in (0..4) %}
+      {% assign cat_name = cat_names[i] %}
+      {% assign cat_icon = cat_icons[i] %}
+      {% assign cat_color = cat_colors[i] %}
+      {% assign cat_desc = cat_descs[i] %}
+      {% assign cat_posts = site.categories[cat_name] %}
+      {% assign cat_count = cat_posts | size %}
+    <a href="/categories/{{ cat_name }}/" class="glass-card stagger-{{ forloop.index }}" style="text-decoration: none; display: block;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: {{ cat_color }}22; border: 1px solid {{ cat_color }}33;">
+          {{ cat_icon }}
+        </div>
+        {% if cat_count > 0 %}
+        <span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">
+          {{ cat_count }} 篇
+        </span>
+        {% endif %}
+      </div>
+      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">{{ cat_name }}</h3>
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">
+        {{ cat_desc }}
+      </p>
+      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">
+        查看全部 →
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% assign total_posts = site.posts | size %}
+  <div style="text-align: center; color: var(--text-light); font-size: 0.85rem; margin-top: 2rem;">
+    共计 <strong style="color: var(--primary);">{{ total_posts }}</strong> 篇文章，覆盖 <strong style="color: var(--primary);">5</strong> 个分类
+  </div>
+
 </div>

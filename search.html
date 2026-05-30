@@ -4,155 +4,132 @@ title: 智能搜索
 permalink: /search/
 ---
 
-<div class="container">
-  <div style="padding: 120px 0 var(--space-2xl);">
-    
-    <!-- 搜索区域 -->
-    <div style="text-align: center; margin-bottom: var(--space-2xl);">
-      <h1 style="font-size: 2.5rem; margin-bottom: var(--space-md); color: var(--text-primary);">🔍 智能搜索</h1>
-      <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto var(--space-xl); line-height: 1.7;">
-        输入关键词、技术栈、错误信息或问题描述，快速找到解决方案
-      </p>
-      
-      <form class="search-container" style="max-width: 600px; margin: 0 auto;" onsubmit="handleSearch(event)">
-        <div class="search-wrapper" style="position: relative;">
-          <input type="text" name="q" id="search-input" class="search-input"
-                 placeholder="例如：Vue 部署问题、Nginx 配置、数据库连接..."
-                 autocomplete="off" autofocus
-                 value="{{ page.query | default: '' }}">
-          <button type="submit" class="search-button" aria-label="搜索"
-                  style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
-                         background: var(--primary); color: #fff; border: none;
-                         padding: 0.5rem 1rem; border-radius: var(--radius-md);
-                         cursor: pointer; font-size: 1rem; font-weight: 500;
-                         transition: background 0.2s ease;"
-                  onmouseover="this.style.background='var(--primary-dark)'"
-                  onmouseout="this.style.background='var(--primary)'">
-            🔍 搜索
-          </button>
-        </div>
-      </form>
-      <p style="color: var(--text-light); font-size: 0.8rem; margin-top: var(--space-sm);">
-        提示：按 <kbd style="background:var(--bg-card);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:monospace;">/</kbd> 键快速聚焦搜索框
-      </p>
+<div class="subpage-hero">
+  <div class="subpage-hero-icon" style="background: linear-gradient(135deg, var(--primary), var(--accent));">
+    🔍
+  </div>
+  <h1>智能搜索</h1>
+  <p>输入关键词、技术栈、错误信息或问题描述，快速找到解决方案</p>
+</div>
+
+<div class="subpage-body">
+
+  <!-- 搜索框 -->
+  <div class="glass-card stagger-1" style="margin-bottom: 2rem;">
+    <form onsubmit="handleSearch(event)" style="position: relative;">
+      <input type="text" name="q" id="search-input" class="search-input"
+             placeholder="例如：Vue 部署、Nginx 配置、数据库连接..."
+             autocomplete="off" autofocus
+             style="padding-right: 5.5rem;"
+             value="{{ page.query | default: '' }}">
+      <button type="submit" aria-label="搜索"
+              style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+                     background: var(--primary); color: #fff; border: none;
+                     padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
+                     cursor: pointer; font-size: 0.92rem; font-weight: 500;
+                     transition: all 0.2s ease;"
+              onmouseover="this.style.background='var(--primary-dark)'"
+              onmouseout="this.style.background='var(--primary)'">
+        🔍 搜索
+      </button>
+    </form>
+    <p style="color: var(--text-light); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
+      按 <kbd style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:monospace;font-size:0.75rem;">/</kbd> 键快速聚焦搜索框
+    </p>
+  </div>
+
+  <!-- 热门搜索 -->
+  <div class="glass-card stagger-2" style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.15rem; margin-bottom: 1rem; color: var(--text-primary); text-align: center;">🔥 热门搜索</h2>
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
+      <a href="/search/?q=Vue" class="filter-tag"><span>🎨</span> Vue</a>
+      <a href="/search/?q=Nginx" class="filter-tag"><span>🚀</span> Nginx</a>
+      <a href="/search/?q=数据库" class="filter-tag"><span>💾</span> 数据库</a>
+      <a href="/search/?q=部署" class="filter-tag"><span>⚙️</span> 部署</a>
+      <a href="/search/?q=API" class="filter-tag"><span>🔌</span> API</a>
+      <a href="/search/?q=错误" class="filter-tag"><span>🐛</span> 错误处理</a>
     </div>
-    
-    <!-- 热门搜索 -->
-    <div style="margin-bottom: var(--space-2xl);">
-      <h2 style="font-size: 1.5rem; margin-bottom: var(--space-lg); color: var(--text-primary); text-align: center;">🔥 热门搜索</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: var(--space-sm); justify-content: center;">
-        <a href="/search/?q=Vue" class="filter-tag">
-          <span>🎨</span> Vue
-        </a>
-        <a href="/search/?q=Nginx" class="filter-tag">
-          <span>🚀</span> Nginx
-        </a>
-        <a href="/search/?q=数据库" class="filter-tag">
-          <span>💾</span> 数据库
-        </a>
-        <a href="/search/?q=部署" class="filter-tag">
-          <span>⚙️</span> 部署
-        </a>
-        <a href="/search/?q=API" class="filter-tag">
-          <span>🔌</span> API
-        </a>
-        <a href="/search/?q=错误" class="filter-tag">
-          <span>🐛</span> 错误处理
-        </a>
-      </div>
+  </div>
+
+  {% if page.query %}
+  {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
+
+  <!-- 搜索结果 -->
+  <div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+      <h2 style="font-size: 1.3rem; color: var(--text-primary); margin: 0;">
+        搜索结果: <span style="color: var(--primary);">"{{ page.query }}"</span>
+      </h2>
+      <span style="color: var(--text-light); font-size: 0.82rem;">
+        找到 {{ results.size }} 个结果
+      </span>
     </div>
-    
-    {% if page.query %}
-    <!-- Gather results first before display -->
-    {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
-    
-    <!-- 搜索结果 -->
-    <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); flex-wrap: wrap; gap: var(--space-sm);">
-        <h2 style="font-size: 1.75rem; color: var(--text-primary); margin: 0;">
-          搜索结果: <span style="color: var(--primary);">"{{ page.query }}"</span>
-        </h2>
-        <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          找到 {{ results.size }} 个结果
-        </span>
-      </div>
-      
-      {% if results.size > 0 %}
-      <div class="issues-grid">
-        {% for post in results %}
-        <article class="issue-card fade-in">
-          <div class="issue-header">
-            <h3 class="issue-title">
-              <a href="{{ post.url }}">{{ post.title }}</a>
-            </h3>
-            <span class="issue-id">#{{ forloop.index }}</span>
-          </div>
-          
-          <div class="issue-meta">
-            <span class="meta-item">
-              <span class="meta-icon">📅</span>
-              {{ post.date | date: "%Y-%m-%d" }}
-            </span>
-            {% if post.categories %}
-            {% for category in post.categories %}
-            <span class="category-tag {{ category }}">{{ category }}</span>
-            {% endfor %}
-            {% endif %}
-          </div>
-          
-          <p class="issue-description">{{ post.excerpt | strip_html | truncate: 150 }}</p>
-          
-          {% if post.keywords %}
-          <div class="issue-keywords">
-            {% for keyword in post.keywords limit: 4 %}
-            <span class="keyword">{{ keyword }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </article>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <h3 class="empty-title">未找到相关问题</h3>
-        <p class="empty-description">尝试使用不同的关键词，或浏览所有问题</p>
-        <div style="display: flex; gap: var(--space-sm); justify-content: center; margin-top: var(--space-md); flex-wrap: wrap;">
-          <a href="/" class="btn-primary">查看全部问题</a>
-          <a href="/categories/" class="btn-primary" style="background: rgba(99, 102, 241, 0.1); color: var(--primary);">浏览分类</a>
+
+    {% if results.size > 0 %}
+    <div class="category-grid">
+      {% for post in results %}
+      <a href="{{ post.url }}" class="glass-card search-result-item" style="text-decoration: none; display: block; animation-delay: {{ forloop.index | times: 0.06 }}s;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0; flex: 1; line-height: 1.5;">
+            {{ post.title }}
+          </h3>
+          <span style="font-size: 0.72rem; color: var(--text-light); white-space: nowrap; margin-left: 0.75rem;">
+            {{ post.date | date: "%m-%d" }}
+          </span>
         </div>
-      </div>
-      {% endif %}
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0.5rem 0;">
+          {{ post.excerpt | strip_html | truncate: 100 }}
+        </p>
+        {% if post.categories %}
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem;">
+          {% for category in post.categories %}
+          <span style="background: var(--bg-secondary); color: var(--text-secondary); padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.72rem;">{{ category }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </a>
+      {% endfor %}
     </div>
     {% else %}
-    <!-- 搜索提示 -->
-    <div style="background: var(--bg-glass); backdrop-filter: blur(10px); border-radius: var(--radius-xl); padding: var(--space-xl); border: 1px solid var(--border-light); box-shadow: var(--shadow-glass);">
-      <h2 style="font-size: 1.75rem; margin-bottom: var(--space-lg); color: var(--text-primary); text-align: center;">💡 搜索技巧</h2>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-lg);">
-        <div style="text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🔑</div>
-          <h3 style="font-size: 1.125rem; margin-bottom: var(--space-sm); color: var(--text-primary);">使用关键词</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">输入具体的技术栈名称或错误信息</p>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🏷️</div>
-          <h3 style="font-size: 1.125rem; margin-bottom: var(--space-sm); color: var(--text-primary);">按分类搜索</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">点击分类标签快速筛选相关问题</p>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: var(--space-sm);">📝</div>
-          <h3 style="font-size: 1.125rem; margin-bottom: var(--space-sm); color: var(--text-primary);">问题描述</h3>
-          <p style="color: var(--text-secondary); font-size: 0.9375rem; line-height: 1.6;">使用自然语言描述遇到的问题</p>
-        </div>
+    <div class="glass-card" style="text-align: center; padding: 2.5rem;">
+      <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔍</div>
+      <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--text-primary);">未找到相关问题</h3>
+      <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1.25rem;">尝试使用不同的关键词，或浏览所有问题</p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="/" class="btn-primary">查看全部问题</a>
+        <a href="/categories/" class="social-link" style="border-color: var(--primary); color: var(--primary);">浏览分类</a>
       </div>
     </div>
     {% endif %}
-    
   </div>
+
+  {% else %}
+  <!-- 搜索提示 -->
+  <div class="glass-card stagger-3">
+    <h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; color: var(--text-primary); text-align: center;">💡 搜索技巧</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+      <div style="text-align: center;">
+        <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🔑</div>
+        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary);">使用关键词</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">输入具体的技术栈名称或错误信息</p>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🏷️</div>
+        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary);">按分类搜索</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">点击分类标签快速筛选相关问题</p>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">📝</div>
+        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary);">问题描述</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">使用自然语言描述遇到的问题</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 
 <script>
-  // Search form submit handler
   function handleSearch(e) {
     e.preventDefault();
     var input = document.getElementById('search-input');
@@ -161,8 +138,6 @@ permalink: /search/
       window.location.href = '/search/?q=' + encodeURIComponent(query);
     }
   }
-  
-  // Keyboard shortcut: press "/" to focus search
   document.addEventListener('keydown', function(e) {
     if (e.key === '/' && document.activeElement !== document.getElementById('search-input') &&
         document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {

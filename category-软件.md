@@ -4,87 +4,71 @@ title: 软件问题
 permalink: /categories/软件/
 ---
 
-<div class="container">
-  <div style="padding: 80px 0 var(--space-xl);">
-    
-    <!-- 标题 -->
-    <div style="text-align: center; margin-bottom: var(--space-xl);">
-      <h1 style="font-size: 2rem; margin-bottom: var(--space-md); color: var(--text-primary);">💻 软件问题</h1>
-      <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.7;">
-        Python、Java、Node.js、算法、性能优化等软件相关问题与解决方案
-      </p>
-    </div>
-    
-    <!-- 面包屑导航 -->
-    <div style="margin-bottom: var(--space-lg);">
-      <a href="/" style="color: var(--text-secondary); text-decoration: none;">首页</a>
-      <span style="color: var(--text-light); margin: 0 0.5rem;">/</span>
-      <a href="/categories/" style="color: var(--text-secondary); text-decoration: none;">分类</a>
-      <span style="color: var(--text-light); margin: 0 0.5rem;">/</span>
-      <span style="color: var(--primary); font-weight: 500;">软件</span>
-    </div>
-    
-    <!-- 问题列表 -->
-    <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
-        <h2 style="font-size: 1.5rem; color: var(--text-primary); margin: 0;">
-          软件问题记录
-        </h2>
-        <span style="color: var(--text-secondary); font-size: 0.875rem;">
-          {% assign software_posts = site.categories["软件"] %}
-          共 {{ software_posts.size }} 篇
+<div class="subpage-hero">
+  <div class="subpage-hero-icon" style="background: linear-gradient(135deg, #60a5fa33, #60a5fa11); border: 1px solid #60a5fa44;">
+    💻
+  </div>
+  <h1>💻 软件</h1>
+  <p>Python、Java、Node.js、算法、性能优化等软件相关问题与解决方案</p>
+</div>
+
+<div class="subpage-body">
+
+  <!-- 面包屑 -->
+  <div class="breadcrumb" style="margin-bottom: 2rem;">
+    <a href="/">首页</a>
+    <span class="breadcrumb-sep">/</span>
+    <a href="/categories/">分类</a>
+    <span class="breadcrumb-sep">/</span>
+    <span style="color: var(--primary); font-weight: 500;">软件</span>
+  </div>
+
+  <!-- 文章列表 -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+    <h2 style="font-size: 1.3rem; color: var(--text-primary); margin: 0;">全部文章</h2>
+    <span style="color: var(--text-light); font-size: 0.85rem;">
+      %{% assign cat_posts = site.categories["软件"] %}
+      共 %{{ cat_posts.size }} 篇
+    </span>
+  </div>
+
+  %{% assign cat_posts = site.categories["软件"] %}
+  %{% if cat_posts.size > 0 %}
+  <div class="category-grid">
+    %{% for post in cat_posts %}
+    <a href="%{{ post.url }}" class="glass-card stagger-%{{ forloop.index | modulo: 5 | plus: 1 }}" style="text-decoration: none; display: block;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0; flex: 1; line-height: 1.5;">
+          %{{ post.title }}
+        </h3>
+        <span style="font-size: 0.72rem; color: var(--text-light); white-space: nowrap; margin-left: 0.75rem; margin-top: 0.15rem;">
+          %{{ post.date | date: "%m-%d" }}
         </span>
       </div>
-      
-      {% assign software_posts = site.categories["软件"] %}
-      {% if software_posts.size > 0 %}
-      <div class="issues-grid">
-        {% for post in software_posts %}
-        <article class="issue-card fade-in">
-          <div class="issue-header">
-            <h3 class="issue-title">
-              <a href="{{ post.url }}">{{ post.title }}</a>
-            </h3>
-            <span class="issue-id">#{{ forloop.index }}</span>
-          </div>
-          
-          <div class="issue-meta">
-            <span class="meta-item">
-              <span>📅</span>
-              {{ post.date | date: "%Y-%m-%d" }}
-            </span>
-            {% if post.author %}
-            <span class="meta-item">
-              <span>👤</span>
-              {{ post.author }}
-            </span>
-            {% endif %}
-          </div>
-          
-          <p class="issue-description">{{ post.excerpt | strip_html | truncate: 120 }}</p>
-          
-          {% if post.keywords %}
-          <div class="issue-keywords">
-            {% for keyword in post.keywords limit: 4 %}
-            <span class="keyword">{{ keyword }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </article>
-        {% endfor %}
+      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0.5rem 0;">
+        %{{ post.excerpt | strip_html | truncate: 100 }}
+      </p>
+      %{% if post.keywords %}
+      <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.75rem;">
+        %{% for keyword in post.keywords limit: 3 %}
+        <span style="background: var(--bg-secondary); color: var(--primary); padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.72rem;">%{{ keyword }}</span>
+        %{% endfor %}
       </div>
-      {% else %}
-      <div class="empty-state">
-        <div class="empty-icon">💻</div>
-        <h3 class="empty-title">暂无软件问题记录</h3>
-        <p class="empty-description">通过钉钉上传第一个软件问题，开始积累软件知识库</p>
-        <div style="display: flex; gap: var(--space-sm); justify-content: center; margin-top: var(--space-md);">
-          <a href="/" class="btn-primary">返回首页</a>
-          <a href="/categories/" class="btn-primary" style="background: rgba(37, 99, 235, 0.1); color: var(--primary);">浏览其他分类</a>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-    
+      %{% endif %}
+    </a>
+    %{% endfor %}
   </div>
+  %{% else %}
+  <div class="glass-card" style="text-align: center; padding: 3rem;">
+    <div style="font-size: 2.5rem; margin-bottom: 1rem;">💻</div>
+    <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--text-primary);">暂无软件文章</h3>
+    <p style="color: var(--text-light); font-size: 0.9rem;">开始记录第一个软件问题吧 ✨</p>
+  </div>
+  %{% endif %}
+
+  <!-- 返回链接 -->
+  <div style="margin-top: 2.5rem; text-align: center;">
+    <a href="/categories/" class="social-link">← 返回分类浏览</a>
+  </div>
+
 </div>
