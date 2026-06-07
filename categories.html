@@ -4,82 +4,354 @@ title: 分类浏览
 permalink: /categories/
 ---
 
-<div class="subpage-hero">
-  <div class="subpage-hero-icon" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
-    📂
-  </div>
-  <h1>分类浏览</h1>
-  <p>按技术分类浏览问题记录，快速找到解决方案</p>
+<style>
+  /* Categories页面专属样式 */
+  .categories-hero {
+    position: relative;
+    padding: 5rem 2rem 3rem;
+    text-align: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, #000010 0%, #0a1a2e 50%, #000010 100%);
+  }
+  
+  .categories-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.12) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    animation: catPulse 5s ease-in-out infinite;
+  }
+  
+  @keyframes catPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.2) rotate(10deg); opacity: 0.8; }
+  }
+  
+  .categories-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ff88, #00d4ff, #be0aff);
+    margin: 0 auto 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    box-shadow: 0 0 40px rgba(0, 255, 136, 0.4),
+                0 0 80px rgba(0, 212, 255, 0.2);
+    animation: iconFloat 3s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+  }
+  
+  @keyframes iconFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+  }
+  
+  .categories-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00ff88, #00d4ff, #be0aff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .categories-subtitle {
+    font-size: 1.1rem;
+    color: #8892b0;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .categories-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+  
+  /* 分类卡片 - 大卡片设计 */
+  .category-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  
+  .category-card {
+    background: rgba(17, 17, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: block;
+  }
+  
+  .category-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  
+  .category-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .category-card:hover::before {
+    transform: scaleX(1);
+  }
+  
+  .category-card.blue::before { background: linear-gradient(90deg, #00d4ff, #0099cc); }
+  .category-card.green::before { background: linear-gradient(90deg, #00ff88, #00cc6a); }
+  .category-card.purple::before { background: linear-gradient(90deg, #be0aff, #9500cc); }
+  .category-card.red::before { background: linear-gradient(90deg, #ff006e, #cc0058); }
+  .category-card.yellow::before { background: linear-gradient(90deg, #ffbe0b, #cc9800); }
+  
+  .category-card.blue:hover { box-shadow: 0 0 30px rgba(0, 212, 255, 0.2); }
+  .category-card.green:hover { box-shadow: 0 0 30px rgba(0, 255, 136, 0.2); }
+  .category-card.purple:hover { box-shadow: 0 0 30px rgba(190, 10, 255, 0.2); }
+  .category-card.red:hover { box-shadow: 0 0 30px rgba(255, 0, 110, 0.2); }
+  .category-card.yellow:hover { box-shadow: 0 0 30px rgba(255, 190, 11, 0.2); }
+  
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+  }
+  
+  .card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+  }
+  
+  .card-icon.blue { background: rgba(0, 212, 255, 0.15); border: 1px solid rgba(0, 212, 255, 0.3); }
+  .card-icon.green { background: rgba(0, 255, 136, 0.15); border: 1px solid rgba(0, 255, 136, 0.3); }
+  .card-icon.purple { background: rgba(190, 10, 255, 0.15); border: 1px solid rgba(190, 10, 255, 0.3); }
+  .card-icon.red { background: rgba(255, 0, 110, 0.15); border: 1px solid rgba(255, 0, 110, 0.3); }
+  .card-icon.yellow { background: rgba(255, 190, 11, 0.15); border: 1px solid rgba(255, 190, 11, 0.3); }
+  
+  .card-count {
+    padding: 0.35rem 0.9rem;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  .card-count.blue { background: rgba(0, 212, 255, 0.2); color: #00d4ff; }
+  .card-count.green { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+  .card-count.purple { background: rgba(190, 10, 255, 0.2); color: #be0aff; }
+  .card-count.red { background: rgba(255, 0, 110, 0.2); color: #ff006e; }
+  .card-count.yellow { background: rgba(255, 190, 11, 0.2); color: #ffbe0b; }
+  
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #e8f0ff;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-desc {
+    color: #8892b0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+  
+  .card-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: gap 0.3s ease;
+  }
+  
+  .card-link.blue { color: #00d4ff; }
+  .card-link.green { color: #00ff88; }
+  .card-link.purple { color: #be0aff; }
+  .card-link.red { color: #ff006e; }
+  .card-link.yellow { color: #ffbe0b; }
+  
+  .category-card:hover .card-link {
+    gap: 0.75rem;
+  }
+  
+  /* 统计 */
+  .categories-stats {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(17, 17, 40, 0.6);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .stats-text {
+    color: #4a5568;
+    font-size: 1rem;
+  }
+  
+  .stats-text strong {
+    color: #00d4ff;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  /* 动画 */
+  .fade-in-up {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+  
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .categories-hero {
+      padding: 3rem 1.5rem 2rem;
+    }
+    
+    .categories-icon {
+      width: 80px;
+      height: 80px;
+      font-size: 2.5rem;
+    }
+    
+    .categories-title {
+      font-size: 1.75rem;
+    }
+    
+    .categories-subtitle {
+      font-size: 0.95rem;
+    }
+    
+    .categories-content {
+      padding: 2rem 1rem;
+    }
+    
+    .category-cards {
+      grid-template-columns: 1fr;
+    }
+    
+    .category-card {
+      padding: 1.5rem;
+    }
+  }
+</style>
+
+{% assign hardware_posts = site.categories["硬件"] %}
+{% assign software_posts = site.categories["软件"] %}
+{% assign database_posts = site.categories["数据库"] %}
+{% assign deploy_posts = site.categories["部署"] %}
+{% assign tools_posts = site.categories["工具"] %}
+
+<!-- Hero区域 -->
+<div class="categories-hero">
+  <div class="categories-icon">📂</div>
+  <h1 class="categories-title">分类浏览</h1>
+  <p class="categories-subtitle">按技术分类浏览问题记录，快速找到解决方案</p>
 </div>
 
-<div class="subpage-body">
-
-  {% assign hardware_posts = site.categories["硬件"] %}
-  {% assign software_posts = site.categories["软件"] %}
-  {% assign database_posts = site.categories["数据库"] %}
-  {% assign deploy_posts = site.categories["部署"] %}
-  {% assign tools_posts = site.categories["工具"] %}
-
-  <div class="category-grid">
+<!-- 分类内容 -->
+<div class="categories-content">
+  
+  <div class="category-cards">
     <!-- 硬件 -->
-    <a href="/categories/硬件/" class="glass-card stagger-1" style="text-decoration: none; display: block;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #60a5fa22; border: 1px solid #60a5fa33;">🔧</div>
-        {% if hardware_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ hardware_posts.size }} 篇</span>{% endif %}
+    <a href="/categories/硬件/" class="category-card blue fade-in-up stagger-1">
+      <div class="card-header">
+        <div class="card-icon blue">🔧</div>
+        {% if hardware_posts.size > 0 %}<span class="card-count blue">{{ hardware_posts.size }} 篇</span>{% endif %}
       </div>
-      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">硬件</h3>
-      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">树莓派、传感器、电路设计、嵌入式系统</p>
-      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+      <h3 class="card-title">硬件</h3>
+      <p class="card-desc">树莓派、传感器、电路设计、嵌入式系统</p>
+      <div class="card-link blue">查看全部 <span>→</span></div>
     </a>
 
     <!-- 软件 -->
-    <a href="/categories/软件/" class="glass-card stagger-2" style="text-decoration: none; display: block;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #34d39922; border: 1px solid #34d39933;">💻</div>
-        {% if software_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ software_posts.size }} 篇</span>{% endif %}
+    <a href="/categories/软件/" class="category-card green fade-in-up stagger-2">
+      <div class="card-header">
+        <div class="card-icon green">💻</div>
+        {% if software_posts.size > 0 %}<span class="card-count green">{{ software_posts.size }} 篇</span>{% endif %}
       </div>
-      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">软件</h3>
-      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">Python、Java、Node.js、算法、性能优化</p>
-      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+      <h3 class="card-title">软件</h3>
+      <p class="card-desc">Python、Java、Node.js、算法、性能优化</p>
+      <div class="card-link green">查看全部 <span>→</span></div>
     </a>
 
     <!-- 数据库 -->
-    <a href="/categories/数据库/" class="glass-card stagger-3" style="text-decoration: none; display: block;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #a78bfa22; border: 1px solid #a78bfa33;">🗄️</div>
-        {% if database_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ database_posts.size }} 篇</span>{% endif %}
+    <a href="/categories/数据库/" class="category-card purple fade-in-up stagger-3">
+      <div class="card-header">
+        <div class="card-icon purple">🗄️</div>
+        {% if database_posts.size > 0 %}<span class="card-count purple">{{ database_posts.size }} 篇</span>{% endif %}
       </div>
-      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">数据库</h3>
-      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">MySQL、PostgreSQL、MongoDB、Redis、SQL优化</p>
-      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+      <h3 class="card-title">数据库</h3>
+      <p class="card-desc">MySQL、PostgreSQL、MongoDB、Redis、SQL优化</p>
+      <div class="card-link purple">查看全部 <span>→</span></div>
     </a>
 
     <!-- 部署 -->
-    <a href="/categories/部署/" class="glass-card stagger-4" style="text-decoration: none; display: block;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #f8717122; border: 1px solid #f8717133;">🚀</div>
-        {% if deploy_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ deploy_posts.size }} 篇</span>{% endif %}
+    <a href="/categories/部署/" class="category-card red fade-in-up stagger-4">
+      <div class="card-header">
+        <div class="card-icon red">🚀</div>
+        {% if deploy_posts.size > 0 %}<span class="card-count red">{{ deploy_posts.size }} 篇</span>{% endif %}
       </div>
-      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">部署</h3>
-      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">Docker、Kubernetes、Nginx、CI/CD、服务器配置</p>
-      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+      <h3 class="card-title">部署</h3>
+      <p class="card-desc">Docker、Kubernetes、Nginx、CI/CD、服务器配置</p>
+      <div class="card-link red">查看全部 <span>→</span></div>
     </a>
 
     <!-- 工具 -->
-    <a href="/categories/工具/" class="glass-card stagger-5" style="text-decoration: none; display: block;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 44px; height: 44px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; background: #fbbf2422; border: 1px solid #fbbf2433;">🛠️</div>
-        {% if tools_posts.size > 0 %}<span style="background: var(--primary); color: #fff; padding: 0.2rem 0.6rem; border-radius: var(--radius-full); font-size: 0.72rem; font-weight: 600;">{{ tools_posts.size }} 篇</span>{% endif %}
+    <a href="/categories/工具/" class="category-card yellow fade-in-up stagger-5">
+      <div class="card-header">
+        <div class="card-icon yellow">🛠️</div>
+        {% if tools_posts.size > 0 %}<span class="card-count yellow">{{ tools_posts.size }} 篇</span>{% endif %}
       </div>
-      <h3 style="font-size: 1.15rem; margin: 0.75rem 0 0.35rem; color: var(--text-primary);">工具</h3>
-      <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0;">Git、VSCode、命令行、开发环境、调试工具</p>
-      <div style="margin-top: 0.75rem; color: var(--primary); font-weight: 500; font-size: 0.85rem;">查看全部 →</div>
+      <h3 class="card-title">工具</h3>
+      <p class="card-desc">Git、VSCode、命令行、开发环境、调试工具</p>
+      <div class="card-link yellow">查看全部 <span>→</span></div>
     </a>
   </div>
 
   {% assign total_posts = site.posts | size %}
-  <div style="text-align: center; color: var(--text-light); font-size: 0.85rem; margin-top: 2rem;">
-    共计 <strong style="color: var(--primary);">{{ total_posts }}</strong> 篇文章，覆盖 <strong style="color: var(--primary);">5</strong> 个分类
+  <div class="categories-stats fade-in-up">
+    <p class="stats-text">
+      共计 <strong>{{ total_posts }}</strong> 篇文章，覆盖 <strong>5</strong> 个分类
+    </p>
   </div>
 
 </div>
