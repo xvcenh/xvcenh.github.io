@@ -4,50 +4,557 @@ title: 智能搜索
 permalink: /search/
 ---
 
-<div class="subpage-hero">
-  <div class="subpage-hero-icon" style="background: linear-gradient(135deg, var(--primary), var(--accent));">
-    🔍
-  </div>
-  <h1>智能搜索</h1>
-  <p>输入关键词、技术栈、错误信息或问题描述，快速找到解决方案</p>
+<style>
+  /* Search页面专属样式 */
+  .search-hero {
+    position: relative;
+    padding: 5rem 2rem 3rem;
+    text-align: center;
+    overflow: hidden;
+    background: linear-gradient(135deg, #000010 0%, #0a0a2e 50%, #000010 100%);
+  }
+  
+  .search-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(190, 10, 255, 0.15) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    animation: searchPulse 4s ease-in-out infinite;
+  }
+  
+  @keyframes searchPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 0.8; }
+  }
+  
+  .search-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #be0aff, #ff006e, #ffbe0b);
+    margin: 0 auto 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    box-shadow: 0 0 40px rgba(190, 10, 255, 0.4),
+                0 0 80px rgba(255, 0, 110, 0.2);
+    animation: iconFloat 3s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+  }
+  
+  @keyframes iconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .search-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #be0aff, #ff006e, #ffbe0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .search-subtitle {
+    font-size: 1.1rem;
+    color: #8892b0;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .search-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+  
+  /* 搜索框 - 霓虹风格 */
+  .search-box {
+    background: rgba(17, 17, 40, 0.9);
+    border: 2px solid rgba(190, 10, 255, 0.3);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(20px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .search-box::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(135deg, #be0aff, #ff006e, #ffbe0b, #00d4ff);
+    border-radius: inherit;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .search-box:focus-within {
+    border-color: rgba(190, 10, 255, 0.6);
+    box-shadow: 0 0 30px rgba(190, 10, 255, 0.3),
+                0 0 60px rgba(255, 0, 110, 0.1);
+  }
+  
+  .search-box:focus-within::before {
+    opacity: 1;
+  }
+  
+  .search-form {
+    position: relative;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    padding-right: 7rem;
+    background: rgba(0, 0, 16, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    color: #e8f0ff;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.3s ease;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: rgba(190, 10, 255, 0.5);
+    background: rgba(0, 0, 16, 0.95);
+  }
+  
+  .search-input::placeholder {
+    color: #4a5568;
+  }
+  
+  .search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(135deg, #be0aff, #ff006e);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+  }
+  
+  .search-btn:hover {
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 0 20px rgba(190, 10, 255, 0.5);
+  }
+  
+  .search-hint {
+    color: #4a5568;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  .search-hint kbd {
+    background: rgba(190, 10, 255, 0.2);
+    border: 1px solid rgba(190, 10, 255, 0.3);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #be0aff;
+  }
+  
+  /* 热门搜索 */
+  .hot-search {
+    background: rgba(17, 17, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(20px);
+  }
+  
+  .hot-search h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e8f0ff;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .hot-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+  
+  .hot-tag {
+    padding: 0.6rem 1.25rem;
+    background: rgba(190, 10, 255, 0.1);
+    border: 1px solid rgba(190, 10, 255, 0.2);
+    border-radius: 100px;
+    color: #be0aff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .hot-tag:hover {
+    background: rgba(190, 10, 255, 0.2);
+    border-color: rgba(190, 10, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(190, 10, 255, 0.3);
+  }
+  
+  /* 搜索结果 */
+  .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .results-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e8f0ff;
+  }
+  
+  .results-title .query {
+    color: #be0aff;
+  }
+  
+  .results-count {
+    color: #4a5568;
+    font-size: 0.9rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  .results-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .result-card {
+    background: rgba(17, 17, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .result-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #be0aff, #ff006e, #ffbe0b);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  
+  .result-card:hover {
+    transform: translateX(4px);
+    border-color: rgba(190, 10, 255, 0.3);
+    box-shadow: 0 0 20px rgba(190, 10, 255, 0.1);
+  }
+  
+  .result-card:hover::after {
+    transform: scaleX(1);
+  }
+  
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+  }
+  
+  .result-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e8f0ff;
+    flex: 1;
+    line-height: 1.5;
+  }
+  
+  .result-date {
+    font-size: 0.8rem;
+    color: #4a5568;
+    white-space: nowrap;
+    margin-left: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  
+  .result-excerpt {
+    color: #8892b0;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+  
+  .result-categories {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .result-category {
+    padding: 0.25rem 0.75rem;
+    background: rgba(190, 10, 255, 0.1);
+    border: 1px solid rgba(190, 10, 255, 0.2);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    color: #be0aff;
+    font-weight: 500;
+  }
+  
+  /* 空结果 */
+  .empty-results {
+    background: rgba(17, 17, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 3rem;
+    text-align: center;
+  }
+  
+  .empty-results .icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .empty-results h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e8f0ff;
+    margin-bottom: 0.75rem;
+  }
+  
+  .empty-results p {
+    color: #8892b0;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .empty-results .actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .empty-results .btn-primary {
+    background: linear-gradient(135deg, #be0aff, #ff006e);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .empty-results .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(190, 10, 255, 0.4);
+  }
+  
+  .empty-results .btn-secondary {
+    background: transparent;
+    color: #be0aff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    text-decoration: none;
+    font-weight: 600;
+    border: 1px solid rgba(190, 10, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .empty-results .btn-secondary:hover {
+    background: rgba(190, 10, 255, 0.1);
+    border-color: rgba(190, 10, 255, 0.5);
+  }
+  
+  /* 搜索技巧 */
+  .search-tips {
+    background: rgba(17, 17, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(20px);
+  }
+  
+  .search-tips h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #e8f0ff;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .tip-card {
+    text-align: center;
+    padding: 1.5rem;
+    background: rgba(0, 0, 16, 0.5);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+  }
+  
+  .tip-card:hover {
+    border-color: rgba(190, 10, 255, 0.2);
+    transform: translateY(-2px);
+  }
+  
+  .tip-card .icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .tip-card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e8f0ff;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tip-card p {
+    color: #8892b0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  /* 动画 */
+  .fade-in-up {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .search-hero {
+      padding: 3rem 1.5rem 2rem;
+    }
+    
+    .search-icon {
+      width: 80px;
+      height: 80px;
+      font-size: 2.5rem;
+    }
+    
+    .search-title {
+      font-size: 1.75rem;
+    }
+    
+    .search-subtitle {
+      font-size: 0.95rem;
+    }
+    
+    .search-content {
+      padding: 2rem 1rem;
+    }
+    
+    .search-box {
+      padding: 1.5rem;
+    }
+    
+    .search-input {
+      padding: 1rem 1rem;
+      padding-right: 5.5rem;
+      font-size: 1rem;
+    }
+    
+    .search-btn {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .tips-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Hero区域 -->
+<div class="search-hero">
+  <div class="search-icon">🔍</div>
+  <h1 class="search-title">智能搜索</h1>
+  <p class="search-subtitle">输入关键词、技术栈、错误信息或问题描述，快速找到解决方案</p>
 </div>
 
-<div class="subpage-body">
-
+<!-- 搜索内容 -->
+<div class="search-content">
+  
   <!-- 搜索框 -->
-  <div class="glass-card stagger-1" style="margin-bottom: 2rem;">
-    <form onsubmit="handleSearch(event)" style="position: relative;">
+  <div class="search-box fade-in-up stagger-1">
+    <form onsubmit="handleSearch(event)" class="search-form">
       <input type="text" name="q" id="search-input" class="search-input"
              placeholder="例如：Vue 部署、Nginx 配置、数据库连接..."
              autocomplete="off" autofocus
-             style="padding-right: 5.5rem;"
              value="{{ page.query | default: '' }}">
-      <button type="submit" aria-label="搜索"
-              style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-                     background: var(--primary); color: #fff; border: none;
-                     padding: 0.6rem 1.25rem; border-radius: var(--radius-md);
-                     cursor: pointer; font-size: 0.92rem; font-weight: 500;
-                     transition: all 0.2s ease;"
-              onmouseover="this.style.background='var(--primary-dark)'"
-              onmouseout="this.style.background='var(--primary)'">
-        🔍 搜索
-      </button>
+      <button type="submit" class="search-btn">🔍 搜索</button>
     </form>
-    <p style="color: var(--text-light); font-size: 0.78rem; margin-top: 0.75rem; text-align: center;">
-      按 <kbd style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:monospace;font-size:0.75rem;">/</kbd> 键快速聚焦搜索框
+    <p class="search-hint">
+      按 <kbd>/</kbd> 键快速聚焦搜索框
     </p>
   </div>
 
   <!-- 热门搜索 -->
-  <div class="glass-card stagger-2" style="margin-bottom: 2rem;">
-    <h2 style="font-size: 1.15rem; margin-bottom: 1rem; color: var(--text-primary); text-align: center;">🔥 热门搜索</h2>
-    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
-      <a href="/search/?q=Vue" class="filter-tag"><span>🎨</span> Vue</a>
-      <a href="/search/?q=Nginx" class="filter-tag"><span>🚀</span> Nginx</a>
-      <a href="/search/?q=数据库" class="filter-tag"><span>💾</span> 数据库</a>
-      <a href="/search/?q=部署" class="filter-tag"><span>⚙️</span> 部署</a>
-      <a href="/search/?q=API" class="filter-tag"><span>🔌</span> API</a>
-      <a href="/search/?q=错误" class="filter-tag"><span>🐛</span> 错误处理</a>
+  <div class="hot-search fade-in-up stagger-2">
+    <h2>🔥 热门搜索</h2>
+    <div class="hot-tags">
+      <a href="/search/?q=Vue" class="hot-tag"><span>🎨</span> Vue</a>
+      <a href="/search/?q=Nginx" class="hot-tag"><span>🚀</span> Nginx</a>
+      <a href="/search/?q=数据库" class="hot-tag"><span>💾</span> 数据库</a>
+      <a href="/search/?q=部署" class="hot-tag"><span>⚙️</span> 部署</a>
+      <a href="/search/?q=API" class="hot-tag"><span>🔌</span> API</a>
+      <a href="/search/?q=错误" class="hot-tag"><span>🐛</span> 错误处理</a>
     </div>
   </div>
 
@@ -55,35 +562,27 @@ permalink: /search/
   {% assign results = site.posts | where_exp: "post", "post.content contains page.query or post.title contains page.query or post.keywords contains page.query" %}
 
   <!-- 搜索结果 -->
-  <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-      <h2 style="font-size: 1.3rem; color: var(--text-primary); margin: 0;">
-        搜索结果: <span style="color: var(--primary);">"{{ page.query }}"</span>
+  <div class="fade-in-up stagger-3">
+    <div class="results-header">
+      <h2 class="results-title">
+        搜索结果: <span class="query">"{{ page.query }}"</span>
       </h2>
-      <span style="color: var(--text-light); font-size: 0.82rem;">
-        找到 {{ results.size }} 个结果
-      </span>
+      <span class="results-count">找到 {{ results.size }} 个结果</span>
     </div>
 
     {% if results.size > 0 %}
-    <div class="category-grid">
+    <div class="results-grid">
       {% for post in results %}
-      <a href="{{ post.url }}" class="glass-card search-result-item" style="text-decoration: none; display: block; animation-delay: {{ forloop.index | times: 0.06 }}s;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-          <h3 style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin: 0; flex: 1; line-height: 1.5;">
-            {{ post.title }}
-          </h3>
-          <span style="font-size: 0.72rem; color: var(--text-light); white-space: nowrap; margin-left: 0.75rem;">
-            {{ post.date | date: "%m-%d" }}
-          </span>
+      <a href="{{ post.url }}" class="result-card" style="animation-delay: {{ forloop.index | times: 0.06 }}s;">
+        <div class="result-header">
+          <h3 class="result-title">{{ post.title }}</h3>
+          <span class="result-date">{{ post.date | date: "%m-%d" }}</span>
         </div>
-        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.6; margin: 0.5rem 0;">
-          {{ post.excerpt | strip_html | truncate: 100 }}
-        </p>
+        <p class="result-excerpt">{{ post.excerpt | strip_html | truncate: 100 }}</p>
         {% if post.categories %}
-        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.5rem;">
+        <div class="result-categories">
           {% for category in post.categories %}
-          <span style="background: var(--bg-secondary); color: var(--text-secondary); padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.72rem;">{{ category }}</span>
+          <span class="result-category">{{ category }}</span>
           {% endfor %}
         </div>
         {% endif %}
@@ -91,37 +590,37 @@ permalink: /search/
       {% endfor %}
     </div>
     {% else %}
-    <div class="glass-card" style="text-align: center; padding: 2.5rem;">
-      <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔍</div>
-      <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem; color: var(--text-primary);">未找到相关问题</h3>
-      <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1.25rem;">尝试使用不同的关键词，或浏览所有问题</p>
-      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+    <div class="empty-results">
+      <div class="icon">🔍</div>
+      <h3>未找到相关问题</h3>
+      <p>尝试使用不同的关键词，或浏览所有问题</p>
+      <div class="actions">
         <a href="/" class="btn-primary">查看全部问题</a>
-        <a href="/categories/" class="social-link" style="border-color: var(--primary); color: var(--primary);">浏览分类</a>
+        <a href="/categories/" class="btn-secondary">浏览分类</a>
       </div>
     </div>
     {% endif %}
   </div>
 
   {% else %}
-  <!-- 搜索提示 -->
-  <div class="glass-card stagger-3">
-    <h2 style="font-size: 1.25rem; margin-bottom: 1.25rem; color: var(--text-primary); text-align: center;">💡 搜索技巧</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
-      <div style="text-align: center;">
-        <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🔑</div>
-        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary);">使用关键词</h3>
-        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">输入具体的技术栈名称或错误信息</p>
+  <!-- 搜索技巧 -->
+  <div class="search-tips fade-in-up stagger-3">
+    <h2>💡 搜索技巧</h2>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="icon">🔑</div>
+        <h3>使用关键词</h3>
+        <p>输入具体的技术栈名称或错误信息</p>
       </div>
-      <div style="text-align: center;">
-        <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">🏷️</div>
-        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary);">按分类搜索</h3>
-        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">点击分类标签快速筛选相关问题</p>
+      <div class="tip-card">
+        <div class="icon">🏷️</div>
+        <h3>按分类搜索</h3>
+        <p>点击分类标签快速筛选相关问题</p>
       </div>
-      <div style="text-align: center;">
-        <div style="font-size: 1.75rem; margin-bottom: 0.5rem;">📝</div>
-        <h3 style="font-size: 1rem; margin-bottom: 0.25rem; color: var(--text-primary);">问题描述</h3>
-        <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">使用自然语言描述遇到的问题</p>
+      <div class="tip-card">
+        <div class="icon">📝</div>
+        <h3>问题描述</h3>
+        <p>使用自然语言描述遇到的问题</p>
       </div>
     </div>
   </div>
