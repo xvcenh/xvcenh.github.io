@@ -13,6 +13,9 @@ title: xvcenh的博客
     <meta name="author" content="xvcenh">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="https://xvcenh.github.io/">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     {% seo %}
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -98,9 +101,9 @@ title: xvcenh的博客
             </div>
 
             <!-- 开源项目工具 -->
-            <h2 class="section-title">🧰 开源工具</h2>
+            <h2 class="section-title gradient-text">🧰 开源工具</h2>
             <div class="tools-grid">
-                <a href="https://xvcenh.github.io/svg-scene-engine/" target="_blank" rel="noopener" class="tool-card">
+                <a href="https://xvcenh.github.io/svg-scene-engine/" target="_blank" rel="noopener" class="tool-card gradient-border">
                     <div class="tool-icon" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">🎭</div>
                     <div class="tool-info">
                         <div class="tool-name">SVG Scene Engine</div>
@@ -108,7 +111,7 @@ title: xvcenh的博客
                     </div>
                     <div class="tool-arrow">→</div>
                 </a>
-                <a href="https://xvcenh.github.io/svg-asset-library/" target="_blank" rel="noopener" class="tool-card">
+                <a href="https://xvcenh.github.io/svg-asset-library/" target="_blank" rel="noopener" class="tool-card gradient-border">
                     <div class="tool-icon" style="background: linear-gradient(135deg, #ec4899, #db2777);">🎨</div>
                     <div class="tool-info">
                         <div class="tool-name">SVG Asset Library</div>
@@ -116,7 +119,7 @@ title: xvcenh的博客
                     </div>
                     <div class="tool-arrow">→</div>
                 </a>
-                <a href="https://github.com/xvcenh/claudescan" target="_blank" rel="noopener" class="tool-card">
+                <a href="https://github.com/xvcenh/claudescan" target="_blank" rel="noopener" class="tool-card gradient-border">
                     <div class="tool-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">🔍</div>
                     <div class="tool-info">
                         <div class="tool-name">ClaudeScan</div>
@@ -124,7 +127,7 @@ title: xvcenh的博客
                     </div>
                     <div class="tool-arrow">→</div>
                 </a>
-                <a href="https://github.com/xvcenh/liltown" target="_blank" rel="noopener" class="tool-card">
+                <a href="https://github.com/xvcenh/liltown" target="_blank" rel="noopener" class="tool-card gradient-border">
                     <div class="tool-icon" style="background: linear-gradient(135deg, #10b981, #059669);">🏘️</div>
                     <div class="tool-info">
                         <div class="tool-name">LilTown</div>
@@ -135,7 +138,7 @@ title: xvcenh的博客
             </div>
 
             <!-- 最新文章 -->
-            <h2 class="section-title">📝 最新文章</h2>
+            <h2 class="section-title gradient-text">📝 最新文章</h2>
 
             {% if site.posts.size > 0 %}
             {% for post in site.posts limit: 8 %}
