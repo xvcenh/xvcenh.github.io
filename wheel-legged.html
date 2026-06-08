@@ -287,7 +287,8 @@ const PARTS_DEF=[
    explode:{x:0.08,y:0.08,z:0}},
 ];
 
-function initThree(){
+async function initThree(){
+  const {OrbitControls}=await import('https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js');
   const canvas=document.getElementById('robotCanvas');
   const rect=canvas.parentElement.getBoundingClientRect();
   scene=new THREE.Scene();
@@ -300,7 +301,7 @@ function initThree(){
   renderer.shadowMap.enabled=true;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.8;
-  controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.dampingFactor=0.05;
   controls.target.set(0,0.02,0);
 
