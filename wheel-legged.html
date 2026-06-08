@@ -12,9 +12,21 @@ permalink: /wheel-legged/
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.157.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://unpkg.com/three@0.157.0/examples/js/loaders/STLLoader.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+window.THREE = THREE;
+window.THREE.OrbitControls = OrbitControls;
+window.THREE.STLLoader = STLLoader;
 <style>
 :root{--bg:#0a0f1e;--bg2:#0f172a;--bg3:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#60a5fa;--accent2:#a78bfa;--accent3:#f472b6;--border:rgba(255,255,255,0.08);--green:#4ade80;--orange:#fb923c;--red:#f87171;--cyan:#22d3ee}
 *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Space Grotesk','PingFang SC',sans-serif;line-height:1.6;overflow-x:hidden}
