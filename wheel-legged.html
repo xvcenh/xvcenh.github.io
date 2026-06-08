@@ -1,6 +1,6 @@
 ---
 layout: null
-title: 双轮足机器人 · 交互式解构
+title: 双轮足机器人 · 3D交互解构
 permalink: /wheel-legged/
 ---
 <!DOCTYPE html>
@@ -8,11 +8,12 @@ permalink: /wheel-legged/
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>双轮足机器人 · 交互式解构 — xvcenh的博客</title>
-<meta name="description" content="达妙科技双轮足机器人深度解析 - 五连杆VMC算法实时演示、代码架构可视化、3D爆炸拆解">
+<title>双轮足机器人 · 3D交互解构</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
 :root {
   --bg: #0a0f1e;
@@ -25,7 +26,6 @@ permalink: /wheel-legged/
   --accent2: #a78bfa;
   --accent3: #f472b6;
   --border: rgba(255,255,255,0.08);
-  --glow: rgba(96,165,250,0.15);
   --green: #4ade80;
   --orange: #fb923c;
   --red: #f87171;
@@ -36,127 +36,125 @@ html { scroll-behavior: smooth; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Space Grotesk', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'Space Grotesk', 'PingFang SC', sans-serif;
   line-height: 1.6;
   overflow-x: hidden;
 }
 .mono { font-family: 'JetBrains Mono', monospace; }
 
-/* ── Noise Overlay ── */
-.noise-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  pointer-events: none; z-index: 9999; opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ── Top Bar ── */
+/* Top Bar */
 .top-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 32px;
-  background: linear-gradient(180deg, rgba(10,15,30,0.98) 0%, rgba(10,15,30,0.85) 100%);
+  background: rgba(10,15,30,0.9);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
 .top-bar .back {
   color: var(--text2); text-decoration: none; font-size: 0.85rem;
   padding: 8px 16px; border: 1px solid var(--border); border-radius: 8px;
-  transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+  transition: all 0.3s;
 }
-.top-bar .back:hover { color: var(--accent); border-color: rgba(96,165,250,0.3); transform: translateX(-2px); }
+.top-bar .back:hover { color: var(--accent); border-color: var(--accent); }
 .top-bar h1 {
-  font-size: 1.25rem; font-weight: 600;
-  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+  font-size: 1.2rem; font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
-.top-bar .links { display: flex; gap: 12px; }
-.top-bar .links a {
-  color: var(--text3); text-decoration: none; font-size: 0.8rem;
-  padding: 6px 12px; border-radius: 6px; transition: all 0.3s;
-}
-.top-bar .links a:hover { color: var(--accent); background: rgba(96,165,250,0.1); }
 
-/* ── Hero Section ── */
-.hero {
-  min-height: 100vh; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; position: relative;
-  padding: 120px 32px 80px; overflow: hidden;
-}
-.hero-bg {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: radial-gradient(ellipse at 50% 50%, rgba(96,165,250,0.08) 0%, transparent 60%);
-}
-.hero-content { position: relative; z-index: 2; text-align: center; max-width: 900px; }
-.hero-label {
-  font-size: 0.8rem; color: var(--accent); letter-spacing: 0.2em;
-  text-transform: uppercase; margin-bottom: 24px; font-weight: 500;
-}
-.hero h2 {
-  font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 700;
-  line-height: 1.1; margin-bottom: 24px;
-  background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.hero p { font-size: 1.1rem; color: var(--text2); max-width: 600px; margin: 0 auto 40px; }
-.hero-stats {
-  display: flex; gap: 48px; justify-content: center; margin-top: 48px;
-}
-.stat { text-align: center; }
-.stat-num {
-  font-size: 2.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
-  background: linear-gradient(135deg, var(--accent), var(--cyan));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.stat-label { font-size: 0.8rem; color: var(--text3); margin-top: 4px; }
-
-/* ── Section Common ── */
-.section {
-  padding: 100px 32px; max-width: 1400px; margin: 0 auto;
-}
+/* Sections */
+.section { padding: 100px 32px; max-width: 1400px; margin: 0 auto; }
 .section-label {
   font-size: 0.75rem; color: var(--accent); letter-spacing: 0.2em;
-  text-transform: uppercase; margin-bottom: 12px; font-weight: 500;
+  text-transform: uppercase; margin-bottom: 12px;
 }
 .section-title {
-  font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 700;
-  margin-bottom: 16px; color: var(--text);
+  font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 700; margin-bottom: 16px;
 }
 .section-desc { font-size: 1rem; color: var(--text2); max-width: 600px; margin-bottom: 48px; }
 
-/* ── VMC Interactive Section ── */
-.vmc-section { background: var(--bg2); border-radius: 24px; padding: 48px; margin-bottom: 80px; border: 1px solid var(--border); }
-.vmc-container { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
-.vmc-canvas-wrap {
-  position: relative; background: var(--bg); border-radius: 16px;
-  border: 1px solid var(--border); overflow: hidden;
+/* Hero */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 120px 32px 80px; position: relative;
 }
-.vmc-canvas-wrap canvas { width: 100%; display: block; }
-.vmc-controls { display: flex; flex-direction: column; gap: 24px; }
+.hero h2 {
+  font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; text-align: center;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #fff, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero p { font-size: 1.1rem; color: var(--text2); text-align: center; max-width: 600px; }
+.hero-stats {
+  display: flex; gap: 48px; margin-top: 48px;
+}
+.stat-num {
+  font-size: 2.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+}
+.stat-label { font-size: 0.8rem; color: var(--text3); }
+
+/* 3D Scene */
+.scene-container {
+  width: 100%; height: 600px; background: var(--bg2);
+  border-radius: 24px; border: 1px solid var(--border);
+  overflow: hidden; position: relative; margin-bottom: 80px;
+}
+#robotCanvas { width: 100%; height: 100%; display: block; cursor: grab; }
+#robotCanvas:active { cursor: grabbing; }
+.scene-controls {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 12px; z-index: 10;
+}
+.scene-btn {
+  padding: 10px 24px; background: rgba(15,23,42,0.9);
+  border: 1px solid var(--border); border-radius: 10px;
+  color: var(--text); cursor: pointer; font-size: 0.85rem;
+  transition: all 0.3s; font-family: 'Space Grotesk', sans-serif;
+  backdrop-filter: blur(10px);
+}
+.scene-btn:hover { border-color: var(--accent); color: var(--accent); }
+.scene-btn.active { background: rgba(96,165,250,0.2); border-color: var(--accent); color: var(--accent); }
+.scene-hint {
+  position: absolute; top: 20px; left: 20px; z-index: 10;
+  font-size: 0.75rem; color: var(--text3);
+  background: rgba(15,23,42,0.8); padding: 8px 16px; border-radius: 8px;
+}
+
+/* VMC Section */
+.vmc-section {
+  background: var(--bg2); border-radius: 24px; padding: 48px;
+  border: 1px solid var(--border); margin-bottom: 80px;
+}
+.vmc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+.vmc-canvas-wrap {
+  background: var(--bg); border-radius: 16px; border: 1px solid var(--border);
+  overflow: hidden;
+}
+#vmcCanvas { width: 100%; display: block; }
+.vmc-controls { display: flex; flex-direction: column; gap: 20px; }
 .control-group { display: flex; flex-direction: column; gap: 8px; }
 .control-label {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 0.85rem; color: var(--text2);
+  display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text2);
 }
-.control-value {
-  font-family: 'JetBrains Mono', monospace; color: var(--accent);
-  font-size: 0.9rem; font-weight: 600;
-}
+.control-value { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-weight: 600; }
 input[type="range"] {
   -webkit-appearance: none; width: 100%; height: 6px;
   background: var(--bg3); border-radius: 3px; outline: none;
-  transition: background 0.3s;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 20px; height: 20px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border-radius: 50%; cursor: pointer; border: 2px solid var(--bg);
-  box-shadow: 0 0 10px rgba(96,165,250,0.3);
+  box-shadow: 0 0 15px rgba(96,165,250,0.4);
 }
 .vmc-output {
   background: var(--bg); border-radius: 12px; padding: 20px;
   border: 1px solid var(--border); margin-top: 16px;
 }
-.vmc-output h4 { font-size: 0.8rem; color: var(--text3); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+.vmc-output h4 { font-size: 0.75rem; color: var(--text3); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
 .output-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 0; border-bottom: 1px solid var(--border);
@@ -165,84 +163,26 @@ input[type="range"]::-webkit-slider-thumb {
 .output-label { font-size: 0.85rem; color: var(--text2); }
 .output-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; }
 
-/* ── Architecture Section ── */
-.arch-section { margin-bottom: 80px; }
+/* Architecture */
 .arch-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px; margin-bottom: 48px;
+  gap: 20px; margin-bottom: 80px;
 }
 .arch-card {
   background: var(--bg2); border-radius: 16px; padding: 32px;
   border: 1px solid var(--border); transition: all 0.3s;
-  cursor: pointer; position: relative; overflow: hidden;
-}
-.arch-card::before {
-  content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
 }
 .arch-card:hover { border-color: rgba(96,165,250,0.3); transform: translateY(-4px); }
-.arch-card:hover::before { transform: scaleX(1); }
 .arch-card-icon { font-size: 2rem; margin-bottom: 16px; }
 .arch-card h3 { font-size: 1.1rem; margin-bottom: 8px; }
-.arch-card p { font-size: 0.85rem; color: var(--text2); line-height: 1.6; }
+.arch-card p { font-size: 0.85rem; color: var(--text2); }
 .arch-card .freq {
   display: inline-block; margin-top: 12px; padding: 4px 10px;
   background: rgba(96,165,250,0.1); border-radius: 6px;
   font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);
 }
 
-/* ── Flow Diagram ── */
-.flow-section { margin-bottom: 80px; }
-.flow-container {
-  background: var(--bg2); border-radius: 24px; padding: 48px;
-  border: 1px solid var(--border); overflow-x: auto;
-}
-.flow-svg { width: 100%; min-width: 800px; }
-
-/* ── Explode Section ── */
-.explode-section { margin-bottom: 80px; }
-.explode-container {
-  background: var(--bg2); border-radius: 24px; padding: 48px;
-  border: 1px solid var(--border); text-align: center;
-}
-.robot-scene {
-  width: 100%; height: 500px; position: relative;
-  perspective: 1200px; margin: 40px 0;
-}
-.robot-part {
-  position: absolute; left: 50%; top: 50%;
-  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  cursor: pointer;
-}
-.robot-part:hover { filter: brightness(1.3); }
-.explode-btn {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 14px 32px; background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #fff; border: none; border-radius: 12px; font-size: 1rem;
-  font-weight: 600; cursor: pointer; transition: all 0.3s;
-  font-family: 'Space Grotesk', sans-serif;
-}
-.explode-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(96,165,250,0.3); }
-.explode-info {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px; margin-top: 40px; text-align: left;
-}
-.explode-item {
-  background: var(--bg); border-radius: 12px; padding: 20px;
-  border: 1px solid var(--border); transition: all 0.3s;
-}
-.explode-item:hover { border-color: rgba(96,165,250,0.3); }
-.explode-item h4 { font-size: 0.9rem; margin-bottom: 4px; }
-.explode-item p { font-size: 0.8rem; color: var(--text2); }
-.explode-item .tag {
-  display: inline-block; margin-top: 8px; padding: 2px 8px;
-  background: rgba(96,165,250,0.1); border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent);
-}
-
-/* ── Algorithm Section ── */
-.algo-section { margin-bottom: 80px; }
+/* Algorithm */
 .algo-tabs { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
 .algo-tab {
   padding: 10px 20px; background: var(--bg2); border: 1px solid var(--border);
@@ -252,9 +192,8 @@ input[type="range"]::-webkit-slider-thumb {
 .algo-tab.active { background: rgba(96,165,250,0.1); border-color: var(--accent); color: var(--accent); }
 .algo-content {
   background: var(--bg2); border-radius: 24px; padding: 48px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border); margin-bottom: 80px;
 }
-.algo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
 .algo-code {
   background: var(--bg); border-radius: 12px; padding: 24px;
   border: 1px solid var(--border); overflow-x: auto;
@@ -263,1049 +202,850 @@ input[type="range"]::-webkit-slider-thumb {
   font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
   line-height: 1.8; color: var(--text);
 }
-.algo-code .keyword { color: var(--accent2); }
-.algo-code .func { color: var(--accent); }
-.algo-code .comment { color: var(--text3); }
-.algo-code .number { color: var(--orange); }
-.algo-code .string { color: var(--green); }
-.algo-viz { display: flex; flex-direction: column; gap: 24px; }
-.algo-viz-item {
-  background: var(--bg); border-radius: 12px; padding: 20px;
-  border: 1px solid var(--border);
-}
-.algo-viz-item h4 { font-size: 0.85rem; margin-bottom: 12px; color: var(--accent); }
-.bar-chart { display: flex; flex-direction: column; gap: 8px; }
-.bar-row { display: flex; align-items: center; gap: 12px; }
-.bar-label { width: 80px; font-size: 0.75rem; color: var(--text2); text-align: right; }
-.bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
-.bar-val { width: 50px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.kw { color: var(--accent2); }
+.fn { color: var(--accent); }
+.cm { color: var(--text3); }
+.num { color: var(--orange); }
+.str { color: var(--green); }
 
-/* ── Footer ── */
+/* Footer */
 .footer {
   padding: 48px 32px; text-align: center;
   border-top: 1px solid var(--border); color: var(--text3); font-size: 0.8rem;
 }
 .footer a { color: var(--accent); text-decoration: none; }
-.footer a:hover { text-decoration: underline; }
 
-/* ── Responsive ── */
 @media (max-width: 768px) {
-  .top-bar { padding: 12px 16px; }
-  .top-bar .links { display: none; }
   .section { padding: 60px 20px; }
-  .vmc-section { padding: 24px; }
-  .vmc-container { grid-template-columns: 1fr; }
-  .algo-grid { grid-template-columns: 1fr; }
+  .vmc-grid { grid-template-columns: 1fr; }
   .hero-stats { gap: 24px; flex-wrap: wrap; }
-  .robot-scene { height: 350px; }
+  .scene-container { height: 400px; }
 }
-
-/* ── Animations ── */
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-@keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-.animate-in { animation: slideIn 0.6s ease forwards; }
-.float { animation: float 3s ease-in-out infinite; }
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 </style>
 </head>
 <body>
-<div class="noise-overlay"></div>
 
-<!-- Top Bar -->
 <div class="top-bar">
-  <a href="/" class="back">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    返回首页
-  </a>
-  <h1>🤖 双轮足机器人 · 交互式解构</h1>
-  <div class="links">
-    <a href="#vmc">VMC算法</a>
-    <a href="#architecture">架构</a>
-    <a href="#explode">爆炸图</a>
-    <a href="#algorithms">算法</a>
-  </div>
+  <a href="/" class="back">← 返回首页</a>
+  <h1>🤖 双轮足机器人 · 3D交互解构</h1>
+  <div style="width:80px"></div>
 </div>
 
-<!-- Hero Section -->
+<!-- Hero -->
 <section class="hero">
-  <div class="hero-bg"></div>
-  <div class="hero-content">
-    <div class="hero-label">达妙科技 · 开源轮足仓</div>
-    <h2>双轮足机器人<br>深度解构</h2>
-    <p>基于VMC虚拟模型控制 + LQR线性二次调节器，实现欠驱动系统的动态平衡、跳跃、自适应地形穿越</p>
-    <div class="hero-stats">
-      <div class="stat">
-        <div class="stat-num">6</div>
-        <div class="stat-label">电机总数</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">1kHz</div>
-        <div class="stat-label">IMU采样率</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">333Hz</div>
-        <div class="stat-label">控制频率</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num">6</div>
-        <div class="stat-label">状态变量</div>
-      </div>
+  <h2>双轮足机器人<br>深度解构</h2>
+  <p>基于达妙科技开源轮足仓，VMC+LQR算法实现动态平衡、跳跃、自适应地形</p>
+  <div class="hero-stats">
+    <div><div class="stat-num">6</div><div class="stat-label">电机总数</div></div>
+    <div><div class="stat-num">1kHz</div><div class="stat-label">IMU采样</div></div>
+    <div><div class="stat-num">333Hz</div><div class="stat-label">控制频率</div></div>
+  </div>
+</section>
+
+<!-- 3D Robot Scene -->
+<section class="section">
+  <div class="section-label">3D 交互模型</div>
+  <div class="section-title">机械结构可视化</div>
+  <div class="section-desc">鼠标拖拽旋转，滚轮缩放。点击"爆炸拆解"查看各部件分离视图</div>
+
+  <div class="scene-container">
+    <canvas id="robotCanvas"></canvas>
+    <div class="scene-hint">🖱 拖拽旋转 · 滚轮缩放 · 右键平移</div>
+    <div class="scene-controls">
+      <button class="scene-btn active" onclick="setView('perspective')">透视图</button>
+      <button class="scene-btn" onclick="setView('front')">正视图</button>
+      <button class="scene-btn" onclick="setView('side')">侧视图</button>
+      <button class="scene-btn" onclick="setView('top')">俯视图</button>
+      <button class="scene-btn" id="explodeBtn" onclick="toggleExplode()">💥 爆炸拆解</button>
+      <button class="scene-btn" onclick="resetView()">↺ 重置</button>
     </div>
   </div>
 </section>
 
-<!-- VMC Interactive Section -->
+<!-- VMC Interactive -->
 <section class="section" id="vmc">
-  <div class="section-label">交互式演示</div>
-  <div class="section-title">五连杆 VMC 算法实时解算</div>
-  <div class="section-desc">拖动滑块改变关节角度，实时观察虚拟模型控制的正运动学解算过程</div>
+  <div class="section-label">交互式算法演示</div>
+  <div class="section-title">五连杆 VMC 实时解算</div>
+  <div class="section-desc">拖动滑块改变关节角度，实时观察五连杆运动学解算</div>
 
   <div class="vmc-section">
-    <div class="vmc-container">
+    <div class="vmc-grid">
       <div class="vmc-canvas-wrap">
         <canvas id="vmcCanvas" width="600" height="500"></canvas>
       </div>
       <div class="vmc-controls">
         <div class="control-group">
           <div class="control-label">
-            <span>关节角度 φ₁ (左上)</span>
-            <span class="control-value" id="phi1Val">60°</span>
+            <span>φ₁ 左上关节 (rad)</span>
+            <span class="control-value" id="phi1Val">2.094</span>
           </div>
-          <input type="range" id="phi1" min="20" max="160" value="60" step="1">
+          <input type="range" id="phi1" min="30" max="150" value="120" step="1">
         </div>
         <div class="control-group">
           <div class="control-label">
-            <span>关节角度 φ₄ (左下)</span>
-            <span class="control-value" id="phi4Val">120°</span>
+            <span>φ₄ 右上关节 (rad)</span>
+            <span class="control-value" id="phi4Val">1.047</span>
           </div>
-          <input type="range" id="phi4" min="20" max="160" value="120" step="1">
-        </div>
-        <div class="control-group">
-          <div class="control-label">
-            <span>腿长目标 L₀</span>
-            <span class="control-value" id="l0TargetVal">0.15m</span>
-          </div>
-          <input type="range" id="l0Target" min="80" max="300" value="150" step="1">
+          <input type="range" id="phi4" min="30" max="150" value="60" step="1">
         </div>
 
         <div class="vmc-output">
-          <h4>📊 正运动学输出</h4>
+          <h4>📐 正运动学输出</h4>
           <div class="output-row">
             <span class="output-label">腿长 L₀</span>
-            <span class="output-val" id="outL0" style="color: var(--green)">0.152 m</span>
+            <span class="output-val" id="outL0" style="color:var(--green)">--</span>
           </div>
           <div class="output-row">
             <span class="output-label">腿角度 θ</span>
-            <span class="output-val" id="outTheta" style="color: var(--accent)">1.521 rad</span>
+            <span class="output-val" id="outTheta" style="color:var(--accent)">--</span>
           </div>
           <div class="output-row">
-            <span class="output-label">角速度 dθ</span>
-            <span class="output-val" id="outDtheta" style="color: var(--orange)">0.000 rad/s</span>
+            <span class="output-label">C点 X</span>
+            <span class="output-val" id="outCX" style="color:var(--cyan)">--</span>
           </div>
           <div class="output-row">
-            <span class="output-label">C点 X坐标</span>
-            <span class="output-val" id="outCX" style="color: var(--cyan)">0.044 m</span>
+            <span class="output-label">C点 Y</span>
+            <span class="output-val" id="outCY" style="color:var(--accent2)">--</span>
           </div>
           <div class="output-row">
-            <span class="output-label">C点 Y坐标</span>
-            <span class="output-val" id="outCY" style="color: var(--accent2)">0.145 m</span>
+            <span class="output-label">α 腿与地面夹角</span>
+            <span class="output-val" id="outAlpha" style="color:var(--orange)">--</span>
           </div>
         </div>
 
         <div class="vmc-output">
-          <h4>⚙️ 机构参数</h4>
+          <h4>⚙️ 五连杆参数 (mm)</h4>
           <div class="output-row">
-            <span class="output-label">l₁ = l₄</span>
-            <span class="output-val mono" style="color: var(--text)">83.3 mm</span>
+            <span class="output-label">l₁ = l₄ (连杆)</span>
+            <span class="output-val mono">83.3</span>
           </div>
           <div class="output-row">
-            <span class="output-label">l₂ = l₃</span>
-            <span class="output-val mono" style="color: var(--text)">160 mm</span>
+            <span class="output-label">l₂ = l₃ (连杆)</span>
+            <span class="output-val mono">160.0</span>
           </div>
           <div class="output-row">
             <span class="output-label">l₅ (AE间距)</span>
-            <span class="output-val mono" style="color: var(--text)">88 mm</span>
+            <span class="output-val mono">88.0</span>
           </div>
+        </div>
+
+        <div class="vmc-output">
+          <h4>📖 算法说明</h4>
+          <p style="font-size:0.8rem;color:var(--text2);line-height:1.8">
+            VMC (Virtual Model Control) 通过五连杆机构的正运动学，将两个关节电机角度 (φ₁, φ₄) 
+            映射为虚拟腿长 L₀ 和腿角度 θ。再通过雅可比矩阵将期望的力/力矩 (F₀, Tp) 
+            映射回关节电机力矩。
+          </p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Architecture Section -->
-<section class="section" id="architecture">
+<!-- Architecture -->
+<section class="section">
   <div class="section-label">系统架构</div>
   <div class="section-title">FreeRTOS 多任务架构</div>
-  <div class="section-desc">实时操作系统驱动的6任务并行架构，确保毫秒级控制响应</div>
 
   <div class="arch-grid">
-    <div class="arch-card" onclick="highlightTask('ins')">
+    <div class="arch-card">
       <div class="arch-card-icon">🧭</div>
       <h3>INS_task</h3>
-      <p>惯性导航任务。读取BMI088六轴IMU，Mahony互补滤波姿态解算，四元数转欧拉角，加速度坐标系转换</p>
+      <p>BMI088 IMU读取，Mahony互补滤波姿态解算，四元数转欧拉角，加速度坐标系转换</p>
       <span class="freq">1000 Hz · 最高优先级</span>
     </div>
-    <div class="arch-card" onclick="highlightTask('chassisL')">
+    <div class="arch-card">
       <div class="arch-card-icon">🦿</div>
       <h3>ChassisL_task</h3>
-      <p>左侧底盘控制。读取关节电机反馈，VMC正运动学解算，LQR状态反馈，跳跃状态机，离地检测</p>
+      <p>左侧底盘控制：关节电机反馈、VMC正运动学、LQR状态反馈、跳跃状态机、离地检测</p>
       <span class="freq">333 Hz · 高优先级</span>
     </div>
-    <div class="arch-card" onclick="highlightTask('chassisR')">
+    <div class="arch-card">
       <div class="arch-card-icon">🦿</div>
       <h3>ChassisR_task</h3>
-      <p>右侧底盘控制。与左侧对称，控制右半部分的2个DM4310和1个DM6215轮毂电机</p>
+      <p>右侧底盘控制：与左侧对称，控制2个DM4310关节电机和1个DM6215轮毂电机</p>
       <span class="freq">333 Hz · 高优先级</span>
     </div>
-    <div class="arch-card" onclick="highlightTask('remote')">
+    <div class="arch-card">
       <div class="arch-card-icon">🎮</div>
       <h3>Remote_task</h3>
-      <p>遥控任务。解析SBUS/PS2手柄指令，映射为前进速度、转向力矩、腿长设定、功能开关</p>
+      <p>SBUS遥控器/PS2手柄指令解析，映射为前进速度、转向力矩、腿长设定</p>
       <span class="freq">100 Hz · 中优先级</span>
     </div>
-    <div class="arch-card" onclick="highlightTask('watch')">
+    <div class="arch-card">
       <div class="arch-card-icon">👁️</div>
       <h3>Watch_task</h3>
-      <p>看门狗任务。监控各任务运行状态，电机堵转检测，电池电压监控，LED状态指示</p>
+      <p>系统监控：任务状态、电机堵转检测、电池电压、LED状态指示、蜂鸣器报警</p>
       <span class="freq">10 Hz · 低优先级</span>
     </div>
-    <div class="arch-card" onclick="highlightTask('observe')">
+    <div class="arch-card">
       <div class="arch-card-icon">📡</div>
       <h3>Observe_task</h3>
-      <p>状态观测任务。扩展卡尔曼滤波器估计系统状态，为LQR提供更精确的状态反馈</p>
+      <p>状态观测器：扩展卡尔曼滤波估计系统状态，为LQR提供精确的状态反馈</p>
       <span class="freq">500 Hz · 中高优先级</span>
     </div>
   </div>
 </section>
 
-<!-- Flow Diagram -->
-<section class="section flow-section">
-  <div class="section-label">数据流</div>
-  <div class="section-title">控制信号流图</div>
-  <div class="section-desc">从传感器到执行器的完整数据通路</div>
-
-  <div class="flow-container">
-    <svg class="flow-svg" viewBox="0 0 1000 400">
-      <!-- Background Grid -->
-      <defs>
-        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
-        </pattern>
-        <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
-        </linearGradient>
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
-      <rect width="1000" height="400" fill="url(#grid)"/>
-
-      <!-- Nodes -->
-      <g class="flow-node" transform="translate(80,200)">
-        <rect x="-50" y="-30" width="100" height="60" rx="12" fill="#1e293b" stroke="#60a5fa" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">BMI088</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">IMU</text>
-      </g>
-
-      <g class="flow-node" transform="translate(240,120)">
-        <rect x="-55" y="-30" width="110" height="60" rx="12" fill="#1e293b" stroke="#4ade80" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">Mahony</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">姿态解算</text>
-      </g>
-
-      <g class="flow-node" transform="translate(240,280)">
-        <rect x="-55" y="-30" width="110" height="60" rx="12" fill="#1e293b" stroke="#fb923c" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">DM4310</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">关节电机</text>
-      </g>
-
-      <g class="flow-node" transform="translate(450,200)">
-        <rect x="-45" y="-30" width="90" height="60" rx="12" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">VMC</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">正运动学</text>
-      </g>
-
-      <g class="flow-node" transform="translate(620,200)">
-        <rect x="-45" y="-30" width="90" height="60" rx="12" fill="#1e293b" stroke="#f472b6" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">LQR</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">状态反馈</text>
-      </g>
-
-      <g class="flow-node" transform="translate(800,120)">
-        <rect x="-55" y="-30" width="110" height="60" rx="12" fill="#1e293b" stroke="#22d3ee" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">VMC逆</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">力矩映射</text>
-      </g>
-
-      <g class="flow-node" transform="translate(800,280)">
-        <rect x="-55" y="-30" width="110" height="60" rx="12" fill="#1e293b" stroke="#f87171" stroke-width="2"/>
-        <text x="0" y="5" text-anchor="middle" fill="#e2e8f0" font-size="12" font-family="Space Grotesk">DM6215</text>
-        <text x="0" y="20" text-anchor="middle" fill="#94a3b8" font-size="10">轮毂电机</text>
-      </g>
-
-      <!-- Arrows -->
-      <g filter="url(#glow)">
-        <line x1="130" y1="190" x2="185" y2="130" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="130" y1="210" x2="185" y2="270" stroke="#60a5fa" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="295" y1="140" x2="405" y2="190" stroke="#4ade80" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="295" y1="260" x2="405" y2="210" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="495" y1="200" x2="575" y2="200" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="665" y1="190" x2="745" y2="130" stroke="#f472b6" stroke-width="2" marker-end="url(#arrow)"/>
-        <line x1="665" y1="210" x2="745" y2="270" stroke="#f472b6" stroke-width="2" marker-end="url(#arrow)"/>
-      </g>
-
-      <!-- Arrow Marker -->
-      <defs>
-        <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#60a5fa"/>
-        </marker>
-      </defs>
-
-      <!-- Labels -->
-      <text x="160" y="150" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">Accel/Gyro</text>
-      <text x="350" y="165" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">Roll/Pitch/Yaw</text>
-      <text x="350" y="255" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">pos/vel</text>
-      <text x="520" y="185" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">L₀/θ</text>
-      <text x="680" y="165" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">F₀/Tp</text>
-      <text x="700" y="255" fill="#94a3b8" font-size="10" font-family="JetBrains Mono">wheel_T</text>
-
-      <!-- Title -->
-      <text x="500" y="380" text-anchor="middle" fill="#64748b" font-size="12" font-family="JetBrains Mono">
-        传感器 → 姿态解算 → 运动学 → 控制器 → 力矩映射 → 执行器
-      </text>
-    </svg>
-  </div>
-</section>
-
-<!-- Explode Section -->
-<section class="section explode-section" id="explode">
-  <div class="section-label">3D爆炸图</div>
-  <div class="section-title">机械结构拆解</div>
-  <div class="section-desc">点击按钮查看机器人的爆炸拆解视图，了解各部件的空间关系</div>
-
-  <div class="explode-container">
-    <div class="robot-scene" id="robotScene">
-      <!-- SVG Robot Parts -->
-      <svg id="robotSvg" viewBox="0 0 600 500" style="width:100%;height:100%;">
-        <defs>
-          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#334155"/>
-            <stop offset="100%" style="stop-color:#1e293b"/>
-          </linearGradient>
-          <linearGradient id="legGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#475569"/>
-            <stop offset="100%" style="stop-color:#334155"/>
-          </linearGradient>
-          <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#1e293b"/>
-            <stop offset="100%" style="stop-color:#0f172a"/>
-          </linearGradient>
-          <filter id="partGlow">
-            <feGaussianBlur stdDeviation="2" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-
-        <!-- Body -->
-        <g id="part-body" class="robot-part" data-name="机身主控板" data-desc="DM-MC02 STM32H743">
-          <rect x="220" y="180" width="160" height="80" rx="16" fill="url(#bodyGrad)" stroke="#60a5fa" stroke-width="1.5"/>
-          <rect x="240" y="195" width="40" height="12" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.5"/>
-          <rect x="290" y="195" width="30" height="12" rx="3" fill="#0f172a" stroke="#475569" stroke-width="0.5"/>
-          <circle cx="340" cy="201" r="4" fill="#22c55e" opacity="0.8"/>
-          <circle cx="355" cy="201" r="4" fill="#ef4444" opacity="0.8"/>
-          <text x="300" y="245" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="JetBrains Mono">DM-MC02</text>
-        </g>
-
-        <!-- Left Leg Top -->
-        <g id="part-leftTop" class="robot-part" data-name="左上关节 DM4310" data-desc="额定扭矩 10Nm · MIT模式">
-          <rect x="180" y="260" width="50" height="70" rx="8" fill="url(#legGrad)" stroke="#a78bfa" stroke-width="1.5"/>
-          <circle cx="205" cy="285" r="12" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-          <circle cx="205" cy="285" r="4" fill="#a78bfa"/>
-          <text x="205" y="320" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">4310</text>
-        </g>
-
-        <!-- Left Leg Bottom -->
-        <g id="part-leftBot" class="robot-part" data-name="左下关节 DM4310" data-desc="额定扭矩 10Nm · 连杆驱动">
-          <rect x="180" y="340" width="50" height="70" rx="8" fill="url(#legGrad)" stroke="#a78bfa" stroke-width="1.5"/>
-          <circle cx="205" cy="365" r="12" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-          <circle cx="205" cy="365" r="4" fill="#a78bfa"/>
-          <text x="205" y="400" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">4310</text>
-        </g>
-
-        <!-- Right Leg Top -->
-        <g id="part-rightTop" class="robot-part" data-name="右上关节 DM4310" data-desc="额定扭矩 10Nm · MIT模式">
-          <rect x="370" y="260" width="50" height="70" rx="8" fill="url(#legGrad)" stroke="#a78bfa" stroke-width="1.5"/>
-          <circle cx="395" cy="285" r="12" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-          <circle cx="395" cy="285" r="4" fill="#a78bfa"/>
-          <text x="395" y="320" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">4310</text>
-        </g>
-
-        <!-- Right Leg Bottom -->
-        <g id="part-rightBot" class="robot-part" data-name="右下关节 DM4310" data-desc="额定扭矩 10Nm · 连杆驱动">
-          <rect x="370" y="340" width="50" height="70" rx="8" fill="url(#legGrad)" stroke="#a78bfa" stroke-width="1.5"/>
-          <circle cx="395" cy="365" r="12" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-          <circle cx="395" cy="365" r="4" fill="#a78bfa"/>
-          <text x="395" y="400" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="JetBrains Mono">4310</text>
-        </g>
-
-        <!-- Left Wheel -->
-        <g id="part-leftWheel" class="robot-part" data-name="左轮毂电机 DM6215" data-desc="额定扭矩 15Nm · 轮毂驱动">
-          <ellipse cx="160" cy="430" rx="45" ry="45" fill="url(#wheelGrad)" stroke="#f472b6" stroke-width="2"/>
-          <ellipse cx="160" cy="430" rx="30" ry="30" fill="none" stroke="#334155" stroke-width="1"/>
-          <ellipse cx="160" cy="430" rx="15" ry="15" fill="#0f172a" stroke="#f472b6" stroke-width="1"/>
-          <circle cx="160" cy="430" r="5" fill="#f472b6"/>
-          <text x="160" y="435" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold" font-family="JetBrains Mono">DM</text>
-          <text x="160" y="448" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="JetBrains Mono">6215</text>
-        </g>
-
-        <!-- Right Wheel -->
-        <g id="part-rightWheel" class="robot-part" data-name="右轮毂电机 DM6215" data-desc="额定扭矩 15Nm · 轮毂驱动">
-          <ellipse cx="440" cy="430" rx="45" ry="45" fill="url(#wheelGrad)" stroke="#f472b6" stroke-width="2"/>
-          <ellipse cx="440" cy="430" rx="30" ry="30" fill="none" stroke="#334155" stroke-width="1"/>
-          <ellipse cx="440" cy="430" rx="15" ry="15" fill="#0f172a" stroke="#f472b6" stroke-width="1"/>
-          <circle cx="440" cy="430" r="5" fill="#f472b6"/>
-          <text x="440" y="435" text-anchor="middle" fill="#fff" font-size="10" font-weight="bold" font-family="JetBrains Mono">DM</text>
-          <text x="440" y="448" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="JetBrains Mono">6215</text>
-        </g>
-
-        <!-- IMU -->
-        <g id="part-imu" class="robot-part" data-name="BMI088 IMU" data-desc="六轴惯性测量 · 1kHz采样">
-          <rect x="270" y="190" width="60" height="25" rx="4" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/>
-          <text x="300" y="207" text-anchor="middle" fill="#22d3ee" font-size="9" font-family="JetBrains Mono">BMI088</text>
-        </g>
-
-        <!-- Battery -->
-        <g id="part-battery" class="robot-part" data-name="6S 锂电池" data-desc="22.2V · 1300mAh · 动力电源">
-          <rect x="250" y="235" width="100" height="30" rx="6" fill="#1a1a2e" stroke="#4ade80" stroke-width="1.5"/>
-          <text x="300" y="255" text-anchor="middle" fill="#4ade80" font-size="10" font-family="JetBrains Mono">6S LiPo</text>
-        </g>
-
-        <!-- Connecting Lines (shown in exploded view) -->
-        <g id="connectLines" opacity="0">
-          <line x1="205" y1="260" x2="205" y2="180" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-          <line x1="395" y1="260" x2="395" y2="180" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-          <line x1="205" y1="330" x2="205" y2="340" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-          <line x1="395" y1="330" x2="395" y2="340" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-          <line x1="205" y1="410" x2="160" y2="385" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-          <line x1="395" y1="410" x2="440" y2="385" stroke="#64748b" stroke-width="1" stroke-dasharray="4,4"/>
-        </g>
-      </svg>
-    </div>
-
-    <button class="explode-btn" onclick="toggleExplode()">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-      </svg>
-      <span id="explodeBtnText">爆炸拆解</span>
-    </button>
-
-    <div class="explode-info" id="explodeInfo">
-      <div class="explode-item">
-        <h4>🧠 主控板 DM-MC02</h4>
-        <p>STM32H743VIT6 · 480MHz · 1MB RAM</p>
-        <span class="tag">FDCAN × 2</span>
-      </div>
-      <div class="explode-item">
-        <h4>🦾 关节电机 DM4310</h4>
-        <p>额定扭矩 10Nm · MIT模式控制</p>
-        <span class="tag">× 4</span>
-      </div>
-      <div class="explode-item">
-        <h4>🎡 轮毂电机 DM6215</h4>
-        <p>额定扭矩 15Nm · 轮毂直驱</p>
-        <span class="tag">× 2</span>
-      </div>
-      <div class="explode-item">
-        <h4>🧭 IMU BMI088</h4>
-        <p>六轴 · 加速度计 + 陀螺仪</p>
-        <span class="tag">1kHz</span>
-      </div>
-      <div class="explode-item">
-        <h4>🔋 电池 6S LiPo</h4>
-        <p>22.2V · 1300mAh · 动力电源</p>
-        <span class="tag">XT60</span>
-      </div>
-      <div class="explode-item">
-        <h4>📡 遥控 SBUS</h4>
-        <p>航模遥控器 · 100Hz更新</p>
-        <span class="tag">UART</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Algorithm Section -->
-<section class="section algo-section" id="algorithms">
+<!-- Algorithm -->
+<section class="section">
   <div class="section-label">核心算法</div>
-  <div class="section-title">控制算法详解</div>
-  <div class="section-desc">VMC + LQR + 离地检测的完整控制链路</div>
+  <div class="section-title">控制算法代码解析</div>
 
   <div class="algo-tabs">
     <button class="algo-tab active" onclick="switchAlgo('vmc')">VMC 正运动学</button>
-    <button class="algo-tab" onclick="switchAlgo('lqr')">LQR 状态反馈</button>
+    <button class="algo-tab" onclick="switchAlgo('lqr')">LQR 控制律</button>
     <button class="algo-tab" onclick="switchAlgo('ground')">离地检测</button>
     <button class="algo-tab" onclick="switchAlgo('jump')">跳跃状态机</button>
   </div>
 
-  <div class="algo-content">
-    <div class="algo-grid" id="algoVmc">
-      <div class="algo-code">
-        <pre><span class="comment">// VMC 正运动学解算</span>
-<span class="keyword">void</span> <span class="func">VMC_calc_1</span>(vmc_leg_t *vmc, <span class="keyword">float</span> dt) {
-  <span class="comment">// 1. 计算B、D点坐标</span>
-  vmc->YD = l4 * <span class="func">sin</span>(phi4);
-  vmc->YB = l1 * <span class="func">sin</span>(phi1);
-  vmc->XD = l5 + l4 * <span class="func">cos</span>(phi4);
-  vmc->XB = l1 * <span class="func">cos</span>(phi1);
+  <div class="algo-content" id="algoVmc">
+    <div class="algo-code">
+<pre><span class="cm">// VMC 正运动学 - 从关节角度计算腿长和腿角度</span>
+<span class="kw">void</span> <span class="fn">VMC_calc_1</span>(vmc_leg_t *vmc, <span class="kw">float</span> dt) {
+  <span class="cm">// 1. 计算B、D点坐标</span>
+  vmc->YD = l4 * <span class="fn">sinf</span>(phi4);     <span class="cm">// D点y坐标</span>
+  vmc->YB = l1 * <span class="fn">sinf</span>(phi1);     <span class="cm">// B点y坐标</span>
+  vmc->XD = l5 + l4 * <span class="fn">cosf</span>(phi4); <span class="cm">// D点x坐标</span>
+  vmc->XB = l1 * <span class="fn">cosf</span>(phi1);     <span class="cm">// B点x坐标</span>
 
-  <span class="comment">// 2. 计算BD距离</span>
-  lBD = <span class="func">sqrt</span>((XD-XB)² + (YD-YB)²);
+  <span class="cm">// 2. BD距离</span>
+  lBD = <span class="fn">sqrtf</span>((XD-XB)² + (YD-YB)²);
 
-  <span class="comment">// 3. 计算phi2 (闭链约束)</span>
-  A0 = <span class="number">2</span>*l2*(XD-XB);
-  B0 = <span class="number">2</span>*l2*(YD-YB);
+  <span class="cm">// 3. 闭链约束求解phi2</span>
+  A0 = <span class="num">2</span>*l2*(XD-XB);
+  B0 = <span class="num">2</span>*l2*(YD-YB);
   C0 = l2² + lBD² - l3²;
-  phi2 = <span class="number">2</span>*<span class="func">atan2</span>(B0+<span class="func">sqrt</span>(A0²+B0²-C0²), A0+C0);
+  phi2 = <span class="num">2</span>*<span class="fn">atan2f</span>(B0+<span class="fn">sqrtf</span>(A0²+B0²-C0²), A0+C0);
 
-  <span class="comment">// 4. 计算C点坐标</span>
-  XC = l1*<span class="func">cos</span>(phi1) + l2*<span class="func">cos</span>(phi2);
-  YC = l1*<span class="func">sin</span>(phi1) + l2*<span class="func">sin</span>(phi2);
+  <span class="cm">// 4. C点坐标 (末端执行器)</span>
+  XC = l1*<span class="fn">cosf</span>(phi1) + l2*<span class="fn">cosf</span>(phi2);
+  YC = l1*<span class="fn">sinf</span>(phi1) + l2*<span class="fn">sinf</span>(phi2);
 
-  <span class="comment">// 5. 计算腿长和腿角度</span>
-  L0 = <span class="func">sqrt</span>((XC-l5/2)² + YC²);
-  phi0 = <span class="func">atan2</span>(YC, XC-l5/2);
-  theta = <span class="number">π/2</span> - Pitch - phi0;
+  <span class="cm">// 5. 极坐标: 腿长L0, 腿角度phi0</span>
+  L0 = <span class="fn">sqrtf</span>((XC-l5/<span class="num">2</span>)² + YC²);
+  phi0 = <span class="fn">atan2f</span>(YC, XC-l5/<span class="num">2</span>);
+
+  <span class="cm">// 6. theta给LQR用</span>
+  theta = <span class="num">π/2</span> - Pitch - phi0;
+  d_theta = -Gyro_Y - d_phi0;
 }</pre>
-      </div>
-      <div class="algo-viz">
-        <div class="algo-viz-item">
-          <h4>📐 五连杆几何关系</h4>
-          <svg viewBox="0 0 300 200" style="width:100%">
-            <line x1="50" y1="150" x2="100" y2="50" stroke="#60a5fa" stroke-width="2"/>
-            <line x1="100" y1="50" x2="200" y2="50" stroke="#a78bfa" stroke-width="2"/>
-            <line x1="200" y1="50" x2="250" y2="150" stroke="#f472b6" stroke-width="2"/>
-            <line x1="250" y1="150" x2="150" y2="150" stroke="#22d3ee" stroke-width="2"/>
-            <line x1="150" y1="150" x2="50" y2="150" stroke="#4ade80" stroke-width="2"/>
-            <circle cx="50" cy="150" r="5" fill="#60a5fa"/>
-            <circle cx="100" cy="50" r="5" fill="#a78bfa"/>
-            <circle cx="200" cy="50" r="5" fill="#f472b6"/>
-            <circle cx="250" cy="150" r="5" fill="#22d3ee"/>
-            <circle cx="150" cy="150" r="5" fill="#4ade80"/>
-            <text x="30" y="170" fill="#94a3b8" font-size="10">A</text>
-            <text x="90" y="40" fill="#94a3b8" font-size="10">B</text>
-            <text x="200" y="40" fill="#94a3b8" font-size="10">C</text>
-            <text x="260" y="170" fill="#94a3b8" font-size="10">D</text>
-            <text x="140" y="170" fill="#94a3b8" font-size="10">E</text>
-          </svg>
-        </div>
-        <div class="algo-viz-item">
-          <h4>📊 关键输出参数</h4>
-          <div class="bar-chart">
-            <div class="bar-row">
-              <span class="bar-label">腿长 L₀</span>
-              <div class="bar-track"><div class="bar-fill" style="width:60%;background:linear-gradient(90deg,var(--accent),var(--cyan))"></div></div>
-              <span class="bar-val" style="color:var(--accent)">0.15m</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">腿角 θ</span>
-              <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(90deg,var(--accent2),var(--accent3))"></div></div>
-              <span class="bar-val" style="color:var(--accent2)">1.52rad</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">角速度</span>
-              <div class="bar-track"><div class="bar-fill" style="width:10%;background:linear-gradient(90deg,var(--orange),var(--red))"></div></div>
-              <span class="bar-val" style="color:var(--orange)">0.00</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+  </div>
 
-    <div class="algo-grid" id="algoLqr" style="display:none">
-      <div class="algo-code">
-        <pre><span class="comment">// LQR 状态反馈控制</span>
-<span class="keyword">float</span> state[<span class="number">6</span>] = {
-  theta,      <span class="comment">// 腿角度偏差</span>
-  d_theta,    <span class="comment">// 腿角速度</span>
-  x_error,    <span class="comment">// 位置偏差</span>
-  v_error,    <span class="comment">// 速度偏差</span>
-  pitch,      <span class="comment">// 机身俯仰角</span>
-  d_pitch     <span class="comment">// 俯仰角速度</span>
-};
+  <div class="algo-content" id="algoLqr" style="display:none">
+    <div class="algo-code">
+<pre><span class="cm">// LQR 状态反馈控制律</span>
+<span class="cm">// 状态向量: [θ, dθ, x_err, v_err, pitch, dpitch]</span>
 
-<span class="comment">// K值随腿长L0变化 (增益调度)</span>
-<span class="keyword">for</span>(i=<span class="number">0</span>; i<<span class="number">12</span>; i++) {
-  K[i] = c[i][<span class="number">0</span>]*L0³
-       + c[i][<span class="number">1</span>]*L0²
-       + c[i][<span class="number">2</span>]*L0
-       + c[i][<span class="number">3</span>];
+<span class="cm">// K值随腿长L0变化 (增益调度)</span>
+<span class="kw">for</span>(i=<span class="num">0</span>; i<<span class="num">12</span>; i++) {
+  K[i] = Poly[i][<span class="num">0</span>]*L0³ + Poly[i][<span class="num">1</span>]*L0²
+       + Poly[i][<span class="num">2</span>]*L0 + Poly[i][<span class="num">3</span>];
 }
 
-<span class="comment">// 控制律</span>
-wheel_T = K[<span class="number">0</span>]*theta + K[<span class="number">1</span>]*d_theta
-        + K[<span class="number">2</span>]*x_err + K[<span class="number">3</span>]*v_err
-        + K[<span class="number">4</span>]*pitch + K[<span class="number">5</span>]*d_pitch;
+<span class="cm">// 轮毂电机力矩输出</span>
+wheel_T = K[<span class="num">0</span>]*theta  + K[<span class="num">1</span>]*d_theta
+        + K[<span class="num">2</span>]*x_err  + K[<span class="num">3</span>]*v_err
+        + K[<span class="num">4</span>]*pitch  + K[<span class="num">5</span>]*d_pitch;
 
-Tp = K[<span class="number">6</span>]*theta + K[<span class="number">7</span>]*d_theta
-   + K[<span class="number">8</span>]*x_err + K[<span class="number">9</span>]*v_err
-   + K[<span class="number">10</span>]*pitch + K[<span class="number">11</span>]*d_pitch;</pre>
-      </div>
-      <div class="algo-viz">
-        <div class="algo-viz-item">
-          <h4>📈 状态变量权重</h4>
-          <div class="bar-chart">
-            <div class="bar-row">
-              <span class="bar-label">θ 腿角</span>
-              <div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--accent)"></div></div>
-              <span class="bar-val" style="color:var(--accent)">-3.33</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">dθ 角速度</span>
-              <div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--accent2)"></div></div>
-              <span class="bar-val" style="color:var(--accent2)">-0.23</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">x 位置</span>
-              <div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--green)"></div></div>
-              <span class="bar-val" style="color:var(--green)">-1.30</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">v 速度</span>
-              <div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--orange)"></div></div>
-              <span class="bar-val" style="color:var(--orange)">-1.21</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">pitch 俯仰</span>
-              <div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--accent3)"></div></div>
-              <span class="bar-val" style="color:var(--accent3)">3.31</span>
-            </div>
-            <div class="bar-row">
-              <span class="bar-label">dpitch</span>
-              <div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--cyan)"></div></div>
-              <span class="bar-val" style="color:var(--cyan)">0.32</span>
-            </div>
-          </div>
-        </div>
-        <div class="algo-viz-item">
-          <h4>🔄 增益调度示意</h4>
-          <svg viewBox="0 0 300 150" style="width:100%">
-            <rect x="0" y="0" width="300" height="150" fill="var(--bg)" rx="8"/>
-            <path d="M 30 120 Q 80 80 150 60 Q 220 40 270 30" fill="none" stroke="var(--accent)" stroke-width="2"/>
-            <path d="M 30 100 Q 100 90 150 85 Q 200 80 270 75" fill="none" stroke="var(--accent2)" stroke-width="2" stroke-dasharray="5,5"/>
-            <text x="150" y="145" text-anchor="middle" fill="#94a3b8" font-size="10">腿长 L₀ →</text>
-            <text x="10" y="70" fill="#94a3b8" font-size="10" transform="rotate(-90,10,70)">K值</text>
-            <circle cx="150" cy="60" r="4" fill="var(--accent)"/>
-            <text x="160" y="55" fill="var(--accent)" font-size="9">当前</text>
-          </svg>
-        </div>
-      </div>
+<span class="cm">// 髋关节力矩输出</span>
+Tp = K[<span class="num">6</span>]*theta  + K[<span class="num">7</span>]*d_theta
+   + K[<span class="num">8</span>]*x_err  + K[<span class="num">9</span>]*v_err
+   + K[<span class="num">10</span>]*pitch + K[<span class="num">11</span>]*d_pitch;
+
+<span class="cm">// VMC逆运动学: (F0, Tp) → 关节力矩</span>
+torque[<span class="num">0</span>] = j11*F0 + j12*Tp;  <span class="cm">// 前关节</span>
+torque[<span class="num">1</span>] = j21*F0 + j22*Tp;  <span class="cm">// 后关节</span></pre>
     </div>
+  </div>
 
-    <div class="algo-grid" id="algoGround" style="display:none">
-      <div class="algo-code">
-        <pre><span class="comment">// 离地检测算法</span>
-<span class="keyword">uint8_t</span> <span class="func">ground_detection</span>(vmc_leg_t *vmc, INS_t *ins) {
-  <span class="comment">// 估算地面法向力 (牛顿第二定律)</span>
-  vmc->FN = F0*<span class="func">cos</span>(theta)
-          + Tp*<span class="func">sin</span>(theta)/L0
-          + <span class="number">0.6</span>*(ins->MotionAccel_z
-          - dd_L0*<span class="func">cos</span>(theta)
-          + <span class="number">2</span>*d_L0*d_theta*<span class="func">sin</span>(theta)
-          + L0*dd_theta*<span class="func">sin</span>(theta)
-          + L0*d_theta²*<span class="func">cos</span>(theta));
+  <div class="algo-content" id="algoGround" style="display:none">
+    <div class="algo-code">
+<pre><span class="cm">// 离地检测 - 基于牛顿第二定律估算地面反力</span>
+<span class="kw">uint8_t</span> <span class="fn">ground_detection</span>(vmc_leg_t *vmc, INS_t *ins) {
+  <span class="cm">// 法向力估算</span>
+  FN = F0*<span class="fn">cosf</span>(theta) + Tp*<span class="fn">sinf</span>(theta)/L0
+     + <span class="num">0.6</span>*( ins->Accel_z
+     - dd_L0*<span class="fn">cosf</span>(theta)
+     + <span class="num">2</span>*d_L0*d_theta*<span class="fn">sinf</span>(theta)
+     + L0*dd_theta*<span class="fn">sinf</span>(theta)
+     + L0*d_theta²*<span class="fn">cosf</span>(theta) );
 
-  <span class="comment">// 滑动平均滤波</span>
-  aver[<span class="number">0</span>] = aver[<span class="number">1</span>];
-  aver[<span class="number">1</span>] = aver[<span class="number">2</span>];
-  aver[<span class="number">2</span>] = aver[<span class="number">3</span>];
-  aver[<span class="number">3</span>] = FN;
-  avg = <span class="number">0.25</span>*(aver[<span class="number">0</span>]+aver[<span class="number">1</span>]+aver[<span class="number">2</span>]+aver[<span class="number">3</span>]);
+  <span class="cm">// 4点滑动平均滤波</span>
+  avg = <span class="num">0.25</span>*(buf[<span class="num">0</span>]+buf[<span class="num">1</span>]+buf[<span class="num">2</span>]+FN);
 
-  <span class="comment">// 判断离地</span>
-  <span class="keyword">if</span>(avg < <span class="number">3.0f</span>) <span class="keyword">return</span> <span class="number">1</span>; <span class="comment">// 离地</span>
-  <span class="keyword">else</span> <span class="keyword">return</span> <span class="number">0</span>;           <span class="comment">// 着地</span>
+  <span class="kw">if</span>(avg < <span class="num">3.0f</span>) <span class="kw">return</span> <span class="num">1</span>; <span class="cm">// 离地</span>
+  <span class="kw">else</span> <span class="kw">return</span> <span class="num">0</span>;            <span class="cm">// 着地</span>
 }</pre>
-      </div>
-      <div class="algo-viz">
-        <div class="algo-viz-item">
-          <h4>📊 法向力估算</h4>
-          <svg viewBox="0 0 300 150" style="width:100%">
-            <rect x="0" y="0" width="300" height="150" fill="var(--bg)" rx="8"/>
-            <!-- Ground line -->
-            <line x1="20" y1="120" x2="280" y2="120" stroke="#4ade80" stroke-width="2"/>
-            <text x="290" y="125" fill="#4ade80" font-size="9">地面</text>
-            <!-- Force arrows -->
-            <line x1="80" y1="100" x2="80" y2="50" stroke="var(--accent)" stroke-width="2" marker-end="url(#arrow)"/>
-            <text x="90" y="70" fill="var(--accent)" font-size="9">FN</text>
-            <line x1="150" y1="100" x2="150" y2="60" stroke="var(--accent3)" stroke-width="2" marker-end="url(#arrow)"/>
-            <text x="160" y="75" fill="var(--accent3)" font-size="9">F0·cosθ</text>
-            <line x1="220" y1="100" x2="220" y2="70" stroke="var(--orange)" stroke-width="2" marker-end="url(#arrow)"/>
-            <text x="230" y="80" fill="var(--orange)" font-size="9">ma</text>
-            <!-- Foot -->
-            <rect x="60" y="100" width="180" height="20" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1"/>
-            <text x="150" y="115" text-anchor="middle" fill="#94a3b8" font-size="9">足底</text>
-            <!-- Threshold -->
-            <line x1="20" y1="40" x2="280" y2="40" stroke="var(--red)" stroke-width="1" stroke-dasharray="5,5"/>
-            <text x="20" y="35" fill="var(--red)" font-size="9">阈值 3N</text>
-          </svg>
-        </div>
-        <div class="algo-viz-item">
-          <h4>🎯 检测逻辑</h4>
-          <div style="background:var(--bg);border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;line-height:2">
-            <div><span style="color:var(--green)">● 着地</span> — FN > 3N，正常控制</div>
-            <div><span style="color:var(--red)">● 离地</span> — FN < 3N，锁定轮毂</div>
-            <div style="margin-top:8px;color:var(--text3)">两腿同时离地才触发保护</div>
-          </div>
-        </div>
-      </div>
     </div>
+  </div>
 
-    <div class="algo-grid" id="algoJump" style="display:none">
-      <div class="algo-code">
-        <pre><span class="comment">// 跳跃状态机</span>
-<span class="keyword">switch</span>(jump_flag) {
-  <span class="keyword">case</span> <span class="number">1</span>: <span class="comment">// 压缩阶段</span>
-    F0 = mg/<span class="func">cos</span>(theta) + <span class="func">PID</span>(L0, <span class="number">0.08</span>);
-    <span class="keyword">if</span>(L0 < <span class="number">0.10</span>) timer++;
-    <span class="keyword">if</span>(timer >= <span class="number">10</span>) jump_flag = <span class="number">2</span>;
-    <span class="keyword">break</span>;
+  <div class="algo-content" id="algoJump" style="display:none">
+    <div class="algo-code">
+<pre><span class="cm">// 跳跃状态机: 压缩→上升→缩腿</span>
+<span class="kw">switch</span>(jump_flag) {
+  <span class="kw">case</span> <span class="num">1</span>: <span class="cm">// 压缩蓄能</span>
+    F0 = mg/<span class="fn">cosf</span>(theta) + <span class="fn">PID</span>(L0, <span class="num">0.08</span>);
+    <span class="kw">if</span>(L0 < <span class="num">0.10</span> && timer++ > <span class="num">10</span>) jump_flag = <span class="num">2</span>;
+    <span class="kw">break</span>;
 
-  <span class="keyword">case</span> <span class="number">2</span>: <span class="comment">// 上升加速</span>
-    F0 = mg/<span class="func">cos</span>(theta) + <span class="func">PID</span>(L0, <span class="number">0.40</span>);
-    <span class="keyword">if</span>(L0 > <span class="number">0.18</span>) timer++;
-    <span class="keyword">if</span>(timer >= <span class="number">2</span>) jump_flag = <span class="number">3</span>;
-    <span class="keyword">break</span>;
+  <span class="kw">case</span> <span class="num">2</span>: <span class="cm">// 爆发伸展</span>
+    F0 = mg/<span class="fn">cosf</span>(theta) + <span class="fn">PID</span>(L0, <span class="num">0.40</span>);
+    <span class="kw">if</span>(L0 > <span class="num">0.18</span> && timer++ > <span class="num">2</span>) jump_flag = <span class="num">3</span>;
+    <span class="kw">break</span>;
 
-  <span class="keyword">case</span> <span class="number">3</span>: <span class="comment">// 缩腿落地</span>
-    F0 = <span class="func">PID</span>(L0, <span class="number">0.10</span>);
-    <span class="keyword">if</span>(L0 < <span class="number">0.15</span>) timer++;
-    <span class="keyword">if</span>(timer >= <span class="number">3</span>) jump_flag = <span class="number">0</span>;
-    <span class="keyword">break</span>;
+  <span class="kw">case</span> <span class="num">3</span>: <span class="cm">// 落地缓冲</span>
+    F0 = <span class="fn">PID</span>(L0, <span class="num">0.10</span>);
+    <span class="kw">if</span>(L0 < <span class="num">0.15</span> && timer++ > <span class="num">3</span>) jump_flag = <span class="num">0</span>;
+    <span class="kw">break</span>;
 }</pre>
-      </div>
-      <div class="algo-viz">
-        <div class="algo-viz-item">
-          <h4>🦘 跳跃状态转移</h4>
-          <svg viewBox="0 0 300 180" style="width:100%">
-            <rect x="0" y="0" width="300" height="180" fill="var(--bg)" rx="8"/>
-            <!-- States -->
-            <rect x="10" y="70" width="60" height="40" rx="8" fill="#1e293b" stroke="var(--green)" stroke-width="2"/>
-            <text x="40" y="95" text-anchor="middle" fill="var(--green)" font-size="10">站立</text>
-
-            <rect x="85" y="20" width="60" height="40" rx="8" fill="#1e293b" stroke="var(--orange)" stroke-width="2"/>
-            <text x="115" y="45" text-anchor="middle" fill="var(--orange)" font-size="10">压缩</text>
-
-            <rect x="160" y="20" width="60" height="40" rx="8" fill="#1e293b" stroke="var(--accent)" stroke-width="2"/>
-            <text x="190" y="45" text-anchor="middle" fill="var(--accent)" font-size="10">上升</text>
-
-            <rect x="235" y="70" width="60" height="40" rx="8" fill="#1e293b" stroke="var(--accent3)" stroke-width="2"/>
-            <text x="265" y="95" text-anchor="middle" fill="var(--accent3)" font-size="10">缩腿</text>
-
-            <!-- Arrows -->
-            <path d="M 70 80 L 85 55" stroke="var(--text3)" stroke-width="1.5" marker-end="url(#arrow)"/>
-            <path d="M 145 40 L 160 40" stroke="var(--text3)" stroke-width="1.5" marker-end="url(#arrow)"/>
-            <path d="M 220 40 L 250 70" stroke="var(--text3)" stroke-width="1.5" marker-end="url(#arrow)"/>
-            <path d="M 265 110 L 40 110" stroke="var(--text3)" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="5,5"/>
-
-            <!-- Labels -->
-            <text x="75" y="55" fill="var(--text3)" font-size="8">触发</text>
-            <text x="150" y="30" fill="var(--text3)" font-size="8">L₀<0.10</text>
-            <text x="235" y="55" fill="var(--text3)" font-size="8">L₀>0.18</text>
-            <text x="150" y="125" fill="var(--text3)" font-size="8">L₀<0.15</text>
-          </svg>
-        </div>
-        <div class="algo-viz-item">
-          <h4>📏 腿长轨迹</h4>
-          <svg viewBox="0 0 300 150" style="width:100%">
-            <rect x="0" y="0" width="300" height="150" fill="var(--bg)" rx="8"/>
-            <!-- Axes -->
-            <line x1="30" y1="20" x2="30" y2="130" stroke="#64748b" stroke-width="1"/>
-            <line x1="30" y1="130" x2="280" y2="130" stroke="#64748b" stroke-width="1"/>
-            <text x="10" y="30" fill="#94a3b8" font-size="9">0.4m</text>
-            <text x="10" y="80" fill="#94a3b8" font-size="9">0.2m</text>
-            <text x="10" y="130" fill="#94a3b8" font-size="9">0</text>
-            <text x="155" y="145" text-anchor="middle" fill="#94a3b8" font-size="9">时间 →</text>
-            <!-- Trajectory -->
-            <path d="M 30 80 L 60 80 L 80 110 L 120 110 L 140 40 L 180 40 L 200 90 L 240 90 L 260 80 L 280 80"
-                  fill="none" stroke="var(--accent)" stroke-width="2"/>
-            <!-- Phase markers -->
-            <line x1="60" y1="20" x2="60" y2="130" stroke="var(--orange)" stroke-width="1" stroke-dasharray="3,3"/>
-            <line x1="120" y1="20" x2="120" y2="130" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3,3"/>
-            <line x1="180" y1="20" x2="180" y2="130" stroke="var(--accent3)" stroke-width="1" stroke-dasharray="3,3"/>
-            <text x="90" y="15" fill="var(--orange)" font-size="8">压缩</text>
-            <text x="150" y="15" fill="var(--accent)" font-size="8">上升</text>
-            <text x="220" y="15" fill="var(--accent3)" font-size="8">缩腿</text>
-          </svg>
-        </div>
-      </div>
     </div>
   </div>
 </section>
 
-<!-- Footer -->
 <footer class="footer">
-  <p>基于 <a href="https://gitee.com/kit-miao/wheel-legged" target="_blank">达妙科技 Wheel-legged</a> 开源项目解析</p>
-  <p style="margin-top:8px">Made with ❤️ by <a href="https://github.com/xvcenh">xvcenh</a></p>
+  <p>基于 <a href="https://gitee.com/kit-miao/wheel-legged" target="_blank">达妙科技 Wheel-legged</a> 开源项目</p>
+  <p style="margin-top:8px">Made by <a href="https://github.com/xvcenh">xvcenh</a></p>
 </footer>
 
 <script>
-// ── VMC Canvas Interactive ──
-const canvas = document.getElementById('vmcCanvas');
-const ctx = canvas.getContext('2d');
+// ============================================================
+// THREE.JS 3D ROBOT
+// ============================================================
+let scene, camera, renderer, controls;
+let robotGroup, parts = {};
+let isExploded = false;
+let explodeProgress = 0;
+let targetExplode = 0;
 
-// VMC Parameters
-const l1 = 83.3, l2 = 160, l3 = 160, l4 = 83.3, l5 = 88;
-const scale = 2.5;
-const offsetX = 300, offsetY = 250;
+function initThree() {
+  const canvas = document.getElementById('robotCanvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
 
-let phi1Slider = document.getElementById('phi1');
-let phi4Slider = document.getElementById('phi4');
-let l0TargetSlider = document.getElementById('l0Target');
-let lastPhi1 = 60, lastPhi4 = 120;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0f1e);
+  scene.fog = new THREE.Fog(0x0a0f1e, 8, 20);
 
-function deg2rad(d) { return d * Math.PI / 180; }
-function rad2deg(r) { return r * 180 / Math.PI; }
+  camera = new THREE.PerspectiveCamera(45, rect.width / rect.height, 0.1, 100);
+  camera.position.set(3, 2.5, 4);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(rect.width, rect.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.2;
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.target.set(0, 0.8, 0);
+
+  // Lights
+  const ambient = new THREE.AmbientLight(0x404060, 0.6);
+  scene.add(ambient);
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+  mainLight.position.set(5, 8, 5);
+  mainLight.castShadow = true;
+  mainLight.shadow.mapSize.set(2048, 2048);
+  scene.add(mainLight);
+
+  const fillLight = new THREE.DirectionalLight(0x60a5fa, 0.3);
+  fillLight.position.set(-3, 4, -2);
+  scene.add(fillLight);
+
+  const rimLight = new THREE.DirectionalLight(0xa78bfa, 0.2);
+  rimLight.position.set(0, 2, -5);
+  scene.add(rimLight);
+
+  // Ground
+  const groundGeo = new THREE.PlaneGeometry(20, 20);
+  const groundMat = new THREE.MeshStandardMaterial({ 
+    color: 0x0f172a, roughness: 0.8, metalness: 0.2 
+  });
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Grid
+  const grid = new THREE.GridHelper(10, 20, 0x1e293b, 0x1e293b);
+  grid.position.y = 0.001;
+  scene.add(grid);
+
+  buildRobot();
+  animate();
+}
+
+function buildRobot() {
+  robotGroup = new THREE.Group();
+  scene.add(robotGroup);
+
+  // Materials
+  const bodyMat = new THREE.MeshStandardMaterial({ 
+    color: 0x334155, roughness: 0.3, metalness: 0.7 
+  });
+  const legMat = new THREE.MeshStandardMaterial({ 
+    color: 0x475569, roughness: 0.4, metalness: 0.6 
+  });
+  const motorMat = new THREE.MeshStandardMaterial({ 
+    color: 0x1e293b, roughness: 0.2, metalness: 0.8 
+  });
+  const accentMat = new THREE.MeshStandardMaterial({ 
+    color: 0x60a5fa, roughness: 0.3, metalness: 0.5, emissive: 0x60a5fa, emissiveIntensity: 0.1 
+  });
+  const wheelMat = new THREE.MeshStandardMaterial({ 
+    color: 0x0f172a, roughness: 0.6, metalness: 0.4 
+  });
+  const greenMat = new THREE.MeshStandardMaterial({ 
+    color: 0x4ade80, roughness: 0.3, metalness: 0.5, emissive: 0x4ade80, emissiveIntensity: 0.15 
+  });
+  const redMat = new THREE.MeshStandardMaterial({ 
+    color: 0xf87171, roughness: 0.3, metalness: 0.5, emissive: 0xf87171, emissiveIntensity: 0.15 
+  });
+
+  // === BODY (Main chassis) ===
+  const body = new THREE.Group();
+  // Main plate
+  const mainPlate = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.03, 0.16), bodyMat);
+  mainPlate.position.y = 0;
+  mainPlate.castShadow = true;
+  body.add(mainPlate);
+  // Top cover
+  const topCover = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.025, 0.13), bodyMat);
+  topCover.position.y = 0.025;
+  topCover.castShadow = true;
+  body.add(topCover);
+  // Controller board
+  const controller = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.08), motorMat);
+  controller.position.y = 0.045;
+  body.add(controller);
+  // IMU chip
+  const imu = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.008, 0.02), accentMat);
+  imu.position.set(0.02, 0.055, 0);
+  body.add(imu);
+  // LED indicators
+  const led1 = new THREE.Mesh(new THREE.SphereGeometry(0.005), greenMat);
+  led1.position.set(-0.04, 0.055, 0.02);
+  body.add(led1);
+  const led2 = new THREE.Mesh(new THREE.SphereGeometry(0.005), redMat);
+  led2.position.set(-0.03, 0.055, 0.02);
+  body.add(led2);
+  body.position.y = 0.85;
+  robotGroup.add(body);
+  parts.body = { group: body, explodeY: 0.6, explodeX: 0 };
+
+  // === LEFT LEG ===
+  const leftLeg = buildLeg(legMat, motorMat, accentMat, wheelMat);
+  leftLeg.position.set(-0.11, 0.75, 0);
+  robotGroup.add(leftLeg);
+  parts.leftLeg = { group: leftLeg, explodeY: -0.2, explodeX: -0.4 };
+
+  // === RIGHT LEG ===
+  const rightLeg = buildLeg(legMat, motorMat, accentMat, wheelMat);
+  rightLeg.position.set(0.11, 0.75, 0);
+  rightLeg.scale.x = -1;
+  robotGroup.add(rightLeg);
+  parts.rightLeg = { group: rightLeg, explodeY: -0.2, explodeX: 0.4 };
+
+  // === BATTERY ===
+  const battery = new THREE.Group();
+  const battBody = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.05), 
+    new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.5 }));
+  battery.add(battBody);
+  const battLabel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.015, 0.03), greenMat);
+  battLabel.position.y = 0.025;
+  battery.add(battLabel);
+  battery.position.set(0, 0.82, 0.05);
+  robotGroup.add(battery);
+  parts.battery = { group: battery, explodeY: -0.3, explodeX: 0 };
+
+  // === ANTENNA ===
+  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.08), 
+    new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
+  antenna.position.set(-0.06, 0.95, -0.04);
+  robotGroup.add(antenna);
+  parts.antenna = { group: antenna, explodeY: 0.5, explodeX: 0 };
+
+  // === WIRES (decorative) ===
+  const wireMat = new THREE.MeshStandardMaterial({ color: 0x64748b });
+  for (let i = 0; i < 4; i++) {
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.15), wireMat);
+    wire.position.set(0.05 - i * 0.03, 0.78, -0.06);
+    wire.rotation.x = 0.3;
+    robotGroup.add(wire);
+  }
+}
+
+function buildLeg(legMat, motorMat, accentMat, wheelMat) {
+  const leg = new THREE.Group();
+
+  // Hip motor (DM4310)
+  const hipMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.05, 16), motorMat);
+  hipMotor.rotation.z = Math.PI / 2;
+  hipMotor.castShadow = true;
+  leg.add(hipMotor);
+
+  // Upper link 1 (front)
+  const upperLink1 = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.12, 0.015), legMat);
+  upperLink1.position.set(-0.02, -0.08, 0.02);
+  upperLink1.rotation.z = 0.15;
+  upperLink1.castShadow = true;
+  leg.add(upperLink1);
+
+  // Upper link 2 (back)
+  const upperLink2 = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.12, 0.015), legMat);
+  upperLink2.position.set(0.02, -0.08, -0.02);
+  upperLink2.rotation.z = -0.15;
+  upperLink2.castShadow = true;
+  leg.add(upperLink2);
+
+  // Knee motor (DM4310)
+  const kneeMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.04, 16), motorMat);
+  kneeMotor.rotation.z = Math.PI / 2;
+  kneeMotor.position.y = -0.16;
+  kneeMotor.castShadow = true;
+  leg.add(kneeMotor);
+
+  // Lower link 1 (front)
+  const lowerLink1 = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.12, 0.015), legMat);
+  lowerLink1.position.set(-0.015, -0.24, 0.02);
+  lowerLink1.rotation.z = -0.1;
+  lowerLink1.castShadow = true;
+  leg.add(lowerLink1);
+
+  // Lower link 2 (back)
+  const lowerLink2 = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.12, 0.015), legMat);
+  lowerLink2.position.set(0.015, -0.24, -0.02);
+  lowerLink2.rotation.z = 0.1;
+  lowerLink2.castShadow = true;
+  leg.add(lowerLink2);
+
+  // Wheel hub motor (DM6215)
+  const wheelMotor = new THREE.Group();
+  const wheelOuter = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 24), accentMat);
+  wheelOuter.rotation.y = Math.PI / 2;
+  wheelMotor.add(wheelOuter);
+  const wheelInner = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16), motorMat);
+  wheelInner.rotation.z = Math.PI / 2;
+  wheelMotor.add(wheelInner);
+  const tire = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.02, 8, 24), 
+    new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 }));
+  tire.rotation.y = Math.PI / 2;
+  wheelMotor.add(tire);
+  // Spokes
+  for (let i = 0; i < 5; i++) {
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.06, 0.005), legMat);
+    spoke.rotation.z = (i / 5) * Math.PI;
+    wheelMotor.add(spoke);
+  }
+  wheelMotor.position.y = -0.36;
+  leg.add(wheelMotor);
+
+  // Accent strips
+  const strip1 = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.08, 0.003), accentMat);
+  strip1.position.set(-0.03, -0.08, 0.03);
+  leg.add(strip1);
+
+  return leg;
+}
+
+function toggleExplode() {
+  isExploded = !isExploded;
+  targetExplode = isExploded ? 1 : 0;
+  document.getElementById('explodeBtn').classList.toggle('active');
+}
+
+function setView(view) {
+  document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const duration = 800;
+  const start = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+  let target;
+
+  switch(view) {
+    case 'front': target = { x: 0, y: 1, z: 4 }; break;
+    case 'side': target = { x: 4, y: 1, z: 0 }; break;
+    case 'top': target = { x: 0, y: 5, z: 0.01 }; break;
+    default: target = { x: 3, y: 2.5, z: 4 };
+  }
+
+  const startTime = Date.now();
+  function animateCamera() {
+    const t = Math.min((Date.now() - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    camera.position.x = start.x + (target.x - start.x) * ease;
+    camera.position.y = start.y + (target.y - start.y) * ease;
+    camera.position.z = start.z + (target.z - start.z) * ease;
+    if (t < 1) requestAnimationFrame(animateCamera);
+  }
+  animateCamera();
+}
+
+function resetView() {
+  setView('perspective');
+  if (isExploded) toggleExplode();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Smooth explode animation
+  explodeProgress += (targetExplode - explodeProgress) * 0.05;
+
+  Object.values(parts).forEach(part => {
+    part.group.position.y = part.group.userData?.baseY ?? part.group.position.y;
+    if (!part.group.userData) part.group.userData = {};
+    if (part.group.userData.baseY === undefined) part.group.userData.baseY = part.group.position.y;
+
+    part.group.position.y = part.group.userData.baseY + part.explodeY * explodeProgress;
+    part.group.position.x = (part.group.userData.baseX ?? 0) + part.explodeX * explodeProgress;
+  });
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  const rect = document.getElementById('robotCanvas').parentElement.getBoundingClientRect();
+  camera.aspect = rect.width / rect.height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(rect.width, rect.height);
+});
+
+// ============================================================
+// VMC INTERACTIVE
+// ============================================================
+const vmcCanvas = document.getElementById('vmcCanvas');
+const ctx = vmcCanvas.getContext('2d');
+
+// VMC Parameters from actual code (in mm, converted to display scale)
+const L1 = 83.3, L2 = 160, L3 = 160, L4 = 83.3, L5 = 88;
+const SCALE = 1.8;  // pixels per mm
 
 function drawVMC(phi1_deg, phi4_deg) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const W = vmcCanvas.width, H = vmcCanvas.height;
+  ctx.clearRect(0, 0, W, H);
 
-  const phi1 = deg2rad(phi1_deg);
-  const phi4 = deg2rad(phi4_deg);
+  const phi1 = phi1_deg * Math.PI / 180;
+  const phi4 = phi4_deg * Math.PI / 180;
 
-  // Calculate points
-  const AX = 0, AY = 0;
-  const EX = l5 * scale, EY = 0;
-  const BX = l1 * Math.cos(phi1) * scale, BY = -l1 * Math.sin(phi1) * scale;
-  const DX = (l5 + l4 * Math.cos(phi4)) * scale, DY = -l4 * Math.sin(phi4) * scale;
+  // Origin at A point
+  const ox = W * 0.35, oy = H * 0.7;
 
-  // Calculate BD distance
-  const lBD = Math.sqrt((DX - BX) ** 2 + (DY - BY) ** 2);
+  // A and E points (fixed pivots)
+  const Ax = 0, Ay = 0;
+  const Ex = L5, Ey = 0;
 
-  // Calculate phi2
-  const A0 = 2 * l2 * (DX - BX);
-  const B0 = 2 * l2 * (DY - BY);
-  const C0 = l2 * l2 + lBD * lBD - l3 * l3;
-  const disc = A0 * A0 + B0 * B0 - C0 * C0;
-  if (disc < 0) {
+  // B point (from A via l1, phi1)
+  const Bx = L1 * Math.cos(phi1);
+  const By = -L1 * Math.sin(phi1);
+
+  // D point (from E via l4, phi4) - note: phi4 is measured from horizontal
+  const Dx = L5 - L4 * Math.cos(phi4);
+  const Dy = -L4 * Math.sin(phi4);
+
+  // BD vector and length
+  const BDx = Dx - Bx, BDy = Dy - By;
+  const lBD = Math.sqrt(BDx * BDx + BDy * BDy);
+
+  // Check if solution exists
+  const disc = L2 * L2 - ((lBD * lBD + L2 * L2 - L3 * L3) / (2 * lBD)) ** 2;
+  if (disc < 0 || lBD > L2 + L3 || lBD < Math.abs(L2 - L3)) {
     ctx.fillStyle = '#f87171';
-    ctx.font = '16px Space Grotesk';
+    ctx.font = '18px Space Grotesk';
     ctx.textAlign = 'center';
-    ctx.fillText('无解 - 请调整角度', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('⚠ 无解 - 请调整角度', W / 2, H / 2);
+    ctx.font = '13px JetBrains Mono';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText(`BD = ${lBD.toFixed(1)}mm, l₂+l₃ = ${L2+L3}mm`, W / 2, H / 2 + 30);
     return null;
   }
-  const phi2 = 2 * Math.atan2(B0 + Math.sqrt(disc), A0 + C0);
 
-  // C point
-  const CX = (l1 * Math.cos(phi1) + l2 * Math.cos(phi2)) * scale;
-  const CY = -(l1 * Math.sin(phi1) + l2 * Math.sin(phi2)) * scale;
+  // Solve for C point using circle intersection
+  const midX = (Bx + Dx) / 2, midY = (By + Dy) / 2;
+  const h = Math.sqrt(disc);
+  const dx = BDx / lBD, dy = BDy / lBD;
 
-  // L0 and theta
-  const centerX = l5 / 2 * scale;
-  const L0 = Math.sqrt((CX - centerX) ** 2 + CY * CY) / scale;
-  const phi0 = Math.atan2(-CY / scale, (CX - centerX) / scale);
-  const theta = Math.PI / 2 - phi0;
+  // Two solutions - pick the one where C is "above" the BD line (negative y)
+  const Cx1 = midX + h * dy;
+  const Cy1 = midY - h * dx;
+  const Cx2 = midX - h * dy;
+  const Cy2 = midY + h * dx;
 
-  // Convert to canvas coords
-  const ox = offsetX - centerX, oy = offsetY + 50;
+  // Choose the solution where C has more negative y (higher on screen)
+  const Cx = Cy1 < Cy2 ? Cx1 : Cx2;
+  const Cy = Cy1 < Cy2 ? Cy1 : Cy2;
+
+  // Compute leg parameters
+  const legCenterX = L5 / 2;
+  const L0 = Math.sqrt((Cx - legCenterX) * (Cx - legCenterX) + Cy * Cy);
+  const phi0 = Math.atan2(-Cy, Cx - legCenterX);  // angle from vertical
+  const alpha = Math.atan2(-Cy, Cx - legCenterX);  // angle from ground
+
+  // Transform to canvas coords
+  function tx(x) { return ox + x * SCALE; }
+  function ty(y) { return oy + y * SCALE; }  // y is inverted (up is negative)
 
   // Draw grid
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
   ctx.lineWidth = 1;
-  for (let x = 0; x < canvas.width; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  for (let gx = 0; gx < W; gx += 30) {
+    ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke();
   }
-  for (let y = 0; y < canvas.height; y += 40) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  for (let gy = 0; gy < H; gy += 30) {
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
   }
 
-  // Draw links
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
+  // Draw links with glow effect
+  function drawLink(x1, y1, x2, y2, color, width = 4) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(tx(x1), ty(y1));
+    ctx.lineTo(tx(x2), ty(y2));
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
 
-  // Link 1: A-B
-  ctx.strokeStyle = '#60a5fa';
-  ctx.beginPath(); ctx.moveTo(ox + AX, oy + AY); ctx.lineTo(ox + BX, oy + BY); ctx.stroke();
-
-  // Link 2: B-C
-  ctx.strokeStyle = '#a78bfa';
-  ctx.beginPath(); ctx.moveTo(ox + BX, oy + BY); ctx.lineTo(ox + CX, oy + CY); ctx.stroke();
-
-  // Link 3: D-C
-  ctx.strokeStyle = '#f472b6';
-  ctx.beginPath(); ctx.moveTo(ox + DX, oy + DY); ctx.lineTo(ox + CX, oy + CY); ctx.stroke();
-
-  // Link 4: E-D
-  ctx.strokeStyle = '#22d3ee';
-  ctx.beginPath(); ctx.moveTo(ox + EX, oy + EY); ctx.lineTo(ox + DX, oy + DY); ctx.stroke();
-
-  // Link 5: A-E (ground)
-  ctx.strokeStyle = '#4ade80';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
-  ctx.beginPath(); ctx.moveTo(ox + AX, oy + AY); ctx.lineTo(ox + EX, oy + EY); ctx.stroke();
+  // Link 1: A→B (phi1 driven)
+  drawLink(Ax, Ay, Bx, By, '#60a5fa');
+  // Link 2: B→C
+  drawLink(Bx, By, Cx, Cy, '#a78bfa');
+  // Link 3: D→C
+  drawLink(Dx, Dy, Cx, Cy, '#f472b6');
+  // Link 4: E→D (phi4 driven)
+  drawLink(Ex, Ey, Dx, Dy, '#22d3ee');
+  // Link 5: A→E (ground, dashed)
+  ctx.setLineDash([6, 4]);
+  drawLink(Ax, Ay, Ex, Ey, '#4ade80', 2);
   ctx.setLineDash([]);
 
-  // Center line (L0)
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([3, 3]);
-  ctx.beginPath(); ctx.moveTo(ox + centerX, oy); ctx.lineTo(ox + CX, oy + CY); ctx.stroke();
+  // Virtual leg: center→C
+  ctx.setLineDash([4, 4]);
+  drawLink(legCenterX, 0, Cx, Cy, '#fbbf24', 2);
   ctx.setLineDash([]);
 
-  // Joint points
+  // Draw joints
   const joints = [
-    { x: AX, y: AY, color: '#60a5fa', label: 'A' },
-    { x: BX, y: BY, color: '#a78bfa', label: 'B' },
-    { x: CX, y: CY, color: '#fff', label: 'C' },
-    { x: DX, y: DY, color: '#22d3ee', label: 'D' },
-    { x: EX, y: EY, color: '#4ade80', label: 'E' }
+    { x: Ax, y: Ay, color: '#60a5fa', label: 'A (固定)' },
+    { x: Bx, y: By, color: '#a78bfa', label: 'B' },
+    { x: Cx, y: Cy, color: '#ffffff', label: 'C (末端)' },
+    { x: Dx, y: Dy, color: '#22d3ee', label: 'D' },
+    { x: Ex, y: Ey, color: '#4ade80', label: 'E (固定)' }
   ];
 
   joints.forEach(j => {
+    const jx = tx(j.x), jy = ty(j.y);
+    // Outer glow
     ctx.fillStyle = j.color;
-    ctx.beginPath(); ctx.arc(ox + j.x, oy + j.y, 6, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath(); ctx.arc(ox + j.x, oy + j.y, 3, 0, Math.PI * 2); ctx.fill();
-
+    ctx.shadowColor = j.color;
+    ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(jx, jy, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // Inner dot
+    ctx.fillStyle = '#0a0f1e';
+    ctx.beginPath(); ctx.arc(jx, jy, 3, 0, Math.PI * 2); ctx.fill();
+    // Label
     ctx.fillStyle = j.color;
-    ctx.font = 'bold 12px JetBrains Mono';
+    ctx.font = 'bold 11px JetBrains Mono';
     ctx.textAlign = 'center';
-    ctx.fillText(j.label, ox + j.x, oy + j.y - 12);
+    ctx.fillText(j.label, jx, jy - 14);
   });
 
-  // Theta arc
+  // Draw angle arc for phi1
+  ctx.strokeStyle = '#60a5fa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(tx(Ax), ty(Ay), 25, 0, -phi1, phi1 > 0);
+  ctx.stroke();
+  ctx.fillStyle = '#60a5fa';
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText(`φ₁=${phi1_deg}°`, tx(Ax) + 30, ty(Ay) - 10);
+
+  // Draw angle arc for phi4
+  ctx.strokeStyle = '#22d3ee';
+  ctx.beginPath();
+  ctx.arc(tx(Ex), ty(Ey), 25, Math.PI, Math.PI + phi4, true);
+  ctx.stroke();
+  ctx.fillStyle = '#22d3ee';
+  ctx.fillText(`φ₄=${phi4_deg}°`, tx(Ex) - 30, ty(Ey) - 10);
+
+  // Draw L0 label
+  ctx.fillStyle = '#fbbf24';
+  ctx.font = 'bold 12px JetBrains Mono';
+  const l0MidX = (tx(legCenterX) + tx(Cx)) / 2;
+  const l0MidY = (ty(0) + ty(Cy)) / 2;
+  ctx.fillText(`L₀=${(L0/1000).toFixed(3)}m`, l0MidX + 20, l0MidY);
+
+  // Draw theta arc
   ctx.strokeStyle = '#fbbf24';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(ox + centerX, oy, 30, -Math.PI / 2, -Math.PI / 2 + theta, theta > 0);
+  ctx.arc(tx(legCenterX), ty(0), 35, -Math.PI/2, -Math.PI/2 + phi0, phi0 > 0);
   ctx.stroke();
-
-  // Labels
   ctx.fillStyle = '#fbbf24';
-  ctx.font = '11px JetBrains Mono';
-  ctx.textAlign = 'left';
-  ctx.fillText(`L₀ = ${L0.toFixed(3)}m`, ox + centerX + 35, oy - 10);
-  ctx.fillText(`θ = ${theta.toFixed(3)}rad`, ox + centerX + 35, oy + 8);
+  ctx.font = '10px JetBrains Mono';
+  ctx.fillText(`θ=${phi0.toFixed(3)}rad`, tx(legCenterX) + 40, ty(0) + 20);
 
-  return { L0, theta, CX: CX / scale + l5 / 2, CY: -CY / scale };
+  // Dimension lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 2]);
+  // l5 dimension
+  ctx.beginPath();
+  ctx.moveTo(tx(Ax), ty(Ay) + 20);
+  ctx.lineTo(tx(Ex), ty(Ey) + 20);
+  ctx.stroke();
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(`l₅=${L5}mm`, tx(L5/2), ty(0) + 35);
+  ctx.setLineDash([]);
+
+  return { L0, theta: phi0, Cx, Cy, alpha };
 }
 
 function updateVMC() {
-  const p1 = parseInt(phi1Slider.value);
-  const p4 = parseInt(phi4Slider.value);
+  const p1 = parseInt(document.getElementById('phi1').value);
+  const p4 = parseInt(document.getElementById('phi4').value);
 
-  document.getElementById('phi1Val').textContent = p1 + '°';
-  document.getElementById('phi4Val').textContent = p4 + '°';
-  document.getElementById('l0TargetVal').textContent = (parseInt(l0TargetSlider.value) / 1000).toFixed(3) + 'm';
+  document.getElementById('phi1Val').textContent = (p1 * Math.PI / 180).toFixed(3);
+  document.getElementById('phi4Val').textContent = (p4 * Math.PI / 180).toFixed(3);
 
   const result = drawVMC(p1, p4);
   if (result) {
-    document.getElementById('outL0').textContent = result.L0.toFixed(3) + ' m';
-    document.getElementById('outTheta').textContent = result.theta.toFixed(3) + ' rad';
-    document.getElementById('outCX').textContent = result.CX.toFixed(3) + ' m';
-    document.getElementById('outCY').textContent = result.CY.toFixed(3) + ' m';
-
-    // Calculate d_theta (approximate)
-    const dtheta = (deg2rad(p1) - deg2rad(lastPhi1)) * 100;
-    document.getElementById('outDtheta').textContent = dtheta.toFixed(3) + ' rad/s';
-    lastPhi1 = p1;
-    lastPhi4 = p4;
+    document.getElementById('outL0').textContent = (result.L0 / 1000).toFixed(4) + ' m';
+    document.getElementById('outTheta').textContent = result.theta.toFixed(4) + ' rad';
+    document.getElementById('outCX').textContent = (result.Cx / 1000).toFixed(4) + ' m';
+    document.getElementById('outCY').textContent = (result.Cy / 1000).toFixed(4) + ' m';
+    document.getElementById('outAlpha').textContent = (result.alpha * 180 / Math.PI).toFixed(2) + ' °';
   }
 }
 
-phi1Slider.addEventListener('input', updateVMC);
-phi4Slider.addEventListener('input', updateVMC);
-l0TargetSlider.addEventListener('input', updateVMC);
+document.getElementById('phi1').addEventListener('input', updateVMC);
+document.getElementById('phi4').addEventListener('input', updateVMC);
 
-// Initial draw
-updateVMC();
-
-// ── Explode Animation ──
-let isExploded = false;
-function toggleExplode() {
-  isExploded = !isExploded;
-  document.getElementById('explodeBtnText').textContent = isExploded ? '收起组装' : '爆炸拆解';
-
-  const parts = {
-    'part-body': { x: 0, y: isExploded ? -80 : 0 },
-    'part-leftTop': { x: isExploded ? -120 : 0, y: isExploded ? -60 : 0 },
-    'part-leftBot': { x: isExploded ? -120 : 0, y: isExploded ? 40 : 0 },
-    'part-rightTop': { x: isExploded ? 120 : 0, y: isExploded ? -60 : 0 },
-    'part-rightBot': { x: isExploded ? 120 : 0, y: isExploded ? 40 : 0 },
-    'part-leftWheel': { x: isExploded ? -150 : 0, y: isExploded ? 80 : 0 },
-    'part-rightWheel': { x: isExploded ? 150 : 0, y: isExploded ? 80 : 0 },
-    'part-imu': { x: isExploded ? -40 : 0, y: isExploded ? -120 : 0 },
-    'part-battery': { x: isExploded ? 40 : 0, y: isExploded ? -40 : 0 }
-  };
-
-  Object.entries(parts).forEach(([id, offset]) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.transform = `translate(${offset.x}px, ${offset.y}px)`;
-    }
-  });
-
-  document.getElementById('connectLines').style.opacity = isExploded ? '0.5' : '0';
-}
-
-// Hover effect for parts
-document.querySelectorAll('.robot-part').forEach(part => {
-  part.addEventListener('mouseenter', function () {
-    const name = this.dataset.name;
-    const desc = this.dataset.desc;
-    // Could add tooltip here
-  });
-});
-
-// ── Algorithm Tabs ──
+// Algorithm tabs
 function switchAlgo(name) {
   document.querySelectorAll('.algo-tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
-
-  document.getElementById('algoVmc').style.display = name === 'vmc' ? 'grid' : 'none';
-  document.getElementById('algoLqr').style.display = name === 'lqr' ? 'grid' : 'none';
-  document.getElementById('algoGround').style.display = name === 'ground' ? 'grid' : 'none';
-  document.getElementById('algoJump').style.display = name === 'jump' ? 'grid' : 'none';
+  document.getElementById('algoVmc').style.display = name === 'vmc' ? 'block' : 'none';
+  document.getElementById('algoLqr').style.display = name === 'lqr' ? 'block' : 'none';
+  document.getElementById('algoGround').style.display = name === 'ground' ? 'block' : 'none';
+  document.getElementById('algoJump').style.display = name === 'jump' ? 'block' : 'none';
 }
 
-// ── Highlight Task (placeholder) ──
-function highlightTask(name) {
-  // Could add detailed popup or animation
-  console.log('Task:', name);
-}
-
-// ── Scroll Animation ──
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('animate-in');
-    }
-  });
-}, { threshold: 0.1 });
-
-document.querySelectorAll('.arch-card, .explode-item, .vmc-section, .flow-container, .algo-content').forEach(el => {
-  observer.observe(el);
-});
-
-// ── Smooth Scroll ──
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  });
-});
+// Init
+initThree();
+updateVMC();
 </script>
 </body>
 </html>
