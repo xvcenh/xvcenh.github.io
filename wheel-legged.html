@@ -27,6 +27,9 @@ import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 window.THREE = THREE;
 window.THREE.OrbitControls = OrbitControls;
 window.THREE.STLLoader = STLLoader;
+// Three.js加载完成，初始化3D场景
+if(typeof initThree === 'function') initThree();
+if(typeof updateVMC === 'function') updateVMC();
 </script>
 <style>
 :root{--bg:#0a0f1e;--bg2:#0f172a;--bg3:#1e293b;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#60a5fa;--accent2:#a78bfa;--accent3:#f472b6;--border:rgba(255,255,255,0.08);--green:#4ade80;--orange:#fb923c;--red:#f87171;--cyan:#22d3ee}
@@ -524,7 +527,6 @@ function switchAlgo(n){
   ['vmc','lqr','ground','jump'].forEach(k=>{document.getElementById('algo'+k.charAt(0).toUpperCase()+k.slice(1)).style.display=k===n?'block':'none';});
 }
 
-initThree();updateVMC();
 </script>
 </body>
 </html>
