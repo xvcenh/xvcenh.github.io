@@ -319,8 +319,9 @@ function initThree(){
   animate();
 }
 
-function loadAllParts(){
-  const loader=new THREE.STLLoader();
+async function loadAllParts(){
+  const {STLLoader}=await import('https://unpkg.com/three@0.160.0/examples/jsm/loaders/STLLoader.js');
+  const loader=new STLLoader();
   robotGroup=new THREE.Group();
   scene.add(robotGroup);
 
