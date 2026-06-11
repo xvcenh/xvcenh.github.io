@@ -1,0 +1,399 @@
+---
+layout: null
+title: 五连杆正向/逆向解算
+permalink: /fivebar-linkage/
+description: "五连杆并联机构 → 串联臂等效 (髋2+膝2) 交互式可视化 — 正向运动学与逆向运动学实时解算"
+---
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>五连杆 · 正向/逆向 髋2+膝2 串联等效</title>
+    <style>
+        * { margin: 0; box-sizing: border-box; }
+        body {
+            background: #f1f5f9;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1050px;
+            width: 100%;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);
+            padding: 2rem 2rem 1.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        h1 {
+            font-weight: 500;
+            font-size: 1.8rem;
+            color: #0f172a;
+            text-align: center;
+        }
+        .canvases {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+        }
+        .canvas-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            padding: 0.6rem;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        canvas {
+            display: block;
+            background: #fafcff;
+            border-radius: 16px;
+        }
+        .sliders-section {
+            background: #f8fafc;
+            border-radius: 1.8rem;
+            padding: 1.2rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 2rem;
+            border: 1px solid #e2e8f0;
+        }
+        .slider-block {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            background: #ffffff;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        label {
+            font-weight: 600;
+            color: #1e293b;
+            background: #eef2ff;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            white-space: nowrap;
+        }
+        input[type="range"] {
+            width: 140px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+        }
+        .angle-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            background: white;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            min-width: 75px;
+            text-align: center;
+        }
+        .info-panel {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.2rem;
+            padding: 1rem 1.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            font-size: 0.95rem;
+        }
+        .angle-display {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            font-weight: 600;
+            background: #f1f5f9;
+            padding: 0.6rem 1.8rem;
+            border-radius: 2rem;
+        }
+        .specs {
+            font-size: 0.85rem;
+            color: #475569;
+            text-align: center;
+        }
+        .slider-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.2rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔁 五连杆闭环 → 串联臂 (髋2+膝2) · 正向/逆向解算</h1>
+    <div class="canvases">
+        <div class="canvas-panel">
+            <p style="font-weight:600; margin:0 0 0.5rem 1rem;">⬅️ 完整五连杆（A→B→C→D→E）</p>
+            <canvas id="canvasClosed" width="420" height="380"></canvas>
+        </div>
+        <div class="canvas-panel">
+            <p style="font-weight:600; margin:0 0 0.5rem 1rem;">➡️ 串联臂（E→D→C）</p>
+            <canvas id="canvasSerial" width="420" height="380"></canvas>
+        </div>
+    </div>
+    <div class="sliders-section">
+        <div class="slider-block">
+            <div class="slider-label">🔹 正向输入 (髋1, 髋2)</div>
+            <div class="slider-group">
+                <label>髋1 θ₁ (A→B)</label>
+                <input type="range" id="hip1Slider" min="-150" max="150" value="60" step="0.5">
+                <span class="angle-value" id="hip1Val">60.0°</span>
+            </div>
+            <div class="slider-group">
+                <label>髋2 θ₂ (E→D)</label>
+                <input type="range" id="hip2Slider" min="-150" max="150" value="120" step="0.5">
+                <span class="angle-value" id="hip2Val">120.0°</span>
+            </div>
+        </div>
+        <div class="slider-block">
+            <div class="slider-label">🔸 逆向输入 (髋2, 膝2相对角)</div>
+            <div class="slider-group">
+                <label>髋2 θ₂ (E→D)</label>
+                <input type="range" id="invHip2Slider" min="-150" max="150" value="120" step="0.5">
+                <span class="angle-value" id="invHip2Val">120.0°</span>
+            </div>
+            <div class="slider-group">
+                <label>膝2 γ (D→C rel)</label>
+                <input type="range" id="kneeRelSlider" min="-180" max="180" value="0" step="0.5">
+                <span class="angle-value" id="kneeRelVal">0.0°</span>
+            </div>
+        </div>
+        <div id="statusMsg" style="background:#ccfbf1;color:#0f766e;padding:0.3rem 1.5rem;border-radius:2rem;font-weight:500;">✅ 闭环可解</div>
+    </div>
+    <div class="info-panel">
+        <span style="font-weight:600;">📐 实时解算角度 · 轮子半径 0.0603 m</span>
+        <div class="angle-display">
+            <span>🔹 髋1 θ₁: <span id="hip1Out">--</span>°</span>
+            <span>🔹 髋2 θ₂: <span id="hip2Out">--</span>°</span>
+            <span>🔸 膝2 相对: <span id="knee2Out">--</span>°</span>
+        </div>
+    </div>
+    <div class="specs">
+        ⚙️ 杆长：AB=0.075 m | ED=0.075 m | AE=0.08 m | BC=0.14 m | DC=0.14 m
+    </div>
+</div>
+<script>
+    (function() {
+        const d=0.08, L_AB=0.075, L_ED=0.075, L_BC=0.14, L_DC=0.14;
+        const SCALE=850, baseY=60, baseXA=176, baseXE=baseXA+d*SCALE;
+        const canvasClosed=document.getElementById('canvasClosed');
+        const ctxClosed=canvasClosed.getContext('2d');
+        const canvasSerial=document.getElementById('canvasSerial');
+        const ctxSerial=canvasSerial.getContext('2d');
+        const hip1Slider=document.getElementById('hip1Slider');
+        const hip2Slider=document.getElementById('hip2Slider');
+        const hip1Val=document.getElementById('hip1Val');
+        const hip2Val=document.getElementById('hip2Val');
+        const invHip2Slider=document.getElementById('invHip2Slider');
+        const kneeRelSlider=document.getElementById('kneeRelSlider');
+        const invHip2Val=document.getElementById('invHip2Val');
+        const kneeRelVal=document.getElementById('kneeRelVal');
+        const hip1Out=document.getElementById('hip1Out');
+        const hip2Out=document.getElementById('hip2Out');
+        const knee2Out=document.getElementById('knee2Out');
+        const statusMsg=document.getElementById('statusMsg');
+        let theta1=60,theta2=120,gamma=0,updating=false;
+        const toRad=deg=>deg*Math.PI/180;
+        const toDeg=rad=>rad*180/Math.PI;
+
+        function forwardKinematics(th1_deg,th2_deg){
+            const th1=toRad(th1_deg),th2=toRad(th2_deg);
+            const Bx=L_AB*Math.cos(th1),By=L_AB*Math.sin(th1);
+            const Dx=d+L_ED*Math.cos(th2),Dy=L_ED*Math.sin(th2);
+            const dx=Dx-Bx,dy=Dy-By;
+            const distBD=Math.sqrt(dx*dx+dy*dy);
+            if(distBD>L_BC+L_DC+1e-9||distBD<Math.abs(L_BC-L_DC)-1e-9)return{valid:false,Bx,By,Dx,Dy};
+            const angleBD=Math.atan2(dy,dx);
+            const cosPhi=(L_BC*L_BC+distBD*distBD-L_DC*L_DC)/(2*L_BC*distBD);
+            const phi=Math.acos(Math.max(-1,Math.min(1,cosPhi)));
+            let angleBC=angleBD+phi;
+            let Cx=Bx+L_BC*Math.cos(angleBC),Cy=By+L_BC*Math.sin(angleBC);
+            let angleDC=Math.atan2(Cy-Dy,Cx-Dx);
+            if(Math.abs(Math.hypot(Cx-Dx,Cy-Dy)-L_DC)>0.01){
+                angleBC=angleBD-phi;
+                Cx=Bx+L_BC*Math.cos(angleBC);Cy=By+L_BC*Math.sin(angleBC);
+                angleDC=Math.atan2(Cy-Dy,Cx-Dx);
+                if(Math.abs(Math.hypot(Cx-Dx,Cy-Dy)-L_DC)>0.01)return{valid:false,Bx,By,Dx,Dy};
+            }
+            const gamma_calc=toDeg(angleDC-th2);
+            return{valid:true,Bx,By,Dx,Dy,Cx,Cy,angleBC,angleDC,gamma:gamma_calc};
+        }
+
+        function inverseKinematics(th2_deg,gamma_deg){
+            const th2=toRad(th2_deg),gamma_rad=toRad(gamma_deg);
+            const angleDC=th2+gamma_rad;
+            const Dx=d+L_ED*Math.cos(th2),Dy=L_ED*Math.sin(th2);
+            const Cx=Dx+L_DC*Math.cos(angleDC),Cy=Dy+L_DC*Math.sin(angleDC);
+            const distAC=Math.hypot(Cx,Cy);
+            if(distAC>L_AB+L_BC+1e-9||distAC<Math.abs(L_AB-L_BC)-1e-9)return{valid:false,Dx,Dy,Cx,Cy};
+            const angleAC=Math.atan2(Cy,Cx);
+            const cosPsi=(L_AB*L_AB+distAC*distAC-L_BC*L_BC)/(2*L_AB*distAC);
+            const psi=Math.acos(Math.max(-1,Math.min(1,cosPsi)));
+            let angleAB=angleAC+psi;
+            let Bx=L_AB*Math.cos(angleAB),By=L_AB*Math.sin(angleAB);
+            if(Math.abs(Math.hypot(Bx-Cx,By-Cy)-L_BC)>0.01){
+                angleAB=angleAC-psi;
+                Bx=L_AB*Math.cos(angleAB);By=L_AB*Math.sin(angleAB);
+                if(Math.abs(Math.hypot(Bx-Cx,By-Cy)-L_BC)>0.01)return{valid:false,Dx,Dy,Cx,Cy};
+            }
+            const th1=toDeg(angleAB);
+            const angleBC=Math.atan2(Cy-By,Cx-Bx);
+            return{valid:true,Bx,By,Dx,Dy,Cx,Cy,angleBC,angleDC,th1};
+        }
+
+        function toX(x){return baseXA+x*SCALE;}
+        function toY(y){return baseY+y*SCALE;}
+        function drawLabel(ctx,x,y,text,color="#0f172a",size=12,bold=true){
+            ctx.save();ctx.font=`${bold?'bold ':''}${size}px 'Segoe UI',sans-serif`;
+            ctx.fillStyle=color;ctx.shadowColor="white";ctx.shadowBlur=4;
+            ctx.fillText(text,x,y);ctx.restore();
+        }
+        function labelLength(ctx,x1,y1,x2,y2,text,ox=0,oy=0){
+            drawLabel(ctx,(x1+x2)/2+ox,(y1+y2)/2+oy,text,"#1e293b",10,false);
+        }
+
+        function drawClosed(result,th1d,th2d){
+            const ctx=ctxClosed;
+            ctx.clearRect(0,0,canvasClosed.width,canvasClosed.height);
+            const Ax=baseXA,Ay=baseY,Ex=baseXE,Ey=baseY;
+            const Bx=toX(result.Bx),By_=toY(result.By);
+            const Dx=toX(result.Dx),Dy=toY(result.Dy);
+            ctx.beginPath();ctx.moveTo(Ax,Ay);ctx.lineTo(Ex,Ey);
+            ctx.strokeStyle="#94a3b8";ctx.lineWidth=4;ctx.stroke();
+            labelLength(ctx,Ax,Ay,Ex,Ey,`${d.toFixed(3)}`,0,15);
+            ctx.fillStyle="#334155";
+            ctx.beginPath();ctx.arc(Ax,Ay,5,0,2*Math.PI);ctx.fill();
+            ctx.beginPath();ctx.arc(Ex,Ey,5,0,2*Math.PI);ctx.fill();
+            ctx.beginPath();ctx.moveTo(Ax,Ay);ctx.lineTo(Bx,By_);
+            ctx.strokeStyle="#2563eb";ctx.lineWidth=4;ctx.stroke();
+            labelLength(ctx,Ax,Ay,Bx,By_,`${L_AB.toFixed(3)}`,8,-10);
+            ctx.beginPath();ctx.moveTo(Ex,Ey);ctx.lineTo(Dx,Dy);
+            ctx.strokeStyle="#d97706";ctx.lineWidth=4;ctx.stroke();
+            labelLength(ctx,Ex,Ey,Dx,Dy,`${L_ED.toFixed(3)}`,-12,-10);
+            ctx.fillStyle="#2563eb";
+            ctx.beginPath();ctx.arc(Bx,By_,4.5,0,2*Math.PI);ctx.fill();
+            ctx.fillStyle="#d97706";
+            ctx.beginPath();ctx.arc(Dx,Dy,4.5,0,2*Math.PI);ctx.fill();
+            if(result.valid){
+                const Cx=toX(result.Cx),Cy=toY(result.Cy);
+                ctx.beginPath();ctx.moveTo(Bx,By_);ctx.lineTo(Cx,Cy);
+                ctx.strokeStyle="#10b981";ctx.lineWidth=3.5;ctx.stroke();
+                labelLength(ctx,Bx,By_,Cx,Cy,`${L_BC.toFixed(3)}`,8,-10);
+                ctx.beginPath();ctx.moveTo(Dx,Dy);ctx.lineTo(Cx,Cy);
+                ctx.strokeStyle="#f59e0b";ctx.lineWidth=3.5;ctx.stroke();
+                labelLength(ctx,Dx,Dy,Cx,Cy,`${L_DC.toFixed(3)}`,-10,-10);
+                ctx.fillStyle="#dc2626";
+                ctx.beginPath();ctx.arc(Cx,Cy,6,0,2*Math.PI);ctx.fill();
+                drawLabel(ctx,Cx+8,Cy-8,"C","#dc2626",13);
+            }else{
+                ctx.font="italic 14px sans-serif";ctx.fillStyle="#b91c1c";
+                ctx.fillText("⚠️ 无法闭合",150,60);
+            }
+            drawLabel(ctx,Ax-22,Ay-10,"A","#0f172a",13);
+            drawLabel(ctx,Ex+8,Ey-10,"E","#0f172a",13);
+            drawLabel(ctx,Bx+5,By_-10,"B","#2563eb",12);
+            drawLabel(ctx,Dx-20,Dy-10,"D","#d97706",12);
+            ctx.fillStyle="#1e3a8a";ctx.font="bold 12px 'JetBrains Mono'";
+            ctx.fillText(`θ₁=${th1d.toFixed(1)}°`,Ax-35,Ay-25);
+            ctx.fillStyle="#92400e";
+            ctx.fillText(`θ₂=${th2d.toFixed(1)}°`,Ex+5,Ey-28);
+        }
+
+        function drawSerialArm(result,th2_deg,gamma_deg){
+            const ctx=ctxSerial;
+            ctx.clearRect(0,0,canvasSerial.width,canvasSerial.height);
+            const Ex=baseXE,Ey=baseY;
+            const Dx=toX(result.Dx),Dy=toY(result.Dy);
+            ctx.fillStyle="#334155";
+            ctx.beginPath();ctx.arc(Ex,Ey,5,0,2*Math.PI);ctx.fill();
+            drawLabel(ctx,Ex-22,Ey-10,"E","#0f172a",13);
+            ctx.beginPath();ctx.moveTo(Ex,Ey);ctx.lineTo(Dx,Dy);
+            ctx.strokeStyle="#d97706";ctx.lineWidth=4;ctx.stroke();
+            labelLength(ctx,Ex,Ey,Dx,Dy,`${L_ED.toFixed(3)}`,-12,-10);
+            ctx.fillStyle="#d97706";
+            ctx.beginPath();ctx.arc(Dx,Dy,4.5,0,2*Math.PI);ctx.fill();
+            drawLabel(ctx,Dx-20,Dy-10,"D","#d97706",12);
+            if(result.valid){
+                const Cx=toX(result.Cx),Cy=toY(result.Cy);
+                ctx.beginPath();ctx.moveTo(Dx,Dy);ctx.lineTo(Cx,Cy);
+                ctx.strokeStyle="#f59e0b";ctx.lineWidth=3.5;ctx.stroke();
+                labelLength(ctx,Dx,Dy,Cx,Cy,`${L_DC.toFixed(3)}`,-10,-10);
+                ctx.fillStyle="#dc2626";
+                ctx.beginPath();ctx.arc(Cx,Cy,6,0,2*Math.PI);ctx.fill();
+                drawLabel(ctx,Cx+8,Cy-8,"C","#dc2626",13);
+                ctx.fillStyle="#92400e";
+                ctx.font="italic 11px sans-serif";
+                ctx.fillText(`膝2 γ=${gamma_deg.toFixed(1)}°`,Dx+8,Dy-18);
+            }else{
+                ctx.font="italic 13px sans-serif";ctx.fillStyle="#b91c1c";
+                ctx.fillText("无解",Dx+12,Dy-10);
+            }
+            ctx.fillStyle="#92400e";
+            ctx.font="bold 12px 'JetBrains Mono'";
+            ctx.fillText(`θ₂=${th2_deg.toFixed(1)}°`,Ex+5,Ey-28);
+        }
+
+        function fullUpdate(){
+            if(updating)return;updating=true;
+            const fwd=forwardKinematics(theta1,theta2);
+            const actualGamma=fwd.valid?fwd.gamma:gamma;
+            hip1Out.textContent=theta1.toFixed(2);
+            hip2Out.textContent=theta2.toFixed(2);
+            knee2Out.textContent=actualGamma.toFixed(2);
+            drawClosed(fwd,theta1,theta2);
+            drawSerialArm(fwd,theta2,actualGamma);
+            hip1Slider.value=theta1;hip1Val.textContent=theta1.toFixed(1)+'°';
+            hip2Slider.value=theta2;hip2Val.textContent=theta2.toFixed(1)+'°';
+            invHip2Slider.value=theta2;invHip2Val.textContent=theta2.toFixed(1)+'°';
+            kneeRelSlider.value=actualGamma;kneeRelVal.textContent=actualGamma.toFixed(1)+'°';
+            if(fwd.valid){
+                statusMsg.style.background='#ccfbf1';statusMsg.style.color='#0f766e';
+                statusMsg.textContent='✅ 闭环可解';
+            }else{
+                statusMsg.style.background='#fee2e2';statusMsg.style.color='#b91c1c';
+                statusMsg.textContent='❌ 无法闭合';
+            }
+            updating=false;
+        }
+
+        hip1Slider.addEventListener('input',()=>{if(updating)return;theta1=parseFloat(hip1Slider.value);theta2=parseFloat(hip2Slider.value);const fwd=forwardKinematics(theta1,theta2);gamma=fwd.valid?fwd.gamma:0;fullUpdate();});
+        hip2Slider.addEventListener('input',()=>{if(updating)return;theta1=parseFloat(hip1Slider.value);theta2=parseFloat(hip2Slider.value);const fwd=forwardKinematics(theta1,theta2);gamma=fwd.valid?fwd.gamma:0;fullUpdate();});
+        invHip2Slider.addEventListener('input',()=>{if(updating)return;theta2=parseFloat(invHip2Slider.value);gamma=parseFloat(kneeRelSlider.value);const inv=inverseKinematics(theta2,gamma);if(inv.valid)theta1=inv.th1;fullUpdate();});
+        kneeRelSlider.addEventListener('input',()=>{if(updating)return;theta2=parseFloat(invHip2Slider.value);gamma=parseFloat(kneeRelSlider.value);const inv=inverseKinematics(theta2,gamma);if(inv.valid)theta1=inv.th1;fullUpdate();});
+        fullUpdate();
+    })();
+</script>
+</body>
+</html>

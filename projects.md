@@ -429,8 +429,33 @@ description: "xvcenh 的开源项目 — AI 驱动的交互式应用与开发工
     </div>
   </div>
 
+  <!-- Project 5: fivebar-linkage -->
+  <div class="project-card green fade-in-up stagger-5">
+    <div class="project-inner">
+      <div class="project-icon green">🤖</div>
+      <div class="project-info">
+        <h2 class="project-name">五连杆并联机构 · 交互式可视化</h2>
+        <p class="project-tagline">五连杆闭环 → 串联臂等效 (髋2+膝2) · 正向/逆向运动学实时解算</p>
+        <p class="project-desc">
+          双轮足机器人的五连杆并联腿部机构可视化。左侧展示完整五连杆闭环链 (A→B→C→D→E)，
+          右侧展示串联等效臂 (E→D→C)。支持正向运动学（调髋1髋2角度→算C点位置）
+          和逆向运动学（调髋2+膝2相对角→反算髋1），实时 Canvas 渲染，拖滑块即时反馈。
+        </p>
+        <div class="project-tags">
+          <span class="project-tag blue">JavaScript</span>
+          <span class="project-tag green">Canvas</span>
+          <span class="project-tag purple">Robotics</span>
+          <span class="project-tag yellow">Kinematics</span>
+        </div>
+        <a href="/fivebar-linkage/" class="project-link">
+          🔗 在线演示
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- CTA -->
-  <div class="projects-cta fade-in-up stagger-5">
+  <div class="projects-cta fade-in-up stagger-6">
     <p class="cta-text">🌟 喜欢这些项目？去 GitHub 给个 Star 吧！</p>
     <a href="https://github.com/xvcenh" target="_blank" rel="noopener" class="cta-btn">
       🐙 github.com/xvcenh
