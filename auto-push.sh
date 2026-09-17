@@ -3,7 +3,7 @@
 # 自动推送脚本 - 每小时检查并提交更改到GitHub
 
 # 设置工作目录
-cd /home/orangepi/xvcenh.github.io
+cd "$(dirname "$0")"
 
 # 记录日志
 log_file="/tmp/auto-push-$(date +%Y-%m-%d).log"
