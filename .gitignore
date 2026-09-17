@@ -1,0 +1,6 @@
+# Jekyll 构建产物与本地预览缓存（不要提交）
+_site/
+.jekyll-cache/
+.jekyll-metadata
+.bundle/
+vendor/
