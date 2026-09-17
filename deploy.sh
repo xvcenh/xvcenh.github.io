@@ -4,7 +4,7 @@
 echo "🚀 开始部署智能项目问题库..."
 
 # 切换到博客目录
-cd /home/annisen/BLOG/xvcenh.github.io
+cd /home/orangepi/xvcenh.github.io
 
 # 检查Git状态
 echo "📊 检查Git状态..."
