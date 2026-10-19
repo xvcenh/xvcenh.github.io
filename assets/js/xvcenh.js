@@ -206,6 +206,7 @@
 
         function animate(ts) {
             requestAnimationFrame(animate);
+            if (document.hidden) return;
             const dt = Math.min(0.1, (ts - (animate.lastTs || ts)) / 1000);
             animate.lastTs = ts; globalTime += dt;
 

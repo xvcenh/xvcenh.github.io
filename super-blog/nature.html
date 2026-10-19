@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水墨自然 INK MODE · xvcenh 的博客</title>
+<meta name="description" content="xvcenh 的博客 · 水墨自然风格子页面 —— 宣纸纹理、水墨晕染、竖排题款与朱砂印章，用留白重新排版同一份内容。">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+/* ============================================================
+   nature.html · 水墨自然（INK & PAPER）
+   设计基调：宣纸米白 + 墨色 + 一点朱砂；竖排题款；大量留白
+   ============================================================ */
+:root {
+  --paper: #f5efe0;
+  --paper-2: #efe7d4;
+  --paper-3: #e9dfc8;
+  --ink: #26261f;
+  --ink-soft: #55524a;
+  --ink-faint: #8d8674;
+  --cinnabar: #b23a2b;        /* 朱砂印泥 */
+  --cinnabar-2: #d4543c;
+  --moss: #6a7b5c;            /* 苔绿点缀 */
+  --serif: "STKaiti", "KaiTi", "楷体", "STSong", "SimSun", "Songti SC", serif;
+  --song: "STSong", "SimSun", "宋体", "Songti SC", serif;
+  --ease: cubic-bezier(.2, .9, .25, 1);
+  /* 覆盖共享变量：让命令面板 / 光标 / toast 也进入宣纸世界 */
+  --fx-accent: var(--cinnabar);
+  --fx-bg: var(--paper);
+  --fx-fg: var(--ink);
+  --fx-dim: var(--ink-faint);
+  --fx-font: var(--serif);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(1100px 720px at 88% -8%, rgba(178, 141, 88, .16), transparent 62%),
+    radial-gradient(900px 680px at -12% 26%, rgba(120, 112, 82, .12), transparent 58%),
+    radial-gradient(1200px 900px at 50% 118%, rgba(150, 132, 92, .14), transparent 60%);
+  color: var(--ink);
+  font-family: var(--song);
+  font-size: 16px;
+  line-height: 1.9;
+  overflow-x: hidden;
+}
+::selection { background: var(--cinnabar); color: #fdf8ec; }
+a { color: inherit; }
+
+/* ---------- 宣纸纤维 + 噪点（纯 CSS + 内联 SVG turbulence，零网络依赖） ---------- */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(112deg, rgba(122, 104, 66, .05) 0 1.5px, transparent 1.5px 7px),
+    repeating-linear-gradient(24deg, rgba(122, 104, 66, .038) 0 1px, transparent 1px 9px);
+  mix-blend-mode: multiply;
+}
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  opacity: .06; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+
+/* ---------- 背景特效画布：墨雨在后，飞叶在前 ---------- */
+.bg-fx {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; display: block;
+}
+#inkRain { z-index: 2; opacity: .34; }
+#inkLeaves { z-index: 40; opacity: .5; }
+
+/* ---------- 水墨装饰（SVG feTurbulence + feDisplacementMap 撕出墨韵边缘） ---------- */
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ink-blot {
+  position: absolute; pointer-events: none; z-index: 0;
+  filter: blur(.4px);
+}
+.blot-a { width: clamp(280px, 34vw, 560px); top: -8%; right: -6%; opacity: .85; animation: breathe 14s ease-in-out infinite; }
+.blot-b { width: clamp(220px, 26vw, 430px); top: 34%; left: -9%; opacity: .6; animation: breathe 18s ease-in-out infinite reverse; }
+.blot-c { width: clamp(180px, 20vw, 340px); bottom: 6%; right: 12%; opacity: .45; }
+@keyframes breathe {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: .8; }
+  50% { transform: scale(1.06) rotate(2.2deg); opacity: .55; }
+}
+.ink-mountains {
+  position: absolute; left: 0; right: 0; bottom: -2px; width: 100%;
+  height: clamp(180px, 26vw, 380px); z-index: 0; pointer-events: none;
+}
+
+/* ---------- 风格导航（宣纸底 · 墨字 · 当前页盖朱印） ---------- */
+.style-nav {
+  background: color-mix(in oklab, var(--paper) 82%, transparent);
+  backdrop-filter: blur(10px) saturate(115%);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  border-bottom: 1px solid rgba(38, 38, 31, .1);
+  font-family: var(--song);
+}
+.style-nav a { color: var(--ink-soft); border: 1px solid transparent; }
+.style-nav a:hover { color: var(--ink); border-color: rgba(38, 38, 31, .18); background: rgba(38, 38, 31, .05); }
+.style-nav a.current {
+  color: var(--cinnabar); border-color: var(--cinnabar);
+  background: rgba(178, 58, 43, .08); box-shadow: inset 0 0 0 1px rgba(178, 58, 43, .25);
+}
+.style-nav .nav-home { color: var(--ink); letter-spacing: .12em; }
+
+/* ---------- 布局骨架 ---------- */
+.wrap { position: relative; z-index: 5; max-width: 1220px; margin: 0 auto; padding: 0 clamp(18px, 5vw, 48px); }
+
+/* ---------- Hero：竖排题款 + 印章 ---------- */
+.ink-hero {
+  position: relative; min-height: 100vh;
+  display: flex; align-items: center;
+  padding: clamp(110px, 15vh, 170px) 0 clamp(60px, 9vh, 110px);
+  overflow: hidden;
+}
+.hero-inner {
+  position: relative; z-index: 5; width: 100%; max-width: 1220px; margin: 0 auto;
+  padding: 0 clamp(18px, 5vw, 48px);
+  display: grid; grid-template-columns: minmax(0, 1.25fr) auto;
+  gap: clamp(28px, 6vw, 90px); align-items: center;
+}
+.hero-kicker {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-size: clamp(11px, 1.2vw, 13px); letter-spacing: .38em;
+  color: var(--cinnabar); text-transform: uppercase;
+  margin-bottom: clamp(20px, 3.4vh, 34px);
+}
+.hero-kicker::before { content: ""; width: clamp(34px, 5vw, 72px); height: 1px; background: var(--cinnabar); opacity: .7; }
+.hero-lede {
+  margin: 0 0 clamp(22px, 4vh, 40px); max-width: 30em;
+  font-family: var(--serif);
+  font-size: clamp(17px, 2vw, 23px); line-height: 2.15; color: var(--ink-soft);
+}
+.hero-lede em { font-style: normal; color: var(--ink); border-bottom: 1px solid rgba(178, 58, 43, .4); padding-bottom: 2px; }
+.hero-sub-note {
+  margin: 0 0 clamp(26px, 4vh, 46px); max-width: 32em;
+  color: var(--ink-faint); font-size: 14px; letter-spacing: .06em;
+}
+.hero-cta { display: flex; flex-wrap: wrap; gap: clamp(12px, 2vw, 20px); margin-bottom: clamp(30px, 5vh, 54px); }
+.ink-btn {
+  position: relative; display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 26px; text-decoration: none; overflow: hidden;
+  border: 1px solid rgba(38, 38, 31, .55); color: var(--ink);
+  background: transparent; border-radius: 2px;
+  font-family: var(--serif); font-size: 15px; letter-spacing: .22em;
+  transition: color .4s var(--ease), border-color .4s var(--ease), transform .4s var(--ease);
+}
+.ink-btn::before {
+  content: ""; position: absolute; inset: 0; background: var(--ink);
+  transform: scaleY(0); transform-origin: bottom;
+  transition: transform .5s var(--ease);
+}
+.ink-btn span { position: relative; z-index: 1; }
+.ink-btn:hover { color: var(--paper); border-color: var(--ink); }
+.ink-btn:hover::before { transform: scaleY(1); }
+.ink-btn.cinnabar { border-color: var(--cinnabar); color: var(--cinnabar); }
+.ink-btn.cinnabar::before { background: var(--cinnabar); }
+.ink-btn.cinnabar:hover { color: #fdf6e8; }
+
+/* 竖排题款 */
+.v-block {
+  display: flex; flex-direction: row-reverse; align-items: flex-start;
+  gap: clamp(14px, 2.4vw, 30px);
+}
+.v-title {
+  writing-mode: vertical-rl; text-orientation: upright;
+  margin: 0; font-family: var(--serif); font-weight: 700;
+  font-size: clamp(40px, 5.4vw, 78px); line-height: 1.12; letter-spacing: .16em;
+  color: var(--ink);
+}
+.v-title .col { display: block; }
+.v-title .col.sm { font-size: .62em; letter-spacing: .3em; color: var(--ink-soft); padding-top: .5em; }
+.v-side {
+  writing-mode: vertical-rl; text-orientation: mixed;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding-top: clamp(6px, 2vh, 22px);
+}
+.v-caption {
+  writing-mode: vertical-rl; text-orientation: upright;
+  font-family: var(--song); letter-spacing: .5em; font-size: 13px; color: var(--ink-faint);
+}
+
+/* 朱砂印章 */
+.seals { display: flex; flex-wrap: wrap; gap: clamp(12px, 2vw, 20px); align-items: center; }
+.seal {
+  position: relative; display: grid; place-items: center;
+  width: clamp(56px, 7vw, 78px); height: clamp(56px, 7vw, 78px);
+  border: 3px solid var(--cinnabar); border-radius: 4px;
+  color: var(--cinnabar); background: rgba(212, 84, 60, .07);
+  font-family: var(--serif); font-weight: 700;
+  font-size: clamp(15px, 1.8vw, 20px); line-height: 1.18; letter-spacing: .12em;
+  text-align: center; cursor: pointer; user-select: none;
+  transform: rotate(-2.5deg);
+  box-shadow: inset 0 0 0 2px rgba(178, 58, 43, .28), 0 2px 0 rgba(120, 62, 45, .12);
+  transition: transform .45s var(--ease), box-shadow .45s var(--ease), opacity .3s ease;
+}
+.seal:hover, .seal:focus-visible {
+  transform: rotate(0deg) scale(1.08);
+  box-shadow: inset 0 0 0 2px rgba(178, 58, 43, .5), 0 14px 30px rgba(140, 66, 42, .22);
+  outline: none;
+}
+.seal:active { transform: rotate(0deg) scale(.92); }
+.seal .seal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 4px; }
+.seal.tall { height: clamp(72px, 8.4vw, 96px); }
+.seal-note { font-size: 12px; letter-spacing: .3em; color: var(--ink-faint); }
+@keyframes stamp-in {
+  0% { transform: rotate(-14deg) scale(1.5); opacity: 0; }
+  60% { transform: rotate(1deg) scale(.96); opacity: 1; }
+  100% { transform: rotate(-2.5deg) scale(1); opacity: 1; }
+}
+.seal.stamped { animation: stamp-in .6s var(--ease) both; }
+
+/* 墨迹扩散式链接（transform / opacity 动效） */
+.ink-link {
+  position: relative; text-decoration: none; color: var(--ink);
+  transition: color .35s var(--ease);
+}
+.ink-link::before {
+  content: ""; position: absolute; inset: -8px -16px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(38, 38, 31, .16), rgba(38, 38, 31, .05) 62%, transparent);
+  transform: scale(0); opacity: 0; z-index: -1;
+  transition: transform .55s var(--ease), opacity .45s var(--ease);
+}
+.ink-link:hover { color: var(--cinnabar); }
+.ink-link:hover::before { transform: scale(1); opacity: 1; }
+
+/* ---------- 章节 ---------- */
+.ink-section { position: relative; padding: clamp(70px, 10vw, 130px) 0; }
+.sec-head { display: flex; align-items: flex-end; gap: clamp(20px, 4vw, 56px); flex-wrap: wrap; margin-bottom: clamp(38px, 6vw, 68px); }
+.sec-mark {
+  writing-mode: vertical-rl; text-orientation: upright;
+  font-family: var(--serif); letter-spacing: .42em;
+  font-size: 12px; color: var(--cinnabar);
+  border-right: 1px solid rgba(178, 58, 43, .4); padding-right: 12px;
+}
+.sec-title {
+  margin: 0; font-family: var(--serif); font-weight: 700;
+  font-size: clamp(32px, 4.6vw, 58px); line-height: 1.24; letter-spacing: .12em;
+}
+.sec-title em { font-style: normal; color: var(--cinnabar); }
+.sec-note { max-width: 34em; color: var(--ink-faint); font-size: 14.5px; line-height: 2.1; margin: 0; }
+.rule-ink { height: 1px; background: linear-gradient(90deg, rgba(38, 38, 31, .35), rgba(38, 38, 31, .06) 70%, transparent); margin: 0 0 clamp(30px, 5vw, 52px); }
+
+/* ---------- 开源工具：名帖卡片 ---------- */
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(252px, 1fr)); gap: clamp(18px, 2.6vw, 30px); }
+.tool-card {
+  position: relative; display: flex; flex-direction: column; gap: 12px;
+  padding: clamp(24px, 3vw, 34px); text-decoration: none; overflow: hidden;
+  background:
+    linear-gradient(158deg, rgba(255, 253, 245, .9), rgba(238, 228, 205, .55)),
+    var(--paper-2);
+  border: 1px solid rgba(38, 38, 31, .22);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 14px 30px -22px rgba(60, 50, 30, .5);
+  transition: transform .55s var(--ease), box-shadow .55s var(--ease), border-color .45s var(--ease);
+}
+.tool-card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(120% 90% at 50% 120%, rgba(38, 38, 31, .1), transparent 62%);
+  transform: scale(.4); opacity: 0; transform-origin: bottom center;
+  transition: transform .6s var(--ease), opacity .5s var(--ease);
+}
+.tool-card:hover { transform: translateY(-6px); border-color: rgba(38, 38, 31, .42); box-shadow: 0 28px 52px -30px rgba(60, 46, 24, .55); }
+.tool-card:hover::before { transform: scale(1); opacity: 1; }
+.tool-card:nth-child(even) { transform: rotate(.5deg); }
+.tool-card:nth-child(even):hover { transform: rotate(0deg) translateY(-6px); }
+.tool-ico {
+  width: 52px; height: 52px; display: grid; place-items: center; font-size: 24px;
+  border: 1px solid rgba(38, 38, 31, .3); border-radius: 50%;
+  background: rgba(255, 253, 245, .75);
+}
+.tool-card h3 { margin: 0; font-family: var(--serif); font-size: 19px; letter-spacing: .12em; }
+.tool-card p { margin: 0; color: var(--ink-faint); font-size: 13.5px; line-height: 2; }
+.tool-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 14px; }
+.tool-host { font-size: 11px; letter-spacing: .18em; color: var(--ink-faint); text-transform: uppercase; }
+.tool-go { font-family: var(--serif); letter-spacing: .22em; color: var(--cinnabar); transition: transform .4s var(--ease); display: inline-block; }
+.tool-card:hover .tool-go { transform: translateX(8px); }
+
+/* ---------- 最新文章：信笺列表 ---------- */
+.letters { display: flex; flex-direction: column; gap: clamp(14px, 2vw, 22px); }
+.letter {
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: clamp(16px, 3vw, 36px); align-items: center;
+  padding: clamp(20px, 3vw, 30px) clamp(18px, 3vw, 34px);
+  text-decoration: none; overflow: hidden;
+  background: linear-gradient(120deg, rgba(255, 252, 243, .82), rgba(238, 228, 205, .4));
+  border: 1px solid rgba(38, 38, 31, .16);
+  border-left: 3px solid rgba(38, 38, 31, .35);
+  transition: transform .5s var(--ease), border-color .45s var(--ease), background .45s var(--ease);
+}
+.letter::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(60% 130% at var(--mx, 20%) 50%, rgba(178, 58, 43, .1), transparent 70%);
+  opacity: 0; transition: opacity .5s var(--ease); pointer-events: none;
+}
+.letter:hover { transform: translateX(10px); border-left-color: var(--cinnabar); background: linear-gradient(120deg, rgba(255, 252, 243, .95), rgba(240, 228, 203, .55)); }
+.letter:hover::after { opacity: 1; }
+.letter-no {
+  font-family: var(--serif); font-size: clamp(15px, 1.9vw, 19px); letter-spacing: .18em;
+  color: var(--cinnabar); min-width: 3.2em;
+}
+.letter-body h3 {
+  margin: 0 0 8px; font-family: var(--serif); font-weight: 700;
+  font-size: clamp(17px, 2.1vw, 22px); line-height: 1.7; letter-spacing: .06em;
+}
+.letter-meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12.5px; color: var(--ink-faint); letter-spacing: .12em; }
+.ink-tag {
+  padding: 3px 12px; border: 1px solid rgba(38, 38, 31, .28); border-radius: 999px;
+  font-size: 11px; letter-spacing: .16em; color: var(--ink-soft);
+  transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+}
+.letter:hover .ink-tag { color: var(--cinnabar); border-color: rgba(178, 58, 43, .5); transform: translateY(-2px); }
+.letter-seal {
+  width: 46px; height: 46px; display: grid; place-items: center;
+  border: 2px solid rgba(178, 58, 43, .75); border-radius: 3px;
+  color: var(--cinnabar); font-family: var(--serif); font-size: 17px;
+  transform: rotate(-4deg); opacity: .78;
+  transition: transform .45s var(--ease), opacity .35s var(--ease);
+}
+.letter:hover .letter-seal { transform: rotate(0deg) scale(1.1); opacity: 1; }
+
+/* ---------- 关于 ---------- */
+.about-wrap { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: clamp(28px, 5vw, 70px); align-items: start; }
+.about-body p { margin: 0 0 1.4em; color: var(--ink-soft); font-size: 15.5px; line-height: 2.25; max-width: 34em; }
+.about-body strong { color: var(--ink); }
+.about-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: rgba(38, 38, 31, .16); border: 1px solid rgba(38, 38, 31, .16); }
+.about-stats div { background: var(--paper); padding: clamp(18px, 2.6vw, 28px); }
+.about-stats b { display: block; font-family: var(--serif); font-size: clamp(26px, 3.4vw, 42px); line-height: 1.1; color: var(--ink); }
+.about-stats span { display: block; margin-top: 8px; font-size: 11px; letter-spacing: .32em; color: var(--ink-faint); }
+.about-card {
+  padding: clamp(24px, 3.4vw, 38px);
+  background: linear-gradient(160deg, rgba(255, 252, 243, .9), rgba(233, 221, 195, .5));
+  border: 1px solid rgba(38, 38, 31, .2);
+  display: flex; flex-direction: column; gap: 18px;
+}
+.about-card h3 { margin: 0; font-family: var(--serif); letter-spacing: .22em; font-size: 17px; }
+.about-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.about-card li { display: flex; gap: 12px; align-items: baseline; color: var(--ink-soft); font-size: 14px; letter-spacing: .08em; }
+.about-card li::before { content: "○"; color: var(--cinnabar); font-size: 11px; }
+.colophon {
+  writing-mode: vertical-rl; text-orientation: upright;
+  font-family: var(--serif); letter-spacing: .42em; font-size: 14px;
+  color: var(--ink-soft); height: clamp(180px, 24vw, 260px); margin: 0 auto;
+}
+
+/* ---------- 页脚 ---------- */
+.ink-footer {
+  position: relative; z-index: 5; margin-top: clamp(40px, 6vw, 80px);
+  padding: clamp(52px, 8vw, 96px) 0 40px;
+  border-top: 1px solid rgba(38, 38, 31, .22);
+  background: linear-gradient(transparent, rgba(222, 208, 178, .5));
+}
+.foot-inner { max-width: 1220px; margin: 0 auto; padding: 0 clamp(18px, 5vw, 48px); }
+.foot-poem {
+  margin: 0 0 clamp(28px, 4vw, 46px);
+  font-family: var(--serif); font-size: clamp(22px, 3.6vw, 42px);
+  letter-spacing: .3em; line-height: 2; color: var(--ink);
+}
+.foot-poem em { font-style: normal; color: var(--cinnabar); }
+.foot-links { display: flex; flex-wrap: wrap; gap: clamp(14px, 2.4vw, 26px); margin-bottom: clamp(24px, 3vw, 38px); }
+.foot-links a {
+  text-decoration: none; letter-spacing: .22em; font-size: 13px; color: var(--ink-soft);
+  border-bottom: 1px solid rgba(38, 38, 31, .25); padding-bottom: 5px;
+  transition: color .35s var(--ease), border-color .35s var(--ease), transform .35s var(--ease);
+}
+.foot-links a:hover { color: var(--cinnabar); border-color: var(--cinnabar); transform: translateY(-3px); }
+.foot-bottom {
+  display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between;
+  padding-top: 22px; border-top: 1px dashed rgba(38, 38, 31, .25);
+  font-size: 12px; letter-spacing: .18em; color: var(--ink-faint);
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; }
+  .v-block { order: -1; justify-content: flex-start; }
+  .about-wrap { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .v-title { writing-mode: horizontal-tb; text-orientation: mixed; letter-spacing: .18em; }
+  .v-title .col { display: inline; }
+  .v-title .col.sm { padding-top: 0; margin-left: .34em; }
+  .v-side { display: none; }
+  .letter { grid-template-columns: 1fr; gap: 12px; }
+  .letter-seal { display: none; }
+  .sec-mark { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-blot { animation: none; }
+  .seal.stamped { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 水墨滤镜定义：feTurbulence + feDisplacementMap 撕出墨韵边缘 -->
+<svg class="svg-defs" aria-hidden="true">
+  <defs>
+    <filter id="inkEdge" x="-35%" y="-35%" width="170%" height="170%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.015" numOctaves="4" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="58" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+    <filter id="inkEdge2" x="-35%" y="-35%" width="170%" height="170%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.026" numOctaves="3" seed="29" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="42" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="0.8"/>
+    </filter>
+    <filter id="inkEdge3" x="-35%" y="-35%" width="170%" height="170%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.012" numOctaves="4" seed="47" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="72" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- 背景特效：墨雨（极淡）+ 落叶飞花 -->
+<canvas id="inkRain" class="bg-fx" aria-hidden="true"></canvas>
+<canvas id="inkLeaves" class="bg-fx" aria-hidden="true"></canvas>
+
+<!-- 统一导航 -->
+<nav class="style-nav">
+  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+  <a href="cyber.html">赛博霓虹</a>
+  <a href="glass.html">极光玻璃</a>
+  <a href="brutal.html">粗野主义</a>
+  <a href="terminal.html">黑客终端</a>
+  <a href="retro.html">蒸汽波</a>
+  <a href="win98.html">Win98</a>
+  <a href="nature.html" class="current">水墨自然</a>
+  <a href="swiss.html">瑞士排版</a>
+  <a href="anime.html">日系二次元</a>
+  <a href="lab.html">🧪 实验室</a>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="ink-hero">
+  <!-- 墨点晕染 -->
+  <svg class="ink-blot blot-a" viewBox="0 0 300 300" aria-hidden="true">
+    <circle cx="150" cy="150" r="118" style="fill:#26261f; opacity:.2" filter="url(#inkEdge)"/>
+    <circle cx="176" cy="122" r="72" style="fill:#26261f; opacity:.16" filter="url(#inkEdge3)"/>
+  </svg>
+  <svg class="ink-blot blot-b" viewBox="0 0 300 300" aria-hidden="true">
+    <circle cx="150" cy="150" r="126" style="fill:#3a3a2c; opacity:.14" filter="url(#inkEdge2)"/>
+  </svg>
+  <!-- 远山水墨 -->
+  <svg class="ink-mountains" viewBox="0 0 1200 380" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <path d="M0 380 L0 250 Q 160 130 330 220 T 660 190 T 980 250 L1200 190 L1200 380 Z" style="fill:#26261f; opacity:.1" filter="url(#inkEdge)"/>
+    <path d="M0 380 L0 300 Q 220 200 430 280 T 860 260 T 1200 300 L1200 380 Z" style="fill:#26261f; opacity:.14" filter="url(#inkEdge2)"/>
+  </svg>
+
+  <div class="hero-inner">
+    <div>
+      <div class="hero-kicker">INK &amp; PAPER · STYLE 07 · 水墨自然</div>
+      <p class="hero-lede">
+        计白当黑，惜墨如金。<br>
+        这里是 <em>xvcenh 的博客</em> —— 同样的文章，
+        换成宣纸的纹理、竖排的题款与一枚朱砂印，重新呼吸一次。
+      </p>
+      <p class="hero-sub-note">INK MODE · 背景飘着极淡的墨雨与落叶，卡片是信笺，链接 hover 时墨迹缓缓洇开。</p>
+
+      <div class="hero-cta">
+        <a class="ink-btn cinnabar fx-ripple" data-magnetic href="#tools"><span>观其工具</span></a>
+        <a class="ink-btn fx-ripple" data-magnetic href="#posts"><span>读其文章</span></a>
+        <a class="ink-btn fx-ripple" data-magnetic href="#about"><span>问其人</span></a>
+      </div>
+
+      <div class="seals">
+        <div class="seal tall" data-seal="徐辰之印" tabindex="0" title="点击钤印">
+          <div class="seal-grid"><span>徐</span><span>辰</span><span>之</span><span>印</span></div>
+        </div>
+        <div class="seal" data-seal="墨戏" tabindex="0" title="点击钤印">墨戏</div>
+        <div class="seal" data-seal="山水有清音" tabindex="0" title="点击钤印">清<br>音</div>
+        <div class="seal-note">HOVER 盖章 · CLICK 钤印</div>
+      </div>
+    </div>
+
+    <!-- 竖排题款 -->
+    <div class="v-block">
+      <h1 class="v-title" aria-label="xvcenh 的博客">
+        <span class="col">xvcenh</span>
+        <span class="col sm">的博客</span>
+      </h1>
+      <div class="v-side">
+        <div class="v-caption">水墨自然 · INK MODE</div>
+        <div class="v-caption" id="vScramble" data-text="留白之间，自有天地">留白之间，自有天地</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 开源工具 ================= -->
+<main class="wrap">
+  <section class="ink-section" id="tools">
+    <div class="sec-head">
+      <div class="sec-mark">开源工具</div>
+      <div>
+        <h2 class="sec-title reveal">开源工具 · <em>四方名帖</em></h2>
+      </div>
+      <p class="sec-note reveal">四个开源项目，四张名帖 —— 从 AI 场景引擎到终端里的村庄模拟器，皆可取用。</p>
+    </div>
+    <div class="rule-ink"></div>
+    <div class="tools-grid">
+      <a class="tool-card reveal" href="https://xvcenh.github.io/svg-scene-engine/">
+        <div class="tool-ico">🎭</div>
+        <h3>SVG Scene Engine</h3>
+        <p>AI 驱动的 2D 场景合成引擎。</p>
+        <div class="tool-foot"><span class="tool-host">xvcenh.github.io</span><span class="tool-go">展卷 →</span></div>
+      </a>
+      <a class="tool-card reveal" href="https://xvcenh.github.io/svg-asset-library/">
+        <div class="tool-ico">🎨</div>
+        <h3>SVG Asset Library</h3>
+        <p>50+ 奇幻风格 SVG 素材库。</p>
+        <div class="tool-foot"><span class="tool-host">xvcenh.github.io</span><span class="tool-go">展卷 →</span></div>
+      </a>
+      <a class="tool-card reveal" href="https://github.com/xvcenh/claudescan">
+        <div class="tool-ico">🔍</div>
+        <h3>ClaudeScan</h3>
+        <p>AI 编程助手配置生成器。</p>
+        <div class="tool-foot"><span class="tool-host">github.com</span><span class="tool-go">展卷 →</span></div>
+      </a>
+      <a class="tool-card reveal" href="https://github.com/xvcenh/liltown">
+        <div class="tool-ico">🏘️</div>
+        <h3>LilTown</h3>
+        <p>终端 AI 村庄模拟器。</p>
+        <div class="tool-foot"><span class="tool-host">github.com</span><span class="tool-go">展卷 →</span></div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= 最新文章 ================= -->
+  <section class="ink-section" id="posts">
+    <div class="sec-head">
+      <div class="sec-mark">最新文章</div>
+      <div>
+        <h2 class="sec-title reveal">最新文章 · <em>八通信笺</em></h2>
+      </div>
+      <p class="sec-note reveal">软件、前端、部署、数据库、工具 —— 踩过的坑，写成信，寄给后来的人。</p>
+    </div>
+    <div class="rule-ink"></div>
+    <div class="letters">
+      <a class="letter reveal" href="https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html">
+        <div class="letter-no">其一</div>
+        <div class="letter-body">
+          <h3>个人开发者如何让开源项目从 0 到 1000 Star</h3>
+          <div class="letter-meta">
+            <span>2026-05-04</span>
+            <span class="ink-tag">开源</span><span class="ink-tag">经验</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html">
+        <div class="letter-no">其二</div>
+        <div class="letter-body">
+          <h3>Web 性能优化实战：从 Lighthouse 60 分到 95 分</h3>
+          <div class="letter-meta">
+            <span>2026-05-04</span>
+            <span class="ink-tag">前端</span><span class="ink-tag">性能</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html">
+        <div class="letter-no">其三</div>
+        <div class="letter-body">
+          <h3>GitHub Actions 自动化 CI/CD 实战：从零搭建生产级流水线</h3>
+          <div class="letter-meta">
+            <span>2026-05-03</span>
+            <span class="ink-tag">部署</span><span class="ink-tag">DevOps</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html">
+        <div class="letter-no">其四</div>
+        <div class="letter-body">
+          <h3>AI 辅助编程最佳实践：从 Copilot 到 Cursor 的高效工作流</h3>
+          <div class="letter-meta">
+            <span>2026-05-03</span>
+            <span class="ink-tag">工具</span><span class="ink-tag">AI</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html">
+        <div class="letter-no">其五</div>
+        <div class="letter-body">
+          <h3>Vue 项目部署到 Nginx 后页面空白的解决方案</h3>
+          <div class="letter-meta">
+            <span>2026-03-19</span>
+            <span class="ink-tag">软件</span><span class="ink-tag">部署</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html">
+        <div class="letter-no">其六</div>
+        <div class="letter-body">
+          <h3>Git 工作流最佳实践与常见问题</h3>
+          <div class="letter-meta">
+            <span>2026-03-19</span>
+            <span class="ink-tag">工具</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html">
+        <div class="letter-no">其七</div>
+        <div class="letter-body">
+          <h3>Docker 容器部署常见问题解决</h3>
+          <div class="letter-meta">
+            <span>2026-03-19</span>
+            <span class="ink-tag">部署</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+      <a class="letter reveal" href="https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html">
+        <div class="letter-no">其八</div>
+        <div class="letter-body">
+          <h3>MySQL 慢查询优化实战</h3>
+          <div class="letter-meta">
+            <span>2026-03-19</span>
+            <span class="ink-tag">数据库</span>
+          </div>
+        </div>
+        <div class="letter-seal">阅</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= 关于 ================= -->
+  <section class="ink-section" id="about">
+    <div class="sec-head">
+      <div class="sec-mark">关于</div>
+      <div>
+        <h2 class="sec-title reveal">关于 · <em>其人其事</em></h2>
+      </div>
+      <p class="sec-note reveal">xvcenh（徐辰）—— 软件开发 / 运维部署 / 数据库管理。把踩过的坑，写成别人的捷径。</p>
+    </div>
+    <div class="rule-ink"></div>
+    <div class="about-wrap">
+      <div class="about-body reveal">
+        <p><strong>xvcenh（徐辰）</strong>，软件开发 / 运维部署 / 数据库管理。常年在代码、服务器与数据表之间往返，习惯把解决问题的过程完整记录下来。</p>
+        <p>这个风格页面是同一份内容的第七种写法：把卡片换成信笺，把按钮换成印章，把动效换成墨在纸上洇开的速度。技术不变，心境不同。</p>
+        <div class="about-stats">
+          <div><b><span class="counter" data-target="8">0</span></b><span>最新文章</span></div>
+          <div><b><span class="counter" data-target="4">0</span></b><span>开源工具</span></div>
+          <div><b><span class="counter" data-target="10">0</span></b><span>风格页面</span></div>
+          <div><b><span class="counter" data-target="0">0</span></b><span>外部依赖</span></div>
+        </div>
+      </div>
+      <div class="about-card reveal">
+        <h3>笔墨清单</h3>
+        <ul>
+          <li>软件开发 · 前端工程 · 性能优化</li>
+          <li>运维部署 · Docker / Nginx / CI-CD</li>
+          <li>数据库管理 · MySQL 调优</li>
+          <li>开源 · 工具链 · AI 辅助编程</li>
+        </ul>
+        <div class="colophon">山高水长，后会有期</div>
+        <div class="seals">
+          <div class="seal" data-seal="xvcenh" tabindex="0" title="点击钤印">xc</div>
+          <div class="seal" data-seal="徐辰" tabindex="0" title="点击钤印">徐辰</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= 页脚 ================= -->
+<footer class="ink-footer">
+  <div class="foot-inner">
+    <p class="foot-poem reveal">墨分五色，<em>字</em>载千言。</p>
+    <div class="foot-links">
+      <a href="index.html">回到首页</a>
+      <a href="lab.html">🧪 实验室</a>
+      <a href="swiss.html">瑞士排版</a>
+      <a href="anime.html">日系二次元</a>
+      <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 xvcenh · 水墨自然 INK MODE · 宣纸 / 竖排 / 朱砂</div>
+      <div>此页零外部依赖 · prefers-reduced-motion 已适配</div>
+    </div>
+  </div>
+</footer>
+
+<!-- 特效引擎 -->
+<script src="assets/fx.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 背景特效 1：墨雨（FX.rain，极淡） ---------- */
+  FX.rain(document.getElementById('inkRain'), {
+    count: 90, rgb: '58, 62, 52'
+  });
+
+  /* ---------- 背景特效 2：落叶飞花（FX.petals，leaf 叶形） ---------- */
+  FX.petals(document.getElementById('inkLeaves'), {
+    count: 24, color: '128, 140, 96', leaf: true
+  });
+
+  /* ---------- 滚动揭示（宣纸上的内容缓缓洇出） ---------- */
+  FX.reveal('.reveal');
+
+  /* ---------- 数字滚动：题跋里的统计 ---------- */
+  document.querySelectorAll('.counter').forEach(function (el) { FX.counter(el); });
+
+  /* ---------- 文字扰乱：竖排小注 hover 时墨迹游走 ---------- */
+  var vSc = document.getElementById('vScramble');
+  if (vSc) FX.scramble(vSc, { trigger: 'hover', speed: 22 });
+
+  /* ---------- 磁吸按钮 ---------- */
+  document.querySelectorAll('[data-magnetic]').forEach(function (el) { FX.magnetic(el, 0.18); });
+
+  /* ---------- 信笺 hover：墨迹从指针处洇开（跟随 --mx） ---------- */
+  document.querySelectorAll('.letter').forEach(function (card) {
+    card.addEventListener('pointermove', function (e) {
+      var r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', (((e.clientX - r.left) / r.width) * 100).toFixed(1) + '%');
+    }, { passive: true });
+  });
+
+  /* ---------- 印章：点击钤印（toast + 盖章动画） ---------- */
+  document.querySelectorAll('.seal').forEach(function (s) {
+    function stamp() {
+      s.classList.remove('stamped');
+      void s.offsetWidth; /* 重启动画 */
+      s.classList.add('stamped');
+      FX.toast('🖼️ 钤印：「' + (s.dataset.seal || '印') + '」');
+    }
+    s.addEventListener('click', stamp);
+    s.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); stamp(); }
+    });
+  });
+
+  /* ---------- 平滑锚点滚动 ---------- */
+  FX.smoothScroll();
+
+  /* ---------- 自定义光标：墨点 + 淡墨拖尾 ---------- */
+  FX.cursor({ trail: true, trailColor: 'rgba(90, 82, 58, .55)' });
+
+  /* ---------- 命令面板（⌘K / Ctrl+K） ---------- */
+  FX.palette([
+    { icon: '🏠', label: '回到首页', hint: 'index.html', run: function () { location.href = 'index.html'; } },
+    { icon: '🍃', label: '水墨自然（当前）', hint: 'nature.html', run: function () { FX.toast('已在水墨自然页面'); } },
+    { icon: '🧭', label: '瑞士排版风格', hint: 'swiss.html', keywords: 'swiss 瑞士', run: function () { location.href = 'swiss.html'; } },
+    { icon: '🌸', label: '日系二次元风格', hint: 'anime.html', keywords: 'anime 二次元', run: function () { location.href = 'anime.html'; } },
+    { icon: '🧪', label: '炫技实验室', hint: 'lab.html', keywords: 'lab 特效', run: function () { location.href = 'lab.html'; } },
+    { icon: '📜', label: '读最新文章', hint: '#posts', keywords: 'posts 文章', run: function () { location.hash = '#posts'; } },
+    { icon: '🖋️', label: '钤一枚印章', hint: 'seal', keywords: 'seal 印章', run: function () {
+      var seals = document.querySelectorAll('.seal');
+      if (seals.length) seals[0].click();
+    } },
+    { icon: '🔗', label: 'GitHub 主页', hint: 'github.com/xvcenh', run: function () { window.open('https://github.com/xvcenh', '_blank'); } }
+  ], { placeholder: '想去哪里？输入页面或命令…' });
+
+  /* ---------- 彩蛋：KONAMI → 墨洒了 ---------- */
+  FX.konami(function () {
+    document.querySelectorAll('.ink-blot').forEach(function (b, i) {
+      b.style.transition = 'transform 1.2s cubic-bezier(.2,.9,.25,1), opacity 1.2s ease';
+      b.style.transform = 'scale(1.' + (2 + i) + ') rotate(' + (6 + i * 4) + 'deg)';
+      b.style.opacity = '.9';
+      setTimeout(function () { b.style.transform = ''; b.style.opacity = ''; }, 1400);
+    });
+    FX.toast('🥚 彩蛋解锁：墨洒了一地，快拿印章来盖。');
+  });
+})();
+</script>
+</body>
+</html>

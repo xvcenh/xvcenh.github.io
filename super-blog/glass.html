@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>极光玻璃 · xvcenh 的博客</title>
+<meta name="description" content="xvcenh 的博客 · 极光玻璃风格页 —— 在流动的光里，写下问题与解决方案。">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+/* ============================================================
+   glass.html — 极光玻璃风格（GLASSMORPHISM）
+   明亮通透 · 紫蓝橙渐变 · 磨砂玻璃卡片 · 极光 + 光斑双背景
+   ============================================================ */
+:root {
+  --gl-bg: #eef1ff;
+  --gl-ink: #221a44;
+  --gl-dim: #5b5480;
+  --gl-violet: #7c5cff;
+  --gl-blue: #38b6ff;
+  --gl-orange: #ff9d5c;
+  --gl-pink: #ff7ac2;
+  --gl-glass: rgba(255, 255, 255, .52);
+  --gl-glass-strong: rgba(255, 255, 255, .72);
+  --gl-stroke: rgba(255, 255, 255, .78);
+  --ease-gl: cubic-bezier(.2, .9, .25, 1);
+  /* 覆盖共享变量 */
+  --fx-accent: #7c5cff;
+  --fx-accent2: #ff9d5c;
+  --fx-bg: #f4f5ff;
+  --fx-fg: #221a44;
+  --fx-dim: #5b5480;
+  --fx-font: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --fx-mono: "SFMono-Regular", Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--gl-ink);
+  font-family: var(--fx-font);
+  line-height: 1.8;
+  background:
+    radial-gradient(900px 600px at 12% -8%, rgba(124, 92, 255, .30), transparent 60%),
+    radial-gradient(820px 560px at 92% 8%, rgba(255, 157, 92, .26), transparent 58%),
+    radial-gradient(1000px 700px at 50% 118%, rgba(56, 182, 255, .26), transparent 62%),
+    linear-gradient(180deg, #f6f7ff 0%, var(--gl-bg) 45%, #f2eefe 100%);
+  overflow-x: hidden;
+}
+
+/* ---------- 双画布背景层（光斑 + 极光） ---------- */
+.gl-bg-bokeh, .gl-bg-aurora {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+.gl-bg-bokeh { opacity: .9; }
+.gl-bg-aurora { opacity: .55; mix-blend-mode: multiply; }
+
+/* ---------- 导航（玻璃质感） ---------- */
+.style-nav {
+  background: rgba(255, 255, 255, .55);
+  border-bottom: 1px solid rgba(255, 255, 255, .8);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: 0 12px 40px rgba(90, 70, 190, .10);
+}
+.style-nav a {
+  color: var(--gl-dim);
+  background: rgba(255, 255, 255, .42);
+  border: 1px solid rgba(255, 255, 255, .7);
+}
+.style-nav a:hover {
+  color: var(--gl-violet);
+  background: rgba(255, 255, 255, .8);
+}
+.style-nav a.current {
+  color: #fff;
+  background: linear-gradient(120deg, var(--gl-violet), var(--gl-blue));
+  box-shadow: 0 10px 26px rgba(124, 92, 255, .42);
+}
+.style-nav .nav-home {
+  color: var(--gl-ink);
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+/* ---------- 玻璃卡片基座（含降级） ---------- */
+.glass {
+  position: relative;
+  background: var(--gl-glass);
+  border: 1px solid var(--gl-stroke);
+  border-radius: 26px;
+  box-shadow: 0 26px 60px rgba(80, 60, 180, .16), 0 2px 6px rgba(255, 255, 255, .5) inset;
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
+}
+/* 无 backdrop-filter 的浏览器降级为不透明浅色 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: rgba(255, 255, 255, .88); }
+}
+
+/* 渐变描边（padding-box 双背景技法） */
+.glass-grad {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(var(--gl-glass), var(--gl-glass)) padding-box,
+    linear-gradient(130deg, rgba(124, 92, 255, .85), rgba(56, 182, 255, .8), rgba(255, 157, 92, .85)) border-box;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-grad {
+    background:
+      linear-gradient(rgba(255, 255, 255, .9), rgba(255, 255, 255, .9)) padding-box,
+      linear-gradient(130deg, rgba(124, 92, 255, .85), rgba(56, 182, 255, .8), rgba(255, 157, 92, .85)) border-box;
+  }
+}
+
+/* ---------- 容器 / 节奏 ---------- */
+.wrap { width: min(1120px, 100%); margin-inline: auto; padding-inline: clamp(16px, 4vw, 32px); position: relative; z-index: 3; }
+section { padding-block: clamp(56px, 9vw, 108px); position: relative; z-index: 3; }
+
+.sec-head { margin-bottom: clamp(28px, 5vw, 50px); }
+.sec-kicker {
+  display: inline-block;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font: 700 12px/1.5 var(--fx-mono);
+  letter-spacing: .22em;
+  color: var(--gl-violet);
+  background: rgba(255, 255, 255, .6);
+  border: 1px solid rgba(124, 92, 255, .28);
+}
+.sec-title {
+  margin: 16px 0 10px;
+  font-size: clamp(30px, 5.2vw, 50px);
+  font-weight: 850;
+  letter-spacing: .01em;
+}
+.sec-title em {
+  font-style: normal;
+  background: linear-gradient(115deg, var(--gl-violet), var(--gl-blue) 55%, var(--gl-orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sec-note { color: var(--gl-dim); max-width: 58ch; margin: 0; }
+
+/* ---------- HERO ---------- */
+.hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  padding-top: 96px;
+  overflow: hidden;
+}
+.hero-inner { position: relative; z-index: 3; padding-block: clamp(48px, 9vw, 110px); }
+
+/* 悬浮装饰光球（transform 视差） */
+.orb {
+  position: absolute; border-radius: 50%;
+  filter: blur(2px);
+  will-change: transform;
+  pointer-events: none;
+}
+.orb-1 {
+  width: clamp(180px, 26vw, 330px); aspect-ratio: 1;
+  right: 4%; top: 16%;
+  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .9), rgba(124, 92, 255, .5) 46%, rgba(56, 182, 255, .12) 72%, transparent 78%);
+}
+.orb-2 {
+  width: clamp(120px, 17vw, 220px); aspect-ratio: 1;
+  left: 6%; bottom: 14%;
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .92), rgba(255, 157, 92, .55) 48%, rgba(255, 122, 194, .16) 74%, transparent 80%);
+}
+.orb-3 {
+  width: clamp(90px, 12vw, 150px); aspect-ratio: 1;
+  left: 42%; top: 10%;
+  background: radial-gradient(circle at 36% 30%, rgba(255, 255, 255, .95), rgba(56, 182, 255, .5) 52%, transparent 78%);
+}
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font: 700 12px/1 var(--fx-mono);
+  letter-spacing: .24em;
+  color: var(--gl-violet);
+  background: rgba(255, 255, 255, .62);
+  border: 1px solid rgba(124, 92, 255, .32);
+  box-shadow: 0 12px 30px rgba(124, 92, 255, .18);
+}
+.hero-badge i {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: linear-gradient(120deg, var(--gl-blue), var(--gl-orange));
+  box-shadow: 0 0 12px rgba(56, 182, 255, .8);
+}
+
+.hero-title {
+  margin: 26px 0 14px;
+  font-size: clamp(46px, 9.6vw, 112px);
+  font-weight: 900;
+  line-height: 1.06;
+  letter-spacing: .01em;
+}
+.hero-title .grad {
+  background: linear-gradient(112deg, var(--gl-violet) 5%, var(--gl-blue) 42%, var(--gl-orange) 78%, var(--gl-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 12px 34px rgba(124, 92, 255, .28));
+}
+.hero-sub {
+  min-height: 1.9em;
+  margin: 0 0 18px;
+  font-family: var(--fx-mono);
+  font-size: clamp(15px, 2.4vw, 20px);
+  color: var(--gl-violet);
+}
+.hero-desc { color: var(--gl-dim); max-width: 58ch; margin: 0 0 32px; }
+
+.gl-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 15px 30px;
+  border-radius: 999px;
+  text-decoration: none;
+  font: 700 15px/1 var(--fx-font);
+  color: #fff;
+  background: linear-gradient(120deg, var(--gl-violet), var(--gl-blue) 62%, var(--gl-orange));
+  background-size: 180% 180%;
+  box-shadow: 0 18px 44px rgba(124, 92, 255, .42);
+  transition: transform .45s var(--ease-gl), box-shadow .45s var(--ease-gl), background-position .8s var(--ease-gl);
+}
+.gl-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  background-position: 100% 0;
+  box-shadow: 0 26px 58px rgba(124, 92, 255, .5);
+}
+.gl-btn.ghost {
+  color: var(--gl-violet);
+  background: rgba(255, 255, 255, .62);
+  border: 1px solid rgba(124, 92, 255, .35);
+  box-shadow: 0 14px 34px rgba(124, 92, 255, .16);
+}
+.gl-btn.ghost:hover { background: rgba(255, 255, 255, .88); box-shadow: 0 20px 44px rgba(124, 92, 255, .26); }
+
+/* Hero 玻璃展示卡 */
+.hero-panel {
+  margin-top: clamp(30px, 5vw, 52px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2.4vw, 22px);
+  padding: clamp(16px, 3vw, 26px);
+}
+.hero-metric { text-align: left; padding: 4px 6px; }
+.hero-metric b {
+  display: block;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 900;
+  background: linear-gradient(115deg, var(--gl-violet), var(--gl-blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-metric span {
+  font: 700 11px/1.6 var(--fx-mono);
+  letter-spacing: .22em;
+  color: var(--gl-dim);
+}
+
+/* ---------- 开源工具：玻璃 + 渐变描边 + 倾斜视差 ---------- */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(240px, 46vw, 262px), 1fr));
+  gap: clamp(16px, 3vw, 26px);
+}
+.tool-card {
+  display: flex; flex-direction: column; gap: 12px;
+  padding: clamp(22px, 3.4vw, 32px);
+  text-decoration: none; color: inherit;
+  transform-style: preserve-3d;
+  transition: transform .5s var(--ease-gl), box-shadow .5s var(--ease-gl);
+}
+.tool-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 36px 78px rgba(80, 60, 180, .24);
+}
+.tool-ico {
+  width: 62px; height: 62px;
+  display: grid; place-items: center;
+  font-size: 30px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(124, 92, 255, .22), rgba(56, 182, 255, .22), rgba(255, 157, 92, .26));
+  border: 1px solid rgba(255, 255, 255, .8);
+  box-shadow: 0 12px 28px rgba(124, 92, 255, .18);
+}
+.tool-name {
+  margin: 2px 0 0;
+  font-size: 20px; font-weight: 850;
+}
+.tool-desc { margin: 0; color: var(--gl-dim); font-size: 14.5px; }
+.tool-url {
+  font: 500 11.5px/1.7 var(--fx-mono);
+  color: var(--gl-blue);
+  word-break: break-all;
+}
+.tool-go {
+  margin-top: auto; padding-top: 12px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 700 13px/1 var(--fx-font);
+  color: var(--gl-violet);
+}
+.tool-go i {
+  display: inline-grid; place-items: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(120deg, var(--gl-violet), var(--gl-blue));
+  color: #fff; font-style: normal;
+  transition: transform .4s var(--ease-gl);
+}
+.tool-card:hover .tool-go i { transform: translateX(5px); }
+
+/* ---------- 最新文章：玻璃行 + 彩色渐变边 ---------- */
+.posts-list { display: grid; gap: clamp(12px, 2.2vw, 18px); }
+.post-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: clamp(12px, 2.4vw, 22px);
+  padding: clamp(18px, 3vw, 26px) clamp(18px, 3.2vw, 30px);
+  text-decoration: none; color: inherit;
+  overflow: hidden;
+  transition: transform .45s var(--ease-gl), box-shadow .45s var(--ease-gl);
+}
+.post-card::before { /* 左侧渐变玻璃光条 */
+  content: "";
+  position: absolute; left: 0; top: 12px; bottom: 12px; width: 5px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--gl-violet), var(--gl-blue), var(--gl-orange));
+  opacity: .55;
+  transition: opacity .45s var(--ease-gl), transform .45s var(--ease-gl);
+}
+.post-card:hover {
+  transform: translateX(10px);
+  box-shadow: 0 30px 64px rgba(80, 60, 180, .22);
+}
+.post-card:hover::before { opacity: 1; transform: scaleY(1.06); }
+.post-date {
+  font: 700 11px/1 var(--fx-mono);
+  letter-spacing: .18em;
+  color: var(--gl-violet);
+}
+.post-title {
+  margin: 8px 0 10px;
+  font-size: clamp(16px, 2.5vw, 20px);
+  font-weight: 800;
+  line-height: 1.5;
+}
+.post-card:hover .post-title {
+  background: linear-gradient(110deg, var(--gl-violet), var(--gl-blue), var(--gl-orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-pill {
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  color: var(--gl-violet);
+  background: rgba(124, 92, 255, .12);
+  border: 1px solid rgba(124, 92, 255, .25);
+}
+.post-arrow {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: 17px;
+  color: var(--gl-violet);
+  background: rgba(255, 255, 255, .66);
+  border: 1px solid rgba(124, 92, 255, .28);
+  transition: transform .45s var(--ease-gl), background .45s var(--ease-gl), color .45s var(--ease-gl);
+}
+.post-card:hover .post-arrow {
+  transform: translate(3px, -3px) rotate(45deg);
+  background: linear-gradient(120deg, var(--gl-violet), var(--gl-blue));
+  color: #fff;
+}
+
+/* ---------- 关于：宽幅玻璃面板 ---------- */
+.about-panel {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(22px, 4.4vw, 52px);
+  align-items: center;
+  padding: clamp(26px, 5vw, 54px);
+}
+.about-name {
+  margin: 0 0 10px;
+  font-size: clamp(26px, 4.4vw, 42px);
+  font-weight: 900;
+}
+.about-name em {
+  font-style: normal;
+  background: linear-gradient(112deg, var(--gl-orange), var(--gl-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.about-text { color: var(--gl-dim); margin: 0 0 20px; }
+.skill-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.skill-pill {
+  padding: 9px 18px;
+  border-radius: 999px;
+  font: 700 13px/1 var(--fx-font);
+  color: var(--gl-violet);
+  background: rgba(255, 255, 255, .66);
+  border: 1px solid rgba(124, 92, 255, .3);
+  transition: transform .4s var(--ease-gl), box-shadow .4s var(--ease-gl);
+}
+.skill-pill:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(124, 92, 255, .26);
+}
+.about-visual {
+  position: relative;
+  aspect-ratio: 1.15;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(150deg, rgba(124, 92, 255, .32), rgba(56, 182, 255, .3), rgba(255, 157, 92, .34));
+  border: 1px solid rgba(255, 255, 255, .8);
+  display: grid; place-items: center;
+}
+.about-visual .big-emoji {
+  font-size: clamp(72px, 13vw, 132px);
+  filter: drop-shadow(0 22px 40px rgba(80, 60, 180, .3));
+  animation: gl-float 7s ease-in-out infinite;
+}
+@keyframes gl-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-16px) rotate(3deg); }
+}
+.about-visual .ring {
+  position: absolute; border-radius: 50%;
+  border: 1.5px dashed rgba(255, 255, 255, .75);
+}
+.about-visual .ring-1 { width: 62%; aspect-ratio: 1; animation: gl-spin 26s linear infinite; }
+.about-visual .ring-2 { width: 84%; aspect-ratio: 1; animation: gl-spin 40s linear infinite reverse; }
+@keyframes gl-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 页脚 ---------- */
+footer {
+  position: relative; z-index: 3;
+  padding: clamp(30px, 5vw, 50px) 0;
+}
+.foot-panel {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  align-items: center; justify-content: space-between;
+  padding: clamp(20px, 3.6vw, 30px) clamp(22px, 4vw, 36px);
+  font-family: var(--fx-mono); font-size: 13px;
+  color: var(--gl-dim);
+}
+.foot-panel a {
+  color: var(--gl-violet); text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color .3s ease;
+}
+.foot-panel a:hover { border-color: var(--gl-violet); }
+.foot-links { display: flex; flex-wrap: wrap; gap: 18px; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 880px) {
+  .about-panel { grid-template-columns: 1fr; }
+  .about-visual { max-width: 420px; }
+}
+@media (max-width: 620px) {
+  .hero { padding-top: 84px; }
+  .hero-panel { grid-template-columns: 1fr 1fr; }
+  .hero-metric:last-child { grid-column: 1 / -1; }
+  .post-card { grid-template-columns: 1fr; }
+  .post-arrow { display: none; }
+  .hero-title { font-size: clamp(42px, 13vw, 72px); }
+}
+
+/* ---------- 减弱动效降级 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .about-visual .big-emoji, .about-visual .ring { animation: none; }
+  .tool-card, .post-card, .gl-btn, .skill-pill { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 双背景：液态光斑 + 极光 -->
+<div class="gl-bg-bokeh" aria-hidden="true"><canvas id="bgBokeh" class="fx-bg-canvas"></canvas></div>
+<div class="gl-bg-aurora" aria-hidden="true"><canvas id="bgAurora" class="fx-bg-canvas"></canvas></div>
+
+<nav class="style-nav">
+  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+  <a href="cyber.html">赛博霓虹</a>
+  <a class="current" href="glass.html">极光玻璃</a>
+  <a href="brutal.html">粗野主义</a>
+  <a href="terminal.html">黑客终端</a>
+  <a href="retro.html">蒸汽波</a>
+  <a href="win98.html">Win98</a>
+  <a href="nature.html">水墨自然</a>
+  <a href="swiss.html">瑞士排版</a>
+  <a href="anime.html">日系二次元</a>
+  <a href="lab.html">🧪 实验室</a>
+</nav>
+
+<!-- ============================ HERO ============================ -->
+<header class="hero">
+  <div class="orb orb-1" data-parallax="0.06"></div>
+  <div class="orb orb-2" data-parallax="0.1"></div>
+  <div class="orb orb-3" data-parallax="0.14"></div>
+  <div class="wrap hero-inner">
+    <div class="hero-badge"><i></i>GLASSMORPHISM MODE · 极光玻璃风格</div>
+    <h1 class="hero-title"><span class="grad">xvcenh 的博客</span></h1>
+    <p class="hero-sub"><span id="typeSub"></span></p>
+    <p class="hero-desc">
+      把生硬的技术文档，装进一块会透光的玻璃里。软件开发、运维部署、数据库管理的实战笔记，
+      在流动的极光下重新排版 —— 清楚、耐看、能解决问题。
+    </p>
+    <div style="display:flex;flex-wrap:wrap;gap:14px">
+      <a class="gl-btn fx-ripple" href="#tools">浏览开源工具 →</a>
+      <a class="gl-btn ghost fx-ripple" href="#posts">阅读最新文章</a>
+    </div>
+    <div class="hero-panel glass">
+      <div class="hero-metric"><b class="counter" data-target="4">0</b><span>开源项目</span></div>
+      <div class="hero-metric"><b class="counter" data-target="8">0</b><span>最新文章</span></div>
+      <div class="hero-metric"><b class="counter" data-target="3">0</b><span>技术领域</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================ 开源工具 ============================ -->
+<section id="tools">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker reveal">OPEN SOURCE TOOLS</div>
+      <h2 class="sec-title reveal">开源<em>工具</em></h2>
+      <p class="sec-note reveal">四个打磨好并持续维护的开源项目 —— 鼠标悬停卡片，玻璃会跟着你的视线轻轻倾斜。</p>
+    </div>
+    <div class="tools-grid">
+      <a class="tool-card glass glass-grad reveal-scale" data-tilt href="https://xvcenh.github.io/svg-scene-engine/">
+        <div class="tool-ico">🎭</div>
+        <h3 class="tool-name" data-scramble>SVG Scene Engine</h3>
+        <p class="tool-desc">AI 驱动的 2D 场景合成引擎</p>
+        <div class="tool-url">https://xvcenh.github.io/svg-scene-engine/</div>
+        <div class="tool-go">查看项目 <i>→</i></div>
+      </a>
+      <a class="tool-card glass glass-grad reveal-scale" data-tilt href="https://xvcenh.github.io/svg-asset-library/">
+        <div class="tool-ico">🎨</div>
+        <h3 class="tool-name" data-scramble>SVG Asset Library</h3>
+        <p class="tool-desc">50+ 奇幻风格 SVG 素材库</p>
+        <div class="tool-url">https://xvcenh.github.io/svg-asset-library/</div>
+        <div class="tool-go">查看项目 <i>→</i></div>
+      </a>
+      <a class="tool-card glass glass-grad reveal-scale" data-tilt href="https://github.com/xvcenh/claudescan">
+        <div class="tool-ico">🔍</div>
+        <h3 class="tool-name" data-scramble>ClaudeScan</h3>
+        <p class="tool-desc">AI 编程助手配置生成器</p>
+        <div class="tool-url">https://github.com/xvcenh/claudescan</div>
+        <div class="tool-go">查看项目 <i>→</i></div>
+      </a>
+      <a class="tool-card glass glass-grad reveal-scale" data-tilt href="https://github.com/xvcenh/liltown">
+        <div class="tool-ico">🏘️</div>
+        <h3 class="tool-name" data-scramble>LilTown</h3>
+        <p class="tool-desc">终端 AI 村庄模拟器</p>
+        <div class="tool-url">https://github.com/xvcenh/liltown</div>
+        <div class="tool-go">查看项目 <i>→</i></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 最新文章 ============================ -->
+<section id="posts">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker reveal">LATEST WRITING</div>
+      <h2 class="sec-title reveal">最新<em>文章</em></h2>
+      <p class="sec-note reveal">软件、前端、部署、数据库、工具 —— 每篇都是「踩坑记录 + 解决方案」的实战复盘。</p>
+    </div>
+    <div class="posts-list">
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html">
+        <div>
+          <div class="post-date">2026-05-04</div>
+          <h3 class="post-title">个人开发者如何让开源项目从 0 到 1000 Star</h3>
+          <div class="tag-row"><span class="tag-pill">开源</span><span class="tag-pill">经验</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html">
+        <div>
+          <div class="post-date">2026-05-04</div>
+          <h3 class="post-title">Web 性能优化实战：从 Lighthouse 60 分到 95 分</h3>
+          <div class="tag-row"><span class="tag-pill">前端</span><span class="tag-pill">性能</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html">
+        <div>
+          <div class="post-date">2026-05-03</div>
+          <h3 class="post-title">GitHub Actions 自动化 CI/CD 实战：从零搭建生产级流水线</h3>
+          <div class="tag-row"><span class="tag-pill">部署</span><span class="tag-pill">DevOps</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html">
+        <div>
+          <div class="post-date">2026-05-03</div>
+          <h3 class="post-title">AI 辅助编程最佳实践：从 Copilot 到 Cursor 的高效工作流</h3>
+          <div class="tag-row"><span class="tag-pill">工具</span><span class="tag-pill">AI</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html">
+        <div>
+          <div class="post-date">2026-03-19</div>
+          <h3 class="post-title">Vue 项目部署到 Nginx 后页面空白的解决方案</h3>
+          <div class="tag-row"><span class="tag-pill">软件</span><span class="tag-pill">部署</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html">
+        <div>
+          <div class="post-date">2026-03-19</div>
+          <h3 class="post-title">Git 工作流最佳实践与常见问题</h3>
+          <div class="tag-row"><span class="tag-pill">工具</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html">
+        <div>
+          <div class="post-date">2026-03-19</div>
+          <h3 class="post-title">Docker 容器部署常见问题解决</h3>
+          <div class="tag-row"><span class="tag-pill">部署</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post-card glass reveal" href="https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html">
+        <div>
+          <div class="post-date">2026-03-19</div>
+          <h3 class="post-title">MySQL 慢查询优化实战</h3>
+          <div class="tag-row"><span class="tag-pill">数据库</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 关于 ============================ -->
+<section id="about">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-kicker reveal">ABOUT THE AUTHOR</div>
+      <h2 class="sec-title reveal">关于<em>我</em></h2>
+    </div>
+    <div class="about-panel glass glass-grad reveal-scale">
+      <div>
+        <h3 class="about-name">xvcenh（徐辰）<em>· 用玻璃装下所有踩坑记录</em></h3>
+        <p class="about-text">
+          软件开发 / 运维部署 / 数据库管理。写博客的原因很简单：遇到的问题大多不新，
+          但答案散落在各处。把它们捡起来、验证一遍、写清楚 —— 是这个博客存在的全部意义。
+        </p>
+        <div class="skill-pills">
+          <span class="skill-pill">软件开发</span>
+          <span class="skill-pill">运维部署</span>
+          <span class="skill-pill">数据库管理</span>
+          <span class="skill-pill">问题与解决方案</span>
+        </div>
+      </div>
+      <div class="about-visual" aria-hidden="true">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="big-emoji">🧑‍💻</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 页脚 ============================ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-panel glass">
+      <div>© 2026 xvcenh · <a href="https://github.com/xvcenh">GitHub: github.com/xvcenh</a></div>
+      <div class="foot-links">
+        <a href="index.html">✦ 返回主页</a>
+        <a href="lab.html">🧪 炫技实验室</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/fx.js"></script>
+<script src="assets/vendor/vanilla-tilt.min.js"></script>
+<script>
+/* ============================================================
+   glass.html 页面脚本：光斑 + 极光双背景 · 打字机 · 扰乱 · 视差
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* 背景一：多色液态光斑 */
+  FX.bokeh(document.getElementById('bgBokeh'), {
+    count: 13,
+    rgb: '124,140,255',
+    accent: '255,160,110',
+    alpha: 0.32
+  });
+
+  /* 背景二：极光光带（紫蓝橙） */
+  FX.aurora(document.getElementById('bgAurora'), {
+    hues: [[268, 88, 62], [212, 92, 60], [24, 92, 62], [322, 88, 64]],
+    alpha: 0.22,
+    width: 110,
+    blur: 30
+  });
+
+  /* 副标题打字机 */
+  FX.typewriter(document.getElementById('typeSub'), [
+    '把生硬的技术，装进一块会透光的玻璃里。',
+    '软件开发 · 运维部署 · 数据库管理 · 实战笔记。',
+    '问题总会重复出现，答案值得被写下来。'
+  ], { speed: 52, pause: 2000, cursor: '·' });
+
+  /* 标题文字扰乱（可见时触发） */
+  document.querySelectorAll('[data-scramble]').forEach(function (el) {
+    FX.scramble(el, { trigger: 'hover', speed: 18 });
+  });
+
+  /* 数字滚动 */
+  document.querySelectorAll('.counter').forEach(function (el) {
+    FX.counter(el, { duration: 1400 });
+  });
+
+  /* 玻璃卡片 3D 倾斜视差（VanillaTilt） */
+  if (window.VanillaTilt) {
+    window.VanillaTilt.init(document.querySelectorAll('[data-tilt]'), {
+      max: 7,
+      speed: 600,
+      glare: true,
+      'max-glare': 0.18,
+      perspective: 1100,
+      scale: 1.015
+    });
+  }
+
+  /* Hero 光球指针视差（transform / opacity 之外不动布局） */
+  var orbs = [].slice.call(document.querySelectorAll('[data-parallax]'));
+  if (orbs.length && !FX.REDUCED && matchMedia('(hover: hover)').matches) {
+    addEventListener('pointermove', function (e) {
+      var nx = e.clientX / innerWidth - 0.5, ny = e.clientY / innerHeight - 0.5;
+      orbs.forEach(function (o) {
+        var k = parseFloat(o.dataset.parallax) * 120;
+        o.style.transform = 'translate(' + (nx * k).toFixed(1) + 'px,' + (ny * k).toFixed(1) + 'px)';
+      });
+    }, { passive: true });
+  }
+
+  /* 滚动揭示 */
+  FX.reveal('.reveal, .reveal-left, .reveal-scale');
+
+  /* 共享交互 */
+  FX.cursor({ trailColor: 'rgba(124,92,255,.6)', hover: 'a,button,[data-tilt],.post-card,.skill-pill' });
+  FX.ripple();
+  FX.smoothScroll();
+
+  /* 命令面板 */
+  FX.palette([
+    { icon: '🏠', label: '返回超级博客主页', hint: 'index.html', keywords: 'home 主页', run: function () { location.href = 'index.html'; } },
+    { icon: '⚡', label: '赛博霓虹', hint: 'cyber.html', keywords: 'cyber 赛博', run: function () { location.href = 'cyber.html'; } },
+    { icon: '🫧', label: '极光玻璃（当前页）', hint: 'glass.html', keywords: 'glass 玻璃', run: function () { location.href = 'glass.html'; } },
+    { icon: '🧱', label: '粗野主义', hint: 'brutal.html', keywords: 'brutal 粗野', run: function () { location.href = 'brutal.html'; } },
+    { icon: '🧪', label: '炫技实验室', hint: 'lab.html', keywords: 'lab 实验', run: function () { location.href = 'lab.html'; } },
+    { icon: '🐙', label: 'GitHub 主页', hint: 'github.com/xvcenh', keywords: 'github', run: function () { location.href = 'https://github.com/xvcenh'; } },
+    { icon: '📜', label: '跳到「最新文章」', hint: '#posts', keywords: 'posts 文章', run: function () { location.hash = '#posts'; } },
+    { icon: '💡', label: '跳到「关于」', hint: '#about', keywords: 'about 关于', run: function () { location.hash = '#about'; } }
+  ], { placeholder: '输入命令或页面名… 比如 cyber / 文章 / github' });
+})();
+</script>
+</body>
+</html>

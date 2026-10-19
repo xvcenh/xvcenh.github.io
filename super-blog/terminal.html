@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-term-theme="green">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黑客终端 · xvcenh 的博客 — TERMINAL MODE</title>
+<meta name="description" content="xvcenh 超级博客 · 黑客终端风格：CRT 扫描线、荧光字、可交互命令行（help / ls / matrix / party …）。">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+/* ============================================================
+   terminal.html 专属样式 — CRT 荧光终端
+   绿色磷光 / 琥珀双主题 · 扫描线 + 曲面暗角 + 文字发光
+   ============================================================ */
+:root {
+  --bg: #040806;
+  --bg2: #061009;
+  --panel: #071208;
+  --panel2: #0a1a0e;
+  --line: rgba(57, 255, 122, .18);
+  --line-strong: rgba(57, 255, 122, .42);
+  --phos: #39ff7a;
+  --phos-soft: #9dffc0;
+  --fg: #c8ffd8;
+  --dim: #4fae72;
+  --hot: #ffe27a;
+  --danger: #ff6b6b;
+  --fx-accent: var(--phos);
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Cascadia Mono", Consolas, "Courier New", monospace;
+  --ease: cubic-bezier(.2, .9, .25, 1);
+}
+/* 琥珀磷光主题（`theme` 命令切换） */
+html[data-term-theme="amber"] {
+  --bg: #0a0702;
+  --bg2: #120c02;
+  --panel: #140d02;
+  --panel2: #1d1303;
+  --line: rgba(255, 176, 0, .2);
+  --line-strong: rgba(255, 176, 0, .46);
+  --phos: #ffb000;
+  --phos-soft: #ffd98a;
+  --fg: #ffe9bd;
+  --dim: #c08b2e;
+  --hot: #7dffb2;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(120% 90% at 50% -10%, var(--bg2), transparent 60%),
+    var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-x: hidden;
+  transition: background .5s ease, color .5s ease;
+}
+::selection { background: var(--phos); color: #031007; }
+a { color: var(--phos); }
+
+/* ---------- CRT：扫描线 + 曲面暗角 + 轻微闪烁 ---------- */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 9400; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    rgba(0, 0, 0, .26) 0 1px, rgba(0, 0, 0, 0) 1px 3px);
+}
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 9401; pointer-events: none;
+  background:
+    radial-gradient(130% 105% at 50% 42%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, .62) 100%),
+    linear-gradient(rgba(255, 255, 255, .022), rgba(255, 255, 255, 0) 55%);
+  animation: crt-flicker 6s steps(10) infinite;
+}
+@keyframes crt-flicker {
+  0%, 100% { opacity: 1; }
+  47% { opacity: .965; }
+  48% { opacity: 1; }
+  72% { opacity: .98; }
+  73% { opacity: 1; }
+}
+
+/* ---------- 背景画布 ---------- */
+.bg-stars {
+  position: fixed; inset: 0; z-index: 0;
+  width: 100%; height: 100%; opacity: .22; pointer-events: none;
+}
+#matrixHost {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+}
+#matrixHost canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: .5; display: none;
+}
+
+/* ---------- 发光文字工具类 ---------- */
+.glow { text-shadow: 0 0 8px color-mix(in oklab, var(--phos) 62%, transparent), 0 0 26px color-mix(in oklab, var(--phos) 30%, transparent); }
+.c-dim { color: var(--dim); }
+.c-hot { color: var(--hot); }
+.c-ok { color: var(--phos); }
+
+/* ---------- 统一导航 ---------- */
+.style-nav {
+  background: color-mix(in oklab, var(--bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+}
+.style-nav a {
+  color: var(--dim); border: 1px solid transparent;
+  font-family: var(--font-mono);
+}
+.style-nav a:hover { color: var(--phos); border-color: var(--line-strong); }
+.style-nav a.current {
+  color: var(--bg); background: var(--phos);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--phos) 45%, transparent);
+}
+.style-nav .nav-home { color: var(--phos); letter-spacing: .12em; }
+
+/* ---------- HERO ---------- */
+.term-hero {
+  position: relative; z-index: 2;
+  min-height: 92vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: clamp(110px, 16vh, 180px) clamp(18px, 5vw, 72px) clamp(60px, 8vh, 100px);
+}
+.hero-inner { max-width: 1100px; margin: 0 auto; width: 100%; }
+.boot-log {
+  font-size: clamp(11px, 1.5vw, 13px); letter-spacing: .06em;
+  color: var(--dim); margin-bottom: clamp(22px, 4vh, 40px);
+}
+.boot-log .ok { color: var(--phos); }
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 16px; border: 1px solid var(--line-strong); border-radius: 2px;
+  color: var(--phos); font-size: 12px; letter-spacing: .22em;
+}
+.hero-tag i {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--phos); box-shadow: 0 0 12px var(--phos);
+  animation: blink 1.4s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: .15; } }
+.term-hero h1 {
+  margin: 26px 0 10px;
+  font-size: clamp(42px, 9.5vw, 118px);
+  line-height: 1.02; letter-spacing: .02em; font-weight: 700;
+  color: var(--phos-soft);
+}
+.term-hero h1 .caret {
+  display: inline-block; width: .52em; height: .92em; margin-left: .1em;
+  background: var(--phos); vertical-align: baseline;
+  animation: blink 1s steps(2) infinite;
+  box-shadow: 0 0 18px color-mix(in oklab, var(--phos) 70%, transparent);
+}
+.hero-mode {
+  margin: 0 0 6px; font-size: clamp(13px, 2vw, 19px);
+  letter-spacing: .34em; color: var(--dim); text-transform: uppercase;
+}
+.hero-sub {
+  margin: 18px 0 0; min-height: 1.6em;
+  font-size: clamp(15px, 2.1vw, 21px); color: var(--fg);
+}
+.hero-sub .fx-cursor { color: var(--phos); }
+.cmd-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.chip {
+  padding: 9px 16px; border: 1px solid var(--line-strong); border-radius: 2px;
+  background: transparent; color: var(--phos); cursor: pointer;
+  font: 500 12.5px/1 var(--font-mono); letter-spacing: .08em;
+  transition: background .28s var(--ease), color .28s var(--ease), transform .28s var(--ease), box-shadow .28s var(--ease);
+}
+.chip::before { content: "$ "; color: var(--dim); }
+.chip:hover {
+  background: var(--phos); color: var(--bg); transform: translateY(-3px);
+  box-shadow: 0 10px 26px color-mix(in oklab, var(--phos) 32%, transparent);
+}
+.chip:hover::before { color: var(--bg); }
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: clamp(20px, 5vw, 60px);
+  margin-top: clamp(40px, 7vh, 70px); padding-top: 26px;
+  border-top: 1px dashed var(--line);
+}
+.hero-meta div { display: flex; flex-direction: column; gap: 6px; }
+.hero-meta b { font-size: clamp(24px, 3.6vw, 38px); color: var(--phos); line-height: 1; }
+.hero-meta span { font-size: 11px; letter-spacing: .22em; color: var(--dim); }
+
+/* ---------- 区块通用 ---------- */
+.section {
+  position: relative; z-index: 2;
+  max-width: 1100px; margin: 0 auto;
+  padding: clamp(64px, 9vw, 120px) clamp(18px, 5vw, 40px);
+}
+.sec-kicker {
+  font-size: 11.5px; letter-spacing: .34em; color: var(--phos);
+  margin-bottom: 14px;
+}
+.sec-title {
+  margin: 0 0 14px; font-size: clamp(28px, 5vw, 52px);
+  line-height: 1.15; letter-spacing: .02em; color: var(--fg); font-weight: 700;
+}
+.sec-title em { font-style: normal; color: var(--phos); }
+.sec-note { color: var(--dim); max-width: 620px; margin: 0 0 42px; font-size: 14px; }
+
+/* ---------- 交互终端 ---------- */
+.term-shell {
+  border: 1px solid var(--line-strong); border-radius: 4px; overflow: hidden;
+  background: color-mix(in oklab, var(--panel) 92%, black 8%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, .6),
+    0 30px 80px rgba(0, 0, 0, .55),
+    0 0 60px color-mix(in oklab, var(--phos) 12%, transparent);
+}
+.term-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, var(--panel2), var(--panel));
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px; letter-spacing: .12em; color: var(--dim);
+}
+.term-bar .dots { display: flex; gap: 6px; }
+.term-bar .dots i {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid var(--line-strong); display: block;
+}
+.term-bar .dots i:first-child { background: var(--phos); box-shadow: 0 0 10px var(--phos); }
+.term-body {
+  padding: 20px clamp(14px, 2.5vw, 24px) 12px;
+  height: clamp(340px, 56vh, 520px);
+  overflow-y: auto; overscroll-behavior: contain;
+  font-size: clamp(12.5px, 1.6vw, 14.5px); line-height: 1.85;
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+.term-body::-webkit-scrollbar { width: 8px; }
+.term-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 8px; }
+.term-line { white-space: pre-wrap; word-break: break-word; }
+.term-line.echo { color: var(--phos-soft); }
+.term-line.echo .prompt { color: var(--phos); }
+.term-line.info { color: var(--fg); }
+.term-line.muted { color: var(--dim); }
+.term-line.warn { color: var(--hot); }
+.term-line.err { color: var(--danger); }
+.term-line a { color: var(--phos); text-decoration: underline; text-underline-offset: 3px; }
+.term-line a:hover { color: var(--hot); }
+.term-input-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px clamp(14px, 2.5vw, 24px) 16px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in oklab, var(--panel) 80%, black 20%);
+}
+.term-input-row .prompt { color: var(--phos); white-space: nowrap; }
+.term-input-row input {
+  flex: 1; background: transparent; border: 0; outline: 0;
+  color: var(--phos-soft); font: inherit; caret-color: var(--phos);
+}
+.term-input-row input::placeholder { color: var(--dim); opacity: .7; }
+.term-hint {
+  margin-top: 14px; font-size: 11.5px; letter-spacing: .12em; color: var(--dim);
+}
+.term-hint kbd {
+  padding: 2px 7px; border: 1px solid var(--line); border-radius: 2px;
+  color: var(--phos); font: inherit;
+}
+
+/* ---------- 工具卡片（目录列表风格） ---------- */
+.dir-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+.dir-card {
+  display: block; text-decoration: none; position: relative;
+  padding: 22px 20px 18px; border: 1px solid var(--line); border-radius: 3px;
+  background: linear-gradient(160deg, var(--panel), color-mix(in oklab, var(--panel) 70%, var(--bg)));
+  overflow: hidden;
+  transition: transform .45s var(--ease), border-color .35s ease, box-shadow .45s var(--ease);
+}
+.dir-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--line-strong);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, .5), 0 0 34px color-mix(in oklab, var(--phos) 15%, transparent);
+}
+.dir-perm { font-size: 10.5px; letter-spacing: .14em; color: var(--dim); }
+.dir-card h3 {
+  margin: 12px 0 8px; font-size: 17px; letter-spacing: .02em; color: var(--phos-soft);
+}
+.dir-card h3 .emoji { margin-right: 8px; }
+.dir-card p { margin: 0; color: var(--dim); font-size: 12.5px; line-height: 1.75; min-height: 3.2em; }
+.dir-url {
+  margin-top: 16px; display: block; font-size: 11px; letter-spacing: .06em;
+  color: var(--phos); opacity: .8; word-break: break-all;
+}
+.dir-card:hover .dir-url { opacity: 1; }
+.dir-cursor {
+  position: absolute; right: 14px; top: 14px; color: var(--phos);
+  opacity: 0; transform: translateX(-8px); transition: all .35s var(--ease);
+}
+.dir-card:hover .dir-cursor { opacity: 1; transform: none; }
+
+/* ---------- 文章日志 ---------- */
+.log-list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.log-item {
+  display: grid; grid-template-columns: 110px 1fr auto; gap: 8px 22px;
+  align-items: baseline;
+  padding: 20px 12px; border-bottom: 1px solid var(--line);
+  text-decoration: none; color: inherit;
+  transition: background .3s ease, padding-left .35s var(--ease);
+}
+.log-item:hover { background: color-mix(in oklab, var(--phos) 7%, transparent); padding-left: 22px; }
+.log-date { font-size: 11.5px; letter-spacing: .12em; color: var(--dim); }
+.log-main h3 {
+  margin: 0 0 8px; font-size: clamp(15px, 2.1vw, 19px);
+  line-height: 1.5; color: var(--fg); letter-spacing: .01em;
+}
+.log-item:hover .log-main h3 { color: var(--phos-soft); text-shadow: 0 0 14px color-mix(in oklab, var(--phos) 30%, transparent); }
+.log-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.log-tags span {
+  padding: 3px 9px; border: 1px solid var(--line); border-radius: 2px;
+  font-size: 10.5px; letter-spacing: .12em; color: var(--dim);
+}
+.log-arrow { color: var(--dim); font-size: 15px; transition: transform .35s var(--ease), color .3s; }
+.log-item:hover .log-arrow { color: var(--phos); transform: translateX(6px); }
+@media (max-width: 640px) {
+  .log-item { grid-template-columns: 1fr auto; }
+  .log-date { grid-column: 1 / -1; }
+}
+
+/* ---------- 关于 / about.md ---------- */
+.about-wrap {
+  display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(20px, 4vw, 44px);
+}
+@media (max-width: 860px) { .about-wrap { grid-template-columns: 1fr; } }
+.md-doc {
+  border: 1px solid var(--line); border-radius: 3px;
+  background: color-mix(in oklab, var(--panel) 88%, black 12%);
+  padding: clamp(20px, 3vw, 32px);
+}
+.md-doc h3 { margin: 0 0 6px; font-size: 15px; color: var(--phos); letter-spacing: .12em; }
+.md-doc h4 { margin: 26px 0 10px; font-size: 13px; color: var(--hot); letter-spacing: .16em; }
+.md-doc p { margin: 0 0 12px; color: var(--fg); font-size: 13.5px; line-height: 1.95; }
+.md-doc ul { margin: 0; padding-left: 20px; color: var(--dim); font-size: 13px; }
+.md-doc li { margin-bottom: 8px; }
+.md-doc li b { color: var(--phos-soft); font-weight: 500; }
+.stat-panel {
+  border: 1px solid var(--line); border-radius: 3px;
+  padding: clamp(20px, 3vw, 28px);
+  background: linear-gradient(180deg, var(--panel), transparent);
+}
+.stat-panel .row {
+  display: flex; justify-content: space-between; gap: 14px;
+  padding: 11px 0; border-bottom: 1px dashed var(--line);
+  font-size: 12.5px; letter-spacing: .06em;
+}
+.stat-panel .row:last-child { border-bottom: 0; }
+.stat-panel .row b { color: var(--phos); font-weight: 500; }
+.stat-panel .row span { color: var(--dim); }
+.meter { height: 6px; margin-top: 18px; background: color-mix(in oklab, var(--phos) 12%, transparent); border-radius: 99px; overflow: hidden; }
+.meter i {
+  display: block; height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--phos), var(--hot));
+  box-shadow: 0 0 12px var(--phos);
+  transition: width 1.4s var(--ease);
+}
+
+/* ---------- 页脚 ---------- */
+footer {
+  position: relative; z-index: 2;
+  border-top: 1px solid var(--line);
+  padding: clamp(48px, 7vw, 84px) clamp(18px, 5vw, 40px) 34px;
+  background: linear-gradient(transparent, color-mix(in oklab, var(--bg) 80%, var(--phos) 8%));
+}
+.foot-inner { max-width: 1100px; margin: 0 auto; }
+.foot-cmd {
+  font-size: clamp(16px, 3vw, 26px); color: var(--phos);
+  letter-spacing: .04em; margin-bottom: 26px;
+}
+.foot-cmd .prompt { color: var(--dim); }
+.foot-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+.foot-links a {
+  padding: 9px 16px; border: 1px solid var(--line); border-radius: 2px;
+  text-decoration: none; color: var(--dim); font-size: 12px; letter-spacing: .12em;
+  transition: all .3s var(--ease);
+}
+.foot-links a:hover {
+  color: var(--bg); background: var(--phos); border-color: var(--phos);
+  transform: translateY(-3px);
+}
+.foot-bottom {
+  display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between;
+  padding-top: 22px; border-top: 1px dashed var(--line);
+  font-size: 11px; letter-spacing: .12em; color: var(--dim);
+}
+.foot-bottom a { color: var(--phos); }
+
+/* ---------- 减弱动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  body::after { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 背景星野（低透明度） -->
+<canvas class="bg-stars" id="bgStars" aria-hidden="true"></canvas>
+<!-- 数字雨图层（默认隐藏，`matrix` 命令开启） -->
+<div id="matrixHost" aria-hidden="true"></div>
+
+<!-- ================= 统一导航 ================= -->
+<nav class="style-nav">
+  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+  <a href="cyber.html">赛博霓虹</a>
+  <a href="glass.html">极光玻璃</a>
+  <a href="brutal.html">粗野主义</a>
+  <a class="current" href="terminal.html">黑客终端</a>
+  <a href="retro.html">蒸汽波</a>
+  <a href="win98.html">Win98</a>
+  <a href="nature.html">水墨自然</a>
+  <a href="swiss.html">瑞士排版</a>
+  <a href="anime.html">日系二次元</a>
+  <a href="lab.html">🧪 实验室</a>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="term-hero">
+  <div class="hero-inner">
+    <div class="boot-log">
+      <div><span class="c-dim">[0.0001]</span> mount /dev/blog ................. <span class="ok">OK</span></div>
+      <div><span class="c-dim">[0.0027]</span> load assets/fx.js (canvas fx) ... <span class="ok">OK</span></div>
+      <div><span class="c-dim">[0.0134]</span> init CRT phosphor pipeline ...... <span class="ok">OK</span></div>
+      <div><span class="c-dim">[0.0412]</span> spawn interactive shell ......... <span class="ok">READY</span></div>
+    </div>
+    <div class="hero-tag"><i></i>STATUS: ONLINE · TERMINAL MODE</div>
+    <h1 class="glow"><span id="termTitle">xvcenh 的博客</span><span class="caret"></span></h1>
+    <p class="hero-mode">TERMINAL MODE // INTERACTIVE SHELL</p>
+    <p class="hero-sub"><span id="typeSub"></span></p>
+    <div class="cmd-chips" id="cmdChips">
+      <button class="chip" data-cmd="help">help</button>
+      <button class="chip" data-cmd="ls">ls</button>
+      <button class="chip" data-cmd="cat about.md">cat about.md</button>
+      <button class="chip" data-cmd="open docker">open docker</button>
+      <button class="chip" data-cmd="matrix">matrix</button>
+      <button class="chip" data-cmd="theme">theme</button>
+      <button class="chip" data-cmd="party">party</button>
+    </div>
+    <div class="hero-meta">
+      <div><b>11</b><span>SHELL COMMANDS</span></div>
+      <div><b>4</b><span>OPEN SOURCE TOOLS</span></div>
+      <div><b>8</b><span>TECH POSTS</span></div>
+      <div><b>2+</b><span>CANVAS FX LAYERS</span></div>
+      <div><b>∞</b><span>CRT BLOOM</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 交互终端 ================= -->
+<section class="section" id="shell">
+  <div class="sec-kicker reveal">INTERACTIVE SHELL · 就是这台</div>
+  <h2 class="sec-title reveal">敲点什么吧 <em>▸</em></h2>
+  <p class="sec-note reveal">
+    这不是一个假的装饰品 —— 输入 <b>help</b> 查看全部命令；<b>open &lt;文章名&gt;</b> 会输出真实文章链接；
+    <b>matrix</b> 唤醒数字雨；<b>theme</b> 在绿色与琥珀色荧光之间切换。支持 ↑↓ 翻命令历史。
+  </p>
+  <div class="term-shell reveal-scale">
+    <div class="term-bar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span>xvcenh@blog: ~ — zsh — 132×42</span>
+      <span style="margin-left:auto" class="c-dim">CRT · phosphor</span>
+    </div>
+    <div class="term-body" id="termOut" tabindex="0" aria-label="终端输出区域"></div>
+    <div class="term-input-row">
+      <span class="prompt">guest@xvcenh.blog:~$</span>
+      <input id="termInput" type="text" autocomplete="off" spellcheck="false"
+             placeholder="输入命令…（试试 help）" aria-label="终端命令输入">
+    </div>
+  </div>
+  <p class="term-hint">
+    ⌨️ 命令一览：<kbd>help</kbd> <kbd>ls</kbd> <kbd>cat about.md</kbd> <kbd>whoami</kbd>
+    <kbd>open &lt;文章名&gt;</kbd> <kbd>theme</kbd> <kbd>matrix</kbd> <kbd>party</kbd>
+    <kbd>sudo</kbd> <kbd>clear</kbd> <kbd>date</kbd>
+  </p>
+</section>
+
+<!-- ================= 开源工具 ================= -->
+<section class="section" id="tools">
+  <div class="sec-kicker reveal">OPEN SOURCE TOOLS · ls ~/tools</div>
+  <h2 class="sec-title reveal">开源<em>工具</em></h2>
+  <p class="sec-note reveal">drwxr-xr-x 4 projects —— 每一个都能点开直接玩。</p>
+  <div class="dir-list">
+    <a class="dir-card reveal" href="https://xvcenh.github.io/svg-scene-engine/">
+      <div class="dir-cursor">▮</div>
+      <div class="dir-perm">-rwxr-xr-x · svg-scene-engine/</div>
+      <h3><span class="emoji">🎭</span>SVG Scene Engine</h3>
+      <p>AI 驱动的 2D 场景合成引擎，一句话生成可编辑的 SVG 场景插画。</p>
+      <span class="dir-url">https://xvcenh.github.io/svg-scene-engine/</span>
+    </a>
+    <a class="dir-card reveal" href="https://xvcenh.github.io/svg-asset-library/">
+      <div class="dir-cursor">▮</div>
+      <div class="dir-perm">-rwxr-xr-x · svg-asset-library/</div>
+      <h3><span class="emoji">🎨</span>SVG Asset Library</h3>
+      <p>50+ 奇幻风格 SVG 素材库，可拖拽、可换色、可直接复制进设计稿。</p>
+      <span class="dir-url">https://xvcenh.github.io/svg-asset-library/</span>
+    </a>
+    <a class="dir-card reveal" href="https://github.com/xvcenh/claudescan">
+      <div class="dir-cursor">▮</div>
+      <div class="dir-perm">-rwxr-xr-x · claudescan/</div>
+      <h3><span class="emoji">🔍</span>ClaudeScan</h3>
+      <p>AI 编程助手配置生成器，扫描仓库并产出最优的助手配置文件。</p>
+      <span class="dir-url">https://github.com/xvcenh/claudescan</span>
+    </a>
+    <a class="dir-card reveal" href="https://github.com/xvcenh/liltown">
+      <div class="dir-cursor">▮</div>
+      <div class="dir-perm">-rwxr-xr-x · liltown/</div>
+      <h3><span class="emoji">🏘️</span>LilTown</h3>
+      <p>终端 AI 村庄模拟器，一群 Agent 在你的终端里过日子。</p>
+      <span class="dir-url">https://github.com/xvcenh/liltown</span>
+    </a>
+  </div>
+</section>
+
+<!-- ================= 最新文章 ================= -->
+<section class="section" id="posts">
+  <div class="sec-kicker reveal">LATEST LOGS · tail -f ~/posts</div>
+  <h2 class="sec-title reveal">最新<em>文章</em></h2>
+  <p class="sec-note reveal">八条提交记录，全部是真实踩坑。也可以在上面的终端里输入 <b>open &lt;关键词&gt;</b> 打开。</p>
+  <div class="log-list">
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html">
+      <div class="log-date">2026-05-04</div>
+      <div class="log-main">
+        <h3>个人开发者如何让开源项目从 0 到 1000 Star</h3>
+        <div class="log-tags"><span>开源</span><span>经验</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html">
+      <div class="log-date">2026-05-04</div>
+      <div class="log-main">
+        <h3>Web 性能优化实战：从 Lighthouse 60 分到 95 分</h3>
+        <div class="log-tags"><span>前端</span><span>性能</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html">
+      <div class="log-date">2026-05-03</div>
+      <div class="log-main">
+        <h3>GitHub Actions 自动化 CI/CD 实战：从零搭建生产级流水线</h3>
+        <div class="log-tags"><span>部署</span><span>DevOps</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html">
+      <div class="log-date">2026-05-03</div>
+      <div class="log-main">
+        <h3>AI 辅助编程最佳实践：从 Copilot 到 Cursor 的高效工作流</h3>
+        <div class="log-tags"><span>工具</span><span>AI</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html">
+      <div class="log-date">2026-03-19</div>
+      <div class="log-main">
+        <h3>Vue 项目部署到 Nginx 后页面空白的解决方案</h3>
+        <div class="log-tags"><span>软件</span><span>部署</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html">
+      <div class="log-date">2026-03-19</div>
+      <div class="log-main">
+        <h3>Git 工作流最佳实践与常见问题</h3>
+        <div class="log-tags"><span>工具</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html">
+      <div class="log-date">2026-03-19</div>
+      <div class="log-main">
+        <h3>Docker 容器部署常见问题解决</h3>
+        <div class="log-tags"><span>部署</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+    <a class="log-item reveal" href="https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html">
+      <div class="log-date">2026-03-19</div>
+      <div class="log-main">
+        <h3>MySQL 慢查询优化实战</h3>
+        <div class="log-tags"><span>数据库</span></div>
+      </div>
+      <div class="log-arrow">→</div>
+    </a>
+  </div>
+</section>
+
+<!-- ================= 关于 ================= -->
+<section class="section" id="about">
+  <div class="sec-kicker reveal">ABOUT · cat about.md</div>
+  <h2 class="sec-title reveal">关于 <em>xvcenh</em></h2>
+  <p class="sec-note reveal">whoami 的答案永远只有一个。</p>
+  <div class="about-wrap">
+    <div class="md-doc reveal">
+      <h3># about.md</h3>
+      <p><b>xvcenh（徐辰）</b> —— 软件开发 / 运维部署 / 数据库管理。</p>
+      <p>
+        白天把服务稳在生产环境，晚上把踩过的坑写成文章。喜欢原生 Canvas、终端美学，
+        以及一切「看起来很贵但其实零依赖」的实现。
+      </p>
+      <h4>## 技能树</h4>
+      <ul>
+        <li><b>软件开发</b> —— 前端工程、性能优化、AI 工具链</li>
+        <li><b>运维部署</b> —— Docker / Nginx / GitHub Actions CI-CD</li>
+        <li><b>数据库管理</b> —— MySQL 调优、慢查询治理、索引策略</li>
+        <li><b>开源</b> —— 4 个开源项目，0 框架依赖的博客界面实验</li>
+      </ul>
+      <h4>## 联系方式</h4>
+      <p>GitHub → <a href="https://github.com/xvcenh">github.com/xvcenh</a></p>
+    </div>
+    <div class="stat-panel reveal-scale">
+      <div class="row"><span>USER</span><b>xvcenh（徐辰）</b></div>
+      <div class="row"><span>ROLE</span><b>Dev / Ops / DBA</b></div>
+      <div class="row"><span>SHELL</span><b>zsh + 咖啡因</b></div>
+      <div class="row"><span>UPTIME</span><b>128+ commits / year</b></div>
+      <div class="row"><span>EDITOR</span><b>Vim (偶尔叛逃)</b></div>
+      <div class="row"><span>STATUS</span><b>持续输出中…</b></div>
+      <div class="meter"><i id="aboutMeter"></i></div>
+      <p class="c-dim" style="font-size:11px;letter-spacing:.14em;margin:14px 0 0">
+        ARTICLE OUTPUT LEVEL · 96%
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 页脚 ================= -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-cmd"><span class="prompt">guest@xvcenh.blog:~$</span> logout — 会话结束，欢迎再来 ▮</div>
+    <div class="foot-links">
+      <a href="index.html">✦ 回到首页</a>
+      <a href="lab.html">🧪 实验室</a>
+      <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
+      <a href="#shell">↑ 回到终端</a>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 xvcenh · TERMINAL MODE · 零框架 · 原生 Canvas</div>
+      <div>root@/dev/null · <a href="index.html">index.html</a> · <a href="lab.html">lab.html</a></div>
+    </div>
+  </div>
+</footer>
+
+<!-- vendor：confetti（party 命令使用） -->
+<script src="assets/vendor/canvas-confetti.min.js"></script>
+<!-- 共享特效引擎 -->
+<script src="assets/fx.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     1. 背景画布特效：星野（低透明度）+ 数字雨（命令开关）
+     ============================================================ */
+  FX.starfield(document.getElementById('bgStars'), {
+    count: 200, speed: 0.18, shootEvery: 5200, rgb: '120,255,170'
+  });
+
+  var matrixHost = document.getElementById('matrixHost');
+  var matrixCanvas = null, matrixOn = false;
+  function toggleMatrix() {
+    if (!matrixOn && !matrixCanvas) {
+      /* 数字雨画布按需创建，只调用一次 FX.matrixRain */
+      matrixCanvas = document.createElement('canvas');
+      matrixCanvas.id = 'matrixCanvas';
+      matrixHost.appendChild(matrixCanvas);
+      FX.matrixRain(matrixCanvas, {
+        fontSize: 15, color: '#39ff7a', rgb: '57,255,122',
+        bg: '4,8,6', fade: 0.09
+      });
+    }
+    matrixOn = !matrixOn;
+    if (matrixCanvas) {
+      matrixCanvas.style.display = matrixOn ? 'block' : 'none';
+      /* 显示时强制 FX 重新测量画布尺寸 */
+      if (matrixOn) window.dispatchEvent(new Event('resize'));
+    }
+    return matrixOn;
+  }
+
+  /* ============================================================
+     2. 文字特效：标题扰乱 + 打字机 + 滚动揭示
+     ============================================================ */
+  var titleRun = FX.scramble(document.getElementById('termTitle'), {
+    trigger: 'visible', speed: 14
+  });
+  var termTitle = document.getElementById('termTitle');
+  termTitle.addEventListener('mouseenter', function () {
+    if (titleRun) titleRun();
+  });
+
+  FX.typewriter(document.getElementById('typeSub'), [
+    '这台终端听得懂人话 —— 输入 help 试试。',
+    'matrix 唤醒数字雨 · theme 换荧光颜色。',
+    'sudo 也行，如果你敢的话。',
+    'Hi, I\'m xvcenh. 现在轮到你了。'
+  ], { speed: 58, pause: 1900, cursor: '▌' });
+
+  FX.reveal('.reveal, .reveal-scale');
+  FX.smoothScroll();
+  FX.ripple();
+
+  /* 关于面板进度条 */
+  var meter = document.getElementById('aboutMeter');
+  if ('IntersectionObserver' in window) {
+    var meterIO = new IntersectionObserver(function (es) {
+      if (es[0].isIntersecting) { meter.style.width = '96%'; meterIO.disconnect(); }
+    }, { threshold: 0.4 });
+    meterIO.observe(meter);
+  } else {
+    meter.style.width = '96%';
+  }
+
+  /* ============================================================
+     3. 可交互终端：命令解析 + 打字机输出
+     ============================================================ */
+  var outEl = document.getElementById('termOut');
+  var inputEl = document.getElementById('termInput');
+
+  /* --- 文章数据（与全站一致） --- */
+  var ARTICLES = [
+    { title: '个人开发者如何让开源项目从 0 到 1000 Star', date: '2026-05-04', tags: '开源/经验',
+      keys: 'star 开源 增长 growth', url: 'https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html' },
+    { title: 'Web 性能优化实战：从 Lighthouse 60 分到 95 分', date: '2026-05-04', tags: '前端/性能',
+      keys: 'web performance lighthouse 性能 前端', url: 'https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html' },
+    { title: 'GitHub Actions 自动化 CI/CD 实战：从零搭建生产级流水线', date: '2026-05-03', tags: '部署/DevOps',
+      keys: 'github actions cicd ci cd 流水线 部署 devops', url: 'https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html' },
+    { title: 'AI 辅助编程最佳实践：从 Copilot 到 Cursor 的高效工作流', date: '2026-05-03', tags: '工具/AI',
+      keys: 'ai copilot cursor 工具 编程', url: 'https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html' },
+    { title: 'Vue 项目部署到 Nginx 后页面空白的解决方案', date: '2026-03-19', tags: '软件/部署',
+      keys: 'vue nginx 部署 空白 软件', url: 'https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html' },
+    { title: 'Git 工作流最佳实践与常见问题', date: '2026-03-19', tags: '工具',
+      keys: 'git workflow 工作流 工具', url: 'https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html' },
+    { title: 'Docker 容器部署常见问题解决', date: '2026-03-19', tags: '部署',
+      keys: 'docker 容器 部署', url: 'https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html' },
+    { title: 'MySQL 慢查询优化实战', date: '2026-03-19', tags: '数据库',
+      keys: 'mysql 慢查询 数据库 优化 sql', url: 'https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html' }
+  ];
+  var TOOLS = [
+    { name: 'SVG Scene Engine', desc: 'AI 驱动的 2D 场景合成引擎', url: 'https://xvcenh.github.io/svg-scene-engine/', icon: '🎭' },
+    { name: 'SVG Asset Library', desc: '50+ 奇幻风格 SVG 素材库', url: 'https://xvcenh.github.io/svg-asset-library/', icon: '🎨' },
+    { name: 'ClaudeScan', desc: 'AI 编程助手配置生成器', url: 'https://github.com/xvcenh/claudescan', icon: '🔍' },
+    { name: 'LilTown', desc: '终端 AI 村庄模拟器', url: 'https://github.com/xvcenh/liltown', icon: '🏘️' }
+  ];
+
+  /* --- 打印队列：逐字打字机效果 --- */
+  var queue = [], printing = false;
+  function scrollBottom() { outEl.scrollTop = outEl.scrollHeight; }
+
+  function appendInstant(item) {
+    var line = document.createElement('div');
+    line.className = 'term-line ' + (item.cls || 'info');
+    line.textContent = item.text || '';
+    if (item.link) {
+      line.appendChild(document.createTextNode(' '));
+      var a = document.createElement('a');
+      a.href = item.link; a.textContent = item.linkLabel || item.link;
+      a.target = '_blank'; a.rel = 'noopener';
+      line.appendChild(a);
+    }
+    outEl.appendChild(line);
+    scrollBottom();
+  }
+
+  function runQueue() {
+    if (!queue.length) { printing = false; return; }
+    printing = true;
+    var item = queue.shift();
+    /* 减弱动效时直接输出整行 */
+    if (FX.REDUCED || item.instant) {
+      appendInstant(item);
+      setTimeout(runQueue, 20);
+      return;
+    }
+    var line = document.createElement('div');
+    line.className = 'term-line ' + (item.cls || 'info');
+    outEl.appendChild(line);
+    var text = item.text || '', i = 0;
+    (function tick() {
+      if (i < text.length) {
+        i += 1;
+        line.textContent = text.slice(0, i);
+        scrollBottom();
+        setTimeout(tick, 9);
+      } else {
+        if (item.link) {
+          line.appendChild(document.createTextNode(' '));
+          var a = document.createElement('a');
+          a.href = item.link; a.textContent = item.linkLabel || item.link;
+          a.target = '_blank'; a.rel = 'noopener';
+          line.appendChild(a);
+        }
+        scrollBottom();
+        setTimeout(runQueue, 55);
+      }
+    })();
+  }
+
+  function print(items) {
+    /* items: 字符串 或 {text, cls, link, linkLabel, instant} */
+    for (var i = 0; i < items.length; i++) {
+      queue.push(typeof items[i] === 'string' ? { text: items[i] } : items[i]);
+    }
+    if (!printing) runQueue();
+  }
+
+  /* --- 命令实现 --- */
+  function cmdHelp() {
+    return [
+      { text: '可用命令：', cls: 'warn' },
+      { text: '  help              显示这份帮助' },
+      { text: '  ls                列出目录（tools / posts）' },
+      { text: '  cat about.md      阅读「关于」文档' },
+      { text: '  whoami            我是谁' },
+      { text: '  open <文章名>     打开文章并输出链接（如 open docker）' },
+      { text: '  theme             绿色 / 琥珀色荧光切换' },
+      { text: '  matrix            开关数字雨背景' },
+      { text: '  party             撒花庆祝' },
+      { text: '  sudo <任意命令>   试试就知道了' },
+      { text: '  date              显示当前时间' },
+      { text: '  clear             清屏' },
+      { text: '提示：↑ ↓ 可以翻命令历史。', cls: 'muted' }
+    ];
+  }
+
+  function cmdLs() {
+    var lines = [
+      { text: 'drwxr-xr-x  tools/      4 个开源项目', cls: 'info' },
+      { text: 'drwxr-xr-x  posts/      8 篇最新文章', cls: 'info' },
+      { text: '-r--r--r--  about.md    关于 xvcenh', cls: 'info' },
+      { text: '-r--r--r--  README.md   本终端使用说明', cls: 'info' },
+      { text: '', cls: 'info' }
+    ];
+    lines.push({ text: 'tools/:', cls: 'warn' });
+    TOOLS.forEach(function (t) {
+      lines.push({ text: '  ' + t.icon + ' ' + t.name + ' — ' + t.desc });
+      lines.push({ text: '      ' + t.url, cls: 'muted', link: t.url, linkLabel: '↗ 打开' });
+    });
+    lines.push({ text: '', cls: 'info' });
+    lines.push({ text: 'posts/（用 open <关键词> 打开）:', cls: 'warn' });
+    ARTICLES.forEach(function (a) {
+      lines.push({ text: '  ' + a.date + '  ' + a.title, cls: 'info' });
+    });
+    return lines;
+  }
+
+  function cmdAbout() {
+    return [
+      { text: '# about.md', cls: 'warn' },
+      { text: 'xvcenh（徐辰） — 软件开发 / 运维部署 / 数据库管理。', cls: 'info' },
+      { text: '' },
+      { text: '白天把服务稳在生产环境，晚上把踩过的坑写成文章。', cls: 'info' },
+      { text: '喜欢原生 Canvas、终端美学，以及零依赖的炫技实现。', cls: 'info' },
+      { text: '' },
+      { text: '技能树：', cls: 'warn' },
+      { text: '  · 软件开发 —— 前端工程 / 性能优化 / AI 工具链' },
+      { text: '  · 运维部署 —— Docker / Nginx / GitHub Actions CI-CD' },
+      { text: '  · 数据库   —— MySQL 调优 / 慢查询治理 / 索引策略' },
+      { text: '' },
+      { text: 'GitHub: ', link: 'https://github.com/xvcenh', linkLabel: 'github.com/xvcenh' }
+    ];
+  }
+
+  function cmdWhoami() {
+    return [
+      { text: 'xvcenh（徐辰）', cls: 'warn' },
+      { text: 'software developer · ops · dba · open-source enthusiast' },
+      { text: 'tty=pts/0  shell=/bin/zsh  上线时间：随时', cls: 'muted' }
+    ];
+  }
+
+  function cmdOpen(arg) {
+    var q = (arg || '').trim().toLowerCase();
+    if (!q) {
+      var list = [{ text: '用法：open <文章名或关键词>', cls: 'warn' }];
+      ARTICLES.forEach(function (a) {
+        list.push({ text: '  ' + a.date + '  ' + a.title + '  [' + a.keys.split(' ').slice(0, 3).join(' ') + ']' });
+      });
+      return list;
+    }
+    for (var i = 0; i < ARTICLES.length; i++) {
+      var a = ARTICLES[i];
+      var hay = (a.title + ' ' + a.keys).toLowerCase();
+      if (hay.indexOf(q) >= 0) {
+        return [
+          { text: '正在打开：' + a.title, cls: 'warn' },
+          { text: '  日期：' + a.date + '   标签：' + a.tags, cls: 'muted' },
+          { text: '  链接已生成 →', link: a.url, linkLabel: a.url }
+        ];
+      }
+    }
+    return [
+      { text: 'open: 未找到匹配的文章：' + arg, cls: 'err' },
+      { text: '试试：open star / open docker / open mysql / open git / open vue / open ai', cls: 'muted' }
+    ];
+  }
+
+  function cmdTheme() {
+    var root = document.documentElement;
+    var next = root.dataset.termTheme === 'green' ? 'amber' : 'green';
+    root.dataset.termTheme = next;
+    return [{
+      text: next === 'amber'
+        ? '已切换到琥珀色磷光（1980 年代大型机的浪漫）。'
+        : '已切换到绿色磷光（黑客帝国同款）。',
+      cls: 'warn'
+    }];
+  }
+
+  function cmdMatrix() {
+    var on = toggleMatrix();
+    return [{ text: on ? '数字雨已开启 —— 欢迎来到母体。' : '数字雨已关闭 —— 世界恢复正常。', cls: 'warn' }];
+  }
+
+  function cmdParty() {
+    /* confetti 特效：屏幕中央 + 两侧撒花 */
+    FX.confetti(innerWidth * 0.5, innerHeight * 0.42);
+    setTimeout(function () { FX.confetti(innerWidth * 0.25, innerHeight * 0.35); }, 180);
+    setTimeout(function () { FX.confetti(innerWidth * 0.75, innerHeight * 0.35); }, 320);
+    return [
+      { text: '🎉🎉🎉 PARTY MODE 🎉🎉🎉', cls: 'warn' },
+      { text: '（这场彩屑由 canvas-confetti 赞助播出）', cls: 'muted' }
+    ];
+  }
+
+  function cmdSudo(arg) {
+    return [
+      { text: '[sudo] password for guest: ********', cls: 'muted' },
+      { text: 'guest 不在 sudoers 文件中。此事将被报告。', cls: 'err' },
+      { text: '……', cls: 'muted' },
+      { text: '开玩笑的。报告已经发送到 /dev/null 了 😎', cls: 'warn' },
+      { text: '你刚刚运行的是：sudo ' + (arg || ''), cls: 'muted' }
+    ];
+  }
+
+  function cmdDate() {
+    return [{ text: new Date().toString(), cls: 'info' }];
+  }
+
+  /* --- 执行命令 --- */
+  function exec(raw) {
+    var cmd = raw.trim();
+    if (!cmd) return;
+    /* 回显命令 */
+    print([{ text: 'guest@xvcenh.blog:~$ ' + cmd, cls: 'echo', instant: true }]);
+    var parts = cmd.split(/\s+/);
+    var name = parts[0].toLowerCase();
+    var arg = cmd.slice(parts[0].length).trim();
+
+    switch (name) {
+      case 'help': print(cmdHelp()); break;
+      case 'ls': case 'dir': print(cmdLs()); break;
+      case 'cat':
+        if (/^about/.test(arg)) print(cmdAbout());
+        else if (/readme/i.test(arg)) print(cmdHelp());
+        else print([{ text: 'cat: ' + arg + ': 没有那个文件（试试 cat about.md）', cls: 'err' }]);
+        break;
+      case 'whoami': print(cmdWhoami()); break;
+      case 'open': print(cmdOpen(arg)); break;
+      case 'theme': print(cmdTheme()); break;
+      case 'matrix': print(cmdMatrix()); break;
+      case 'party': print(cmdParty()); break;
+      case 'sudo': print(cmdSudo(arg)); break;
+      case 'date': print(cmdDate()); break;
+      case 'clear':
+        queue = []; printing = false;
+        outEl.innerHTML = '';
+        break;
+      case 'exit': case 'logout':
+        print([
+          { text: '连接关闭…… 才怪。这是网页，关不掉的。', cls: 'warn' },
+          { text: '（真想走的话，右上角有 11 个风格页面等你逛）', cls: 'muted' }
+        ]);
+        break;
+      default:
+        print([
+          { text: 'zsh: command not found: ' + name, cls: 'err' },
+          { text: '输入 help 查看可用命令。', cls: 'muted' }
+        ]);
+    }
+  }
+
+  /* --- 输入交互：回车 / 历史 / 焦点 --- */
+  var history = [], histIdx = -1;
+  inputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      var v = inputEl.value;
+      if (v.trim()) { history.push(v); histIdx = history.length; }
+      inputEl.value = '';
+      exec(v);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (history.length) {
+        histIdx = Math.max(0, histIdx - 1);
+        inputEl.value = history[histIdx] || '';
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (history.length) {
+        histIdx = Math.min(history.length, histIdx + 1);
+        inputEl.value = history[histIdx] || '';
+      }
+    }
+  });
+  /* 点击终端任意位置聚焦输入框 */
+  outEl.addEventListener('click', function () { inputEl.focus(); });
+  document.querySelector('.term-shell').addEventListener('click', function () { inputEl.focus(); });
+
+  /* 命令快捷按钮 */
+  document.getElementById('cmdChips').addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-cmd]');
+    if (!btn) return;
+    inputEl.focus();
+    exec(btn.dataset.cmd);
+  });
+
+  /* --- 开机欢迎输出 --- */
+  print([
+    { text: 'xvcenh blog shell v3.0 — 终端模式已就绪。', cls: 'warn', instant: true },
+    { text: '输入 help 查看命令，或点击上方按钮偷懒。', cls: 'muted', instant: true },
+    { text: '', instant: true }
+  ]);
+
+  /* ============================================================
+     4. 自定义光标（绿色磷光拖尾）
+     ============================================================ */
+  FX.cursor({ trail: true, trailColor: 'rgba(57,255,122,.55)' });
+
+})();
+</script>
+</body>
+</html>

@@ -405,7 +405,8 @@ function draw() {
 // ── 主循环 ──
 let simSteps = 0;
 function loop() {
-  if (simSteps < 300) { simulate(); simSteps++; }
+  if (document.hidden) { requestAnimationFrame(loop); return; }
+  if (simSteps < 180) { simulate(); simSteps++; }
   draw();
   requestAnimationFrame(loop);
 }

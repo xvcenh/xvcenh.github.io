@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>粗野主义 · xvcenh 的博客</title>
+<meta name="description" content="xvcenh 的博客 · 新粗野主义风格页 —— 粗边框、硬阴影、大字报，问题和答案都直给。">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+/* ============================================================
+   brutal.html — 新粗野主义风格（NEO-BRUTALISM）
+   纯白/亮黄底 · 4-6px 纯黑边 · 无模糊硬阴影 · 超大标题
+   旋转贴纸 · 跑马灯 · 错位重叠 · 故意粗糙的野性
+   ============================================================ */
+:root {
+  --br-bg: #fffdf3;
+  --br-ink: #111111;
+  --br-yellow: #ffe500;
+  --br-pink: #ff5da2;
+  --br-blue: #3d7bff;
+  --br-green: #29e07f;
+  --br-orange: #ff7a1a;
+  --br-border: 4px solid var(--br-ink);
+  --br-border-thick: 6px solid var(--br-ink);
+  --br-shadow: 8px 8px 0 var(--br-ink);
+  --br-shadow-big: 12px 12px 0 var(--br-ink);
+  --ease-br: cubic-bezier(.2, .9, .25, 1);
+  /* 覆盖共享变量 */
+  --fx-accent: #111111;
+  --fx-accent2: #ff5da2;
+  --fx-bg: #fffdf3;
+  --fx-fg: #111111;
+  --fx-dim: #4a4a4a;
+  --fx-font: "Arial Black", "Arial Bold", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --fx-mono: "SFMono-Regular", Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  color: var(--br-ink);
+  font-family: "Arial", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-weight: 700;
+  line-height: 1.65;
+  /* SVG 网格纸底纹（内联 data-uri，无网络依赖） */
+  background-color: var(--br-bg);
+  background-image:
+    linear-gradient(rgba(17, 17, 17, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 17, 17, .07) 1px, transparent 1px);
+  background-size: 28px 28px;
+  overflow-x: hidden;
+}
+
+/* ---------- 星链网络背景（贴纸风黑线） ---------- */
+.br-bg-net {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: .5;
+}
+
+/* ---------- 导航（贴纸风） ---------- */
+.style-nav {
+  background: var(--br-yellow);
+  border-bottom: var(--br-border);
+}
+.style-nav a {
+  color: var(--br-ink);
+  background: var(--br-bg);
+  border: 3px solid var(--br-ink);
+  border-radius: 0;
+  font-family: var(--fx-mono);
+  font-weight: 800;
+  box-shadow: 3px 3px 0 var(--br-ink);
+  transition: transform .18s var(--ease-br), box-shadow .18s var(--ease-br), background .18s var(--ease-br);
+}
+.style-nav a:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--br-ink);
+  background: var(--br-green);
+}
+.style-nav a.current {
+  background: var(--br-pink);
+  color: var(--br-ink);
+  transform: rotate(-1.5deg);
+  box-shadow: 5px 5px 0 var(--br-ink);
+}
+.style-nav .nav-home {
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  font-family: var(--fx-font);
+  letter-spacing: .02em;
+}
+
+/* ---------- 容器 / 节奏 ---------- */
+.wrap { width: min(1180px, 100%); margin-inline: auto; padding-inline: clamp(16px, 4vw, 34px); position: relative; z-index: 2; }
+section { padding-block: clamp(56px, 9vw, 104px); position: relative; z-index: 2; }
+
+.sec-head { margin-bottom: clamp(30px, 5vw, 56px); position: relative; }
+.sec-no {
+  display: inline-block;
+  padding: 6px 16px;
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  font-family: var(--fx-mono);
+  font-size: 14px;
+  letter-spacing: .22em;
+  transform: rotate(-1.6deg);
+  box-shadow: 5px 5px 0 var(--br-pink);
+}
+.sec-title {
+  margin: 18px 0 12px;
+  font-family: var(--fx-font);
+  font-size: clamp(38px, 8vw, 88px);
+  font-weight: 900;
+  line-height: .98;
+  letter-spacing: -.015em;
+  text-transform: uppercase;
+}
+.sec-title .mark { /* 荧光笔划重点 */
+  position: relative;
+  display: inline-block;
+  padding-inline: 6px;
+  z-index: 1;
+}
+.sec-title .mark::before {
+  content: "";
+  position: absolute; left: -4px; right: -6px; bottom: 4%;
+  height: 42%;
+  background: var(--br-yellow);
+  transform: rotate(-1.2deg);
+  z-index: -1;
+  border: 2px solid var(--br-ink);
+}
+.sec-note {
+  max-width: 62ch;
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(15px, 2.2vw, 18px);
+}
+
+/* ---------- 跑马灯 ---------- */
+.marquee {
+  border-block: var(--br-border);
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  overflow: hidden;
+  padding: 12px 0;
+  position: relative; z-index: 3;
+}
+.marquee.alt { background: var(--br-pink); color: var(--br-ink); border-block: var(--br-border); }
+.marquee-track {
+  display: flex; gap: 42px;
+  width: max-content;
+  white-space: nowrap;
+  font-family: var(--fx-font);
+  font-size: clamp(16px, 2.6vw, 24px);
+  letter-spacing: .06em;
+  animation: br-marq 26s linear infinite;
+}
+.marquee.alt .marquee-track { animation-duration: 20s; animation-direction: reverse; }
+@keyframes br-marq {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ---------- HERO ---------- */
+.hero {
+  position: relative;
+  padding-block: clamp(56px, 9vw, 100px);
+  overflow: hidden;
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.35fr .95fr;
+  gap: clamp(24px, 5vw, 56px);
+  align-items: center;
+}
+.hero-kicker {
+  display: inline-block;
+  padding: 8px 18px;
+  background: var(--br-blue);
+  color: #fff;
+  border: var(--br-border);
+  box-shadow: var(--br-shadow);
+  font-family: var(--fx-mono);
+  font-size: clamp(11px, 1.8vw, 14px);
+  letter-spacing: .3em;
+  transform: rotate(-1.2deg);
+}
+.hero-title {
+  margin: 26px 0 18px;
+  font-family: var(--fx-font);
+  font-size: clamp(52px, 11vw, 132px);
+  font-weight: 900;
+  line-height: .94;
+  letter-spacing: -.02em;
+  text-transform: uppercase;
+}
+.hero-title .line2 {
+  display: inline-block;
+  background: var(--br-yellow);
+  border: var(--br-border-thick);
+  box-shadow: var(--br-shadow-big);
+  padding: 2px 18px;
+  transform: rotate(-1.6deg);
+}
+.hero-title .outline {
+  color: transparent;
+  -webkit-text-stroke: 3px var(--br-ink);
+}
+.hero-sub {
+  min-height: 2.2em;
+  margin: 0 0 16px;
+  font-family: var(--fx-mono);
+  font-size: clamp(15px, 2.5vw, 21px);
+  font-weight: 700;
+  background: var(--br-ink);
+  color: var(--br-green);
+  display: inline-block;
+  padding: 8px 16px;
+  border: var(--br-border);
+  box-shadow: var(--br-shadow);
+}
+.hero-desc {
+  max-width: 58ch;
+  margin: 0 0 30px;
+  font-size: clamp(15px, 2.2vw, 18px);
+  font-weight: 600;
+}
+
+/* 粗野按钮：hover 换位改阴影 */
+.br-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 30px;
+  border: var(--br-border);
+  background: var(--br-yellow);
+  color: var(--br-ink);
+  text-decoration: none;
+  font-family: var(--fx-font);
+  font-size: clamp(15px, 2.2vw, 19px);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  box-shadow: var(--br-shadow);
+  transition: transform .2s var(--ease-br), box-shadow .2s var(--ease-br), background .2s var(--ease-br);
+}
+.br-btn:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: var(--br-shadow-big);
+  background: var(--br-green);
+}
+.br-btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--br-ink); }
+.br-btn.alt { background: var(--br-pink); }
+.br-btn.alt:hover { background: var(--br-orange); }
+
+/* 旋转贴纸 */
+.sticker {
+  position: absolute;
+  z-index: 4;
+  padding: 10px 18px;
+  border: var(--br-border);
+  font-family: var(--fx-mono);
+  font-size: clamp(11px, 1.9vw, 15px);
+  font-weight: 800;
+  letter-spacing: .12em;
+  box-shadow: 5px 5px 0 var(--br-ink);
+  pointer-events: none;
+  user-select: none;
+}
+.sticker-yellow { background: var(--br-yellow); transform: rotate(-7deg); }
+.sticker-pink   { background: var(--br-pink);   transform: rotate(6deg); }
+.sticker-green  { background: var(--br-green);  transform: rotate(-3.5deg); }
+.sticker-blue   { background: var(--br-blue); color: #fff; transform: rotate(4.5deg); }
+.sticker-1 { top: 8%; right: 6%; }
+.sticker-2 { bottom: 12%; right: 30%; }
+.sticker-3 { top: 46%; right: 2%; }
+
+/* 烟花画板（前景互动 canvas） */
+.art-panel {
+  position: relative;
+  border: var(--br-border-thick);
+  background: var(--br-bg);
+  box-shadow: var(--br-shadow-big);
+}
+.art-panel canvas { display: block; width: 100%; height: clamp(300px, 42vw, 430px); }
+.art-label {
+  position: absolute; left: -14px; top: -18px;
+  padding: 7px 16px;
+  background: var(--br-orange);
+  border: var(--br-border);
+  font-family: var(--fx-mono);
+  font-size: 12px;
+  letter-spacing: .18em;
+  transform: rotate(-2.5deg);
+}
+.art-hint {
+  position: absolute; right: 12px; bottom: 12px;
+  padding: 6px 12px;
+  background: var(--br-yellow);
+  border: 3px solid var(--br-ink);
+  font-family: var(--fx-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  transform: rotate(1.6deg);
+}
+
+/* ---------- 开源工具：错位大色块卡 ---------- */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(clamp(240px, 46vw, 272px), 1fr));
+  gap: clamp(18px, 3.4vw, 30px);
+}
+.br-card {
+  position: relative;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: clamp(22px, 3.4vw, 32px);
+  border: var(--br-border);
+  background: var(--br-bg);
+  box-shadow: var(--br-shadow);
+  text-decoration: none; color: inherit;
+  transition: transform .22s var(--ease-br), box-shadow .22s var(--ease-br);
+}
+/* 交替色块 + 交替旋转错位（故意不齐） */
+.br-card:nth-child(4n+1) { background: var(--br-yellow); transform: rotate(-.8deg); }
+.br-card:nth-child(4n+2) { background: #fff; transform: rotate(.9deg) translateY(10px); }
+.br-card:nth-child(4n+3) { background: var(--br-green); transform: rotate(-1.1deg); }
+.br-card:nth-child(4n+4) { background: var(--br-blue); color: #fff; transform: rotate(.7deg) translateY(14px); }
+.br-card:nth-child(4n+4) .br-tag { background: var(--br-yellow); color: var(--br-ink); }
+.br-card:hover {
+  transform: translate(-5px, -5px) rotate(0deg);
+  box-shadow: var(--br-shadow-big);
+}
+.br-tag {
+  align-self: flex-start;
+  padding: 4px 12px;
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  font-family: var(--fx-mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+}
+.br-ico {
+  width: 66px; height: 66px;
+  display: grid; place-items: center;
+  font-size: 34px;
+  background: var(--br-bg);
+  border: var(--br-border);
+  box-shadow: 5px 5px 0 var(--br-ink);
+}
+.br-card-name {
+  margin: 4px 0 0;
+  font-family: var(--fx-font);
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+.br-card-desc { margin: 0; font-size: 15px; font-weight: 600; }
+.br-card-url {
+  font-family: var(--fx-mono);
+  font-size: 11px;
+  word-break: break-all;
+  opacity: .82;
+}
+.br-card-go {
+  margin-top: auto; padding-top: 12px;
+  font-family: var(--fx-font);
+  font-size: 15px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.br-card:hover .br-card-go { text-decoration: underline; text-decoration-thickness: 3px; }
+
+/* ---------- 最新文章：黑框大字报列表 ---------- */
+.post-list { display: grid; gap: clamp(14px, 2.4vw, 22px); }
+.post-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: clamp(14px, 3vw, 26px);
+  align-items: center;
+  padding: clamp(18px, 3vw, 28px);
+  border: var(--br-border);
+  background: var(--br-bg);
+  box-shadow: 6px 6px 0 var(--br-ink);
+  text-decoration: none; color: inherit;
+  transition: transform .2s var(--ease-br), box-shadow .2s var(--ease-br), background .2s var(--ease-br);
+}
+.post-row:hover {
+  transform: translate(-5px, -5px);
+  box-shadow: 11px 11px 0 var(--br-ink);
+  background: var(--br-yellow);
+}
+.post-row:nth-child(even) { transform: rotate(.45deg); }
+.post-row:nth-child(even):hover { transform: translate(-5px, -5px) rotate(0deg); }
+.post-idx {
+  display: grid; place-items: center;
+  width: clamp(52px, 8vw, 72px); aspect-ratio: 1;
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  font-family: var(--fx-mono);
+  font-size: clamp(16px, 2.6vw, 22px);
+  border: 3px solid var(--br-ink);
+}
+.post-main h3 {
+  margin: 0 0 8px;
+  font-family: var(--fx-font);
+  font-size: clamp(17px, 2.8vw, 25px);
+  font-weight: 900;
+  line-height: 1.35;
+}
+.post-meta {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-family: var(--fx-mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+}
+.tag-box {
+  padding: 3px 10px;
+  border: 2px solid var(--br-ink);
+  background: var(--br-pink);
+  font-size: 11px;
+}
+.post-row:nth-child(3n) .tag-box { background: var(--br-green); }
+.post-row:nth-child(3n+1) .tag-box { background: var(--br-blue); color: #fff; }
+.post-go {
+  font-family: var(--fx-font);
+  font-size: clamp(18px, 3vw, 28px);
+  font-weight: 900;
+  transition: transform .2s var(--ease-br);
+}
+.post-row:hover .post-go { transform: translate(4px, -4px); }
+
+/* ---------- 关于：黄底黑字大色块 ---------- */
+.about-block {
+  position: relative;
+  padding: clamp(28px, 5.4vw, 60px);
+  background: var(--br-yellow);
+  border: var(--br-border-thick);
+  box-shadow: var(--br-shadow-big);
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: 1.3fr .9fr;
+  gap: clamp(22px, 4.4vw, 48px);
+  align-items: center;
+}
+.about-name {
+  margin: 0 0 12px;
+  font-family: var(--fx-font);
+  font-size: clamp(30px, 5.6vw, 58px);
+  font-weight: 900;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.about-name .boxed {
+  display: inline-block;
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  padding: 2px 14px;
+  transform: rotate(-1.4deg);
+}
+.about-text { margin: 0 0 20px; font-size: clamp(15px, 2.2vw, 18px); font-weight: 600; max-width: 56ch; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.br-chip {
+  padding: 9px 18px;
+  border: var(--br-border);
+  background: var(--br-bg);
+  box-shadow: 4px 4px 0 var(--br-ink);
+  font-family: var(--fx-mono);
+  font-size: 13px;
+  letter-spacing: .12em;
+  transition: transform .18s var(--ease-br), box-shadow .18s var(--ease-br), background .18s var(--ease-br);
+}
+.br-chip:hover {
+  transform: translate(-3px, -3px) rotate(-1deg);
+  box-shadow: 7px 7px 0 var(--br-ink);
+  background: var(--br-pink);
+}
+.about-side {
+  border: var(--br-border-thick);
+  background: var(--br-bg);
+  box-shadow: var(--br-shadow-big);
+  padding: clamp(20px, 3.4vw, 30px);
+  font-family: var(--fx-mono);
+}
+.about-side h4 {
+  margin: 0 0 14px;
+  font-family: var(--fx-font);
+  font-size: 16px;
+  letter-spacing: .18em;
+  background: var(--br-ink);
+  color: var(--br-yellow);
+  display: inline-block;
+  padding: 5px 12px;
+}
+.side-line {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 3px dotted var(--br-ink);
+  font-size: 13px;
+}
+.side-line:last-child { border-bottom: 0; }
+.side-line b { background: var(--br-green); padding: 1px 8px; border: 2px solid var(--br-ink); }
+
+/* ---------- 页脚：黑色大条 ---------- */
+footer {
+  position: relative; z-index: 2;
+  margin-top: clamp(30px, 6vw, 70px);
+  background: var(--br-ink);
+  color: var(--br-bg);
+  border-top: var(--br-border-thick);
+  padding: clamp(34px, 6vw, 62px) 0;
+}
+.foot-inner {
+  display: flex; flex-wrap: wrap; gap: 18px;
+  align-items: center; justify-content: space-between;
+  font-family: var(--fx-mono);
+  font-size: clamp(13px, 2vw, 16px);
+}
+.foot-inner a {
+  color: var(--br-yellow);
+  text-decoration: none;
+  border-bottom: 3px solid var(--br-yellow);
+}
+.foot-inner a:hover { background: var(--br-yellow); color: var(--br-ink); }
+.foot-links { display: flex; flex-wrap: wrap; gap: 16px; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 900px) {
+  .hero-grid, .about-grid { grid-template-columns: 1fr; }
+  .sticker-2 { right: 8%; bottom: 4%; }
+}
+@media (max-width: 620px) {
+  .post-row { grid-template-columns: 1fr auto; }
+  .post-idx { display: none; }
+  .hero-title { font-size: clamp(46px, 14vw, 80px); }
+  .br-card:nth-child(4n+2), .br-card:nth-child(4n+4) { transform: rotate(.6deg); }
+  .br-card:hover { transform: translate(-4px, -4px); }
+}
+
+/* ---------- 减弱动效降级 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  .br-card, .post-row, .br-btn, .br-chip { transition: none; }
+  .br-card:nth-child(n), .post-row:nth-child(even) { transform: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 星链网络背景（黑色节点线条） -->
+<div class="br-bg-net" aria-hidden="true"><canvas id="bgNet" class="fx-bg-canvas"></canvas></div>
+
+<nav class="style-nav">
+  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+  <a href="cyber.html">赛博霓虹</a>
+  <a href="glass.html">极光玻璃</a>
+  <a class="current" href="brutal.html">粗野主义</a>
+  <a href="terminal.html">黑客终端</a>
+  <a href="retro.html">蒸汽波</a>
+  <a href="win98.html">Win98</a>
+  <a href="nature.html">水墨自然</a>
+  <a href="swiss.html">瑞士排版</a>
+  <a href="anime.html">日系二次元</a>
+  <a href="lab.html">🧪 实验室</a>
+</nav>
+
+<!-- ============================ 跑马灯 ============================ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>★ 开源 ★ 自部署 ★ 踩坑记录 ★ 解决方案 ★ 不装优雅 ★ 只求管用 ★</span>
+    <span>★ 开源 ★ 自部署 ★ 踩坑记录 ★ 解决方案 ★ 不装优雅 ★ 只求管用 ★</span>
+  </div>
+</div>
+
+<!-- ============================ HERO ============================ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-kicker">NEO-BRUTALISM MODE // 粗野主义风格</div>
+        <h1 class="hero-title">
+          <span class="outline">xvcenh</span><br>
+          <span class="line2">的博客</span>
+        </h1>
+        <p class="hero-sub"><span id="typeSub"></span></p>
+        <p class="hero-desc">
+          没有渐变、没有毛玻璃、没有含蓄的暗示 —— 只有粗边框、硬阴影和大字。
+          软件开发 / 运维部署 / 数据库管理的每一个问题，在这里都被拍在桌上：
+          <b>现象、原因、解决办法，直给。</b>
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:16px">
+          <a class="br-btn fx-ripple" href="#tools">看看我做了什么 →</a>
+          <a class="br-btn alt fx-ripple" href="#posts">直接读文章 ↓</a>
+        </div>
+      </div>
+
+      <!-- 烟花互动画板（前景 canvas） -->
+      <div class="art-panel">
+        <div class="art-label">CLICK = 烟花</div>
+        <canvas id="fxFireworks" aria-label="点击发射烟花的互动画板"></canvas>
+        <div class="art-hint">点一下画板试试 👆</div>
+      </div>
+    </div>
+
+    <!-- 旋转贴纸 -->
+    <div class="sticker sticker-yellow sticker-1">100% 手写 HTML</div>
+    <div class="sticker sticker-pink sticker-2">NO FRAMEWORK!</div>
+    <div class="sticker sticker-green sticker-3">BUGS → FIXED</div>
+  </div>
+</header>
+
+<!-- ============================ 跑马灯（反向） ============================ -->
+<div class="marquee alt" aria-hidden="true">
+  <div class="marquee-track">
+    <span>SOFTWARE · OPS · DATABASE · DEVOPS · GIT · DOCKER · MYSQL · NGINX ·</span>
+    <span>SOFTWARE · OPS · DATABASE · DEVOPS · GIT · DOCKER · MYSQL · NGINX ·</span>
+  </div>
+</div>
+
+<!-- ============================ 开源工具 ============================ -->
+<section id="tools">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no reveal">SECTION 01 / 开源工具</div>
+      <h2 class="sec-title reveal">开源<span class="mark">工具</span>，<br>随便用。</h2>
+      <p class="sec-note reveal">四个开源项目。不收钱、不收集数据、不弹窗求 Star —— 但如果你顺手点一个，我也不拦着。</p>
+    </div>
+    <div class="tools-grid">
+      <a class="br-card reveal-scale" href="https://xvcenh.github.io/svg-scene-engine/">
+        <div class="br-tag">TOOL 01</div>
+        <div class="br-ico">🎭</div>
+        <h3 class="br-card-name" data-scramble>SVG Scene Engine</h3>
+        <p class="br-card-desc">AI 驱动的 2D 场景合成引擎</p>
+        <div class="br-card-url">https://xvcenh.github.io/svg-scene-engine/</div>
+        <div class="br-card-go">查看项目 →</div>
+      </a>
+      <a class="br-card reveal-scale" href="https://xvcenh.github.io/svg-asset-library/">
+        <div class="br-tag">TOOL 02</div>
+        <div class="br-ico">🎨</div>
+        <h3 class="br-card-name" data-scramble>SVG Asset Library</h3>
+        <p class="br-card-desc">50+ 奇幻风格 SVG 素材库</p>
+        <div class="br-card-url">https://xvcenh.github.io/svg-asset-library/</div>
+        <div class="br-card-go">查看项目 →</div>
+      </a>
+      <a class="br-card reveal-scale" href="https://github.com/xvcenh/claudescan">
+        <div class="br-tag">TOOL 03</div>
+        <div class="br-ico">🔍</div>
+        <h3 class="br-card-name" data-scramble>ClaudeScan</h3>
+        <p class="br-card-desc">AI 编程助手配置生成器</p>
+        <div class="br-card-url">https://github.com/xvcenh/claudescan</div>
+        <div class="br-card-go">查看项目 →</div>
+      </a>
+      <a class="br-card reveal-scale" href="https://github.com/xvcenh/liltown">
+        <div class="br-tag">TOOL 04</div>
+        <div class="br-ico">🏘️</div>
+        <h3 class="br-card-name" data-scramble>LilTown</h3>
+        <p class="br-card-desc">终端 AI 村庄模拟器</p>
+        <div class="br-card-url">https://github.com/xvcenh/liltown</div>
+        <div class="br-card-go">查看项目 →</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 最新文章 ============================ -->
+<section id="posts">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no reveal">SECTION 02 / 最新文章</div>
+      <h2 class="sec-title reveal">最新<span class="mark">文章</span>，<br>全是干货。</h2>
+      <p class="sec-note reveal">八篇实战记录。看完就能抄作业的那种。</p>
+    </div>
+    <div class="post-list">
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html">
+        <div class="post-idx">01</div>
+        <div class="post-main">
+          <h3 data-scramble>个人开发者如何让开源项目从 0 到 1000 Star</h3>
+          <div class="post-meta"><span>2026-05-04</span><span class="tag-box">开源</span><span class="tag-box">经验</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html">
+        <div class="post-idx">02</div>
+        <div class="post-main">
+          <h3 data-scramble>Web 性能优化实战：从 Lighthouse 60 分到 95 分</h3>
+          <div class="post-meta"><span>2026-05-04</span><span class="tag-box">前端</span><span class="tag-box">性能</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html">
+        <div class="post-idx">03</div>
+        <div class="post-main">
+          <h3 data-scramble>GitHub Actions 自动化 CI/CD 实战：从零搭建生产级流水线</h3>
+          <div class="post-meta"><span>2026-05-03</span><span class="tag-box">部署</span><span class="tag-box">DevOps</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html">
+        <div class="post-idx">04</div>
+        <div class="post-main">
+          <h3 data-scramble>AI 辅助编程最佳实践：从 Copilot 到 Cursor 的高效工作流</h3>
+          <div class="post-meta"><span>2026-05-03</span><span class="tag-box">工具</span><span class="tag-box">AI</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html">
+        <div class="post-idx">05</div>
+        <div class="post-main">
+          <h3 data-scramble>Vue 项目部署到 Nginx 后页面空白的解决方案</h3>
+          <div class="post-meta"><span>2026-03-19</span><span class="tag-box">软件</span><span class="tag-box">部署</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html">
+        <div class="post-idx">06</div>
+        <div class="post-main">
+          <h3 data-scramble>Git 工作流最佳实践与常见问题</h3>
+          <div class="post-meta"><span>2026-03-19</span><span class="tag-box">工具</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html">
+        <div class="post-idx">07</div>
+        <div class="post-main">
+          <h3 data-scramble>Docker 容器部署常见问题解决</h3>
+          <div class="post-meta"><span>2026-03-19</span><span class="tag-box">部署</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+      <a class="post-row reveal" href="https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html">
+        <div class="post-idx">08</div>
+        <div class="post-main">
+          <h3 data-scramble>MySQL 慢查询优化实战</h3>
+          <div class="post-meta"><span>2026-03-19</span><span class="tag-box">数据库</span></div>
+        </div>
+        <div class="post-go">→</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 关于 ============================ -->
+<section id="about">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="sec-no reveal">SECTION 03 / 关于</div>
+      <h2 class="sec-title reveal">谁在写<span class="mark">这些</span>？</h2>
+    </div>
+    <div class="about-block reveal-scale">
+      <div class="about-grid">
+        <div>
+          <h3 class="about-name">xvcenh（徐辰）<br><span class="boxed">写博客的那个人</span></h3>
+          <p class="about-text">
+            软件开发 / 运维部署 / 数据库管理。工作里遇到的问题，写下来就是博客：
+            不绕弯子、不堆术语，先说怎么解决，再说为什么。如果哪篇帮到了你，
+            就当这页黄底黑字没白刷。
+          </p>
+          <div class="chip-row">
+            <span class="br-chip">软件开发</span>
+            <span class="br-chip">运维部署</span>
+            <span class="br-chip">数据库管理</span>
+            <span class="br-chip">踩坑 → 记录 → 解决</span>
+          </div>
+        </div>
+        <div class="about-side">
+          <h4>FACT SHEET</h4>
+          <div class="side-line"><span>名字 / NAME</span><b>xvcenh</b></div>
+          <div class="side-line"><span>中文 / CN</span><b>徐辰</b></div>
+          <div class="side-line"><span>领域 / FIELD</span><b>DEV · OPS · DB</b></div>
+          <div class="side-line"><span>状态 / STATUS</span><b>持续更新</b></div>
+          <div class="side-line"><span>信条 / MOTTO</span><b>问题都能解决</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 页脚 ============================ -->
+<footer>
+  <div class="wrap foot-inner">
+    <div>© 2026 xvcenh · <a href="https://github.com/xvcenh">GitHub: github.com/xvcenh</a></div>
+    <div class="foot-links">
+      <a href="index.html">✦ 返回主页</a>
+      <a href="lab.html">🧪 炫技实验室</a>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/fx.js"></script>
+<script>
+/* ============================================================
+   brutal.html 页面脚本：星链网络 + 互动烟花 · 打字机 · 扰乱 · 揭示
+   ============================================================ */
+(function () {
+  'use strict';
+
+  /* 背景一：星链网络（黑色节点，贴纸风） */
+  FX.network(document.getElementById('bgNet'), {
+    count: 62,
+    dist: 150,
+    rgb: '17,17,17'
+  });
+
+  /* 前景二：互动烟花画板（点击画板发射） */
+  FX.fireworks(document.getElementById('fxFireworks'), {
+    bg: '255,253,243',
+    fade: 0.14,
+    auto: true,
+    interval: 2600,
+    palette: ['#ff5da2', '#3d7bff', '#29e07f', '#ff7a1a', '#111111', '#ffe500']
+  });
+
+  /* 副标题打字机 */
+  FX.typewriter(document.getElementById('typeSub'), [
+    '> 问题 → 原因 → 解决。完事。',
+    '> 软件开发 / 运维部署 / 数据库管理。',
+    '> 不装优雅，只求管用。'
+  ], { speed: 52, pause: 1900, cursor: '█' });
+
+  /* 悬停文字扰乱（粗野也要细节） */
+  document.querySelectorAll('[data-scramble]').forEach(function (el) {
+    FX.scramble(el, { trigger: 'hover', speed: 14 });
+  });
+
+  /* 滚动揭示 */
+  FX.reveal('.reveal, .reveal-left, .reveal-scale');
+
+  /* 共享交互 */
+  FX.cursor({ trailColor: 'rgba(17,17,17,.55)', hover: 'a,button,.br-card,.post-row,.br-chip' });
+  FX.ripple();
+  FX.smoothScroll();
+
+  /* 命令面板 */
+  FX.palette([
+    { icon: '🏠', label: '返回超级博客主页', hint: 'index.html', keywords: 'home 主页', run: function () { location.href = 'index.html'; } },
+    { icon: '⚡', label: '赛博霓虹', hint: 'cyber.html', keywords: 'cyber 赛博', run: function () { location.href = 'cyber.html'; } },
+    { icon: '🫧', label: '极光玻璃', hint: 'glass.html', keywords: 'glass 玻璃', run: function () { location.href = 'glass.html'; } },
+    { icon: '🧱', label: '粗野主义（当前页）', hint: 'brutal.html', keywords: 'brutal 粗野', run: function () { location.href = 'brutal.html'; } },
+    { icon: '🧪', label: '炫技实验室', hint: 'lab.html', keywords: 'lab 实验', run: function () { location.href = 'lab.html'; } },
+    { icon: '🐙', label: 'GitHub 主页', hint: 'github.com/xvcenh', keywords: 'github', run: function () { location.href = 'https://github.com/xvcenh'; } },
+    { icon: '📜', label: '跳到「最新文章」', hint: '#posts', keywords: 'posts 文章', run: function () { location.hash = '#posts'; } },
+    { icon: '💡', label: '跳到「关于」', hint: '#about', keywords: 'about 关于', run: function () { location.hash = '#about'; } }
+  ], { placeholder: '输入命令或页面名… 比如 glass / 文章 / github' });
+})();
+</script>
+</body>
+</html>

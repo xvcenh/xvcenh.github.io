@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日系二次元 ANIME MODE · xvcenh 的博客</title>
+<meta name="description" content="xvcenh 的博客 · 日系二次元风格子页面 —— 樱花与光斑、贴纸卡片、打字机角色对话框，点击页面任意处迸发小星星。">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+/* ============================================================
+   anime.html · 日系二次元（ANIME / KAWAII）
+   设计基调：粉彩 · 圆角 · 贴纸 · 注音罗马字 · 樱花与光斑
+   ============================================================ */
+:root {
+  --pink: #ffd6e8;          /* 樱粉 */
+  --pink-2: #ffb3d4;
+  --hot: #ff7eb6;           /* 强调 */
+  --hot-2: #ff5c9e;
+  --blue: #b8e1ff;          /* 水蓝 */
+  --blue-2: #89c7ff;
+  --mint: #c8f0e2;          /* 薄荷 */
+  --grape: #e8d5ff;         /* 葡萄 */
+  --cream: #fffaf5;         /* 奶白 */
+  --milk: #fff3f8;
+  --ink: #6b5b73;           /* 主文字（柔和紫灰） */
+  --ink-2: #9a8aa5;
+  --white: #ffffff;
+  --sans: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --round: 22px;
+  --ease: cubic-bezier(.2, .9, .25, 1);
+  --bounce: cubic-bezier(.34, 1.45, .5, 1);   /* 弹跳曲线 */
+  /* 覆盖共享变量 */
+  --fx-accent: var(--hot);
+  --fx-bg: var(--cream);
+  --fx-fg: var(--ink);
+  --fx-dim: var(--ink-2);
+  --fx-font: var(--sans);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background:
+    radial-gradient(900px 620px at 8% -6%, rgba(255, 179, 212, .5), transparent 60%),
+    radial-gradient(1000px 700px at 96% 12%, rgba(137, 199, 255, .42), transparent 58%),
+    radial-gradient(1100px 760px at 50% 112%, rgba(232, 213, 255, .55), transparent 62%),
+    linear-gradient(180deg, #fff7fb 0%, #f6f8ff 52%, #fff2f8 100%);
+  background-attachment: fixed;
+  color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.85;
+  overflow-x: hidden;
+}
+::selection { background: var(--pink-2); color: #fff; }
+a { color: inherit; }
+
+/* ---------- 背景特效：樱花 + 梦幻光斑 ---------- */
+.bg-fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; display: block; }
+#sakuraFx { z-index: 40; opacity: .8; }
+#bokehFx { z-index: 1; opacity: .75; }
+
+/* ---------- 风格导航：粉彩胶囊 ---------- */
+.style-nav {
+  background: rgba(255, 246, 251, .82);
+  backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 2px solid rgba(255, 179, 212, .5);
+  font-family: var(--sans);
+}
+.style-nav a {
+  color: var(--ink); background: rgba(255, 255, 255, .65);
+  border: 2px solid rgba(255, 179, 212, .55);
+  transition: transform .35s var(--bounce), background .3s ease, border-color .3s ease;
+}
+.style-nav a:hover { transform: translateY(-3px) rotate(-1deg); background: var(--pink); border-color: var(--hot); }
+.style-nav a.current {
+  background: linear-gradient(120deg, var(--hot), var(--pink-2));
+  border-color: var(--hot); color: #fff; box-shadow: 0 6px 18px rgba(255, 126, 182, .4);
+}
+.style-nav .nav-home { color: var(--hot-2); background: #fff; }
+
+/* ---------- 布局骨架 ---------- */
+.wrap { position: relative; z-index: 5; max-width: 1180px; margin: 0 auto; padding: 0 clamp(18px, 5vw, 44px); }
+.section { position: relative; padding: clamp(66px, 9vw, 118px) 0; }
+
+/* 章节标题 + 注音罗马字 */
+.sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; flex-wrap: wrap; margin-bottom: clamp(32px, 5vw, 56px); }
+.kana {
+  display: block; margin-bottom: 10px;
+  font-size: clamp(11px, 1.3vw, 13px); letter-spacing: .34em;
+  color: var(--hot-2); font-weight: 700;
+}
+.sec-title {
+  margin: 0; font-size: clamp(30px, 4.8vw, 56px); font-weight: 800; letter-spacing: .02em; line-height: 1.2;
+}
+.sec-title .grad {
+  background: linear-gradient(110deg, var(--hot-2), var(--blue-2) 60%, var(--hot));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sec-title rt { font-size: .32em; letter-spacing: .22em; color: var(--ink-2); font-weight: 500; }
+.sec-note { max-width: 32em; margin: 0; color: var(--ink-2); font-size: 14.5px; line-height: 1.95; }
+
+/* ---------- HERO ---------- */
+.anime-hero {
+  position: relative; min-height: 100vh;
+  display: flex; align-items: center;
+  padding: clamp(118px, 15vh, 170px) 0 clamp(56px, 8vh, 96px);
+  overflow: hidden;
+}
+.hero-grid {
+  position: relative; z-index: 5; width: 100%; max-width: 1180px; margin: 0 auto;
+  padding: 0 clamp(18px, 5vw, 44px);
+  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+  gap: clamp(26px, 5vw, 64px); align-items: center;
+}
+.sticker {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 18px; border-radius: 999px;
+  background: var(--white); border: 2px solid var(--pink-2);
+  font-size: 12px; font-weight: 700; letter-spacing: .18em; color: var(--hot-2);
+  transform: rotate(-2.5deg);
+  box-shadow: 0 8px 20px rgba(255, 126, 182, .22);
+  margin-bottom: clamp(18px, 3vh, 30px);
+}
+.hero-title {
+  margin: 0; font-size: clamp(46px, 8.6vw, 108px); font-weight: 800;
+  letter-spacing: .015em; line-height: 1.06;
+}
+.hero-title .grad {
+  background: linear-gradient(115deg, var(--hot-2) 8%, var(--blue-2) 52%, var(--pink-2) 96%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-title rt { font-size: .26em; letter-spacing: .3em; color: var(--ink-2); font-weight: 600; }
+.hero-sub {
+  margin: clamp(18px, 3vh, 30px) 0 0;
+  font-size: clamp(18px, 2.4vw, 27px); font-weight: 700; color: var(--hot-2);
+  min-height: 1.6em;
+}
+.hero-desc { margin: clamp(14px, 2.4vh, 24px) 0 0; max-width: 30em; color: var(--ink-2); font-size: 15px; line-height: 2; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: clamp(24px, 4vh, 42px); }
+.btn-k {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 15px 28px; border-radius: 999px; text-decoration: none;
+  font-size: 15px; font-weight: 800; letter-spacing: .06em;
+  transition: transform .4s var(--bounce);
+}
+.btn-k:hover { transform: translateY(-5px) rotate(-1.2deg) scale(1.03); }
+.btn-main {
+  background: linear-gradient(120deg, var(--hot), var(--pink-2)); color: #fff;
+  box-shadow: 0 12px 28px rgba(255, 126, 182, .42);
+}
+.btn-ghost {
+  background: var(--white); color: var(--ink); border: 2px solid var(--blue-2);
+  box-shadow: 0 10px 24px rgba(137, 199, 255, .35);
+}
+.hero-stats { display: flex; flex-wrap: wrap; gap: clamp(16px, 3vw, 38px); margin-top: clamp(26px, 4.5vh, 48px); }
+.hero-stats div { display: flex; flex-direction: column; gap: 2px; }
+.hero-stats b { font-size: clamp(24px, 3vw, 38px); font-weight: 800; color: var(--hot-2); line-height: 1.1; }
+.hero-stats span { font-size: 11px; letter-spacing: .26em; color: var(--ink-2); }
+
+/* ---------- 角色 + 对话框（本页记忆点） ---------- */
+.hero-char { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.mascot {
+  position: relative; width: clamp(190px, 24vw, 250px); height: clamp(210px, 26vw, 276px);
+  cursor: pointer; user-select: none;
+  transition: transform .45s var(--bounce);
+}
+.mascot:hover { transform: translateY(-8px) rotate(1.5deg) scale(1.03); }
+.m-head {
+  position: absolute; left: 50%; top: 34px; transform: translateX(-50%);
+  width: 76%; aspect-ratio: 1; border-radius: 50% 50% 47% 47%;
+  background: linear-gradient(170deg, #fff1ec, #ffe2e6 70%);
+  border: 3px solid var(--ink);
+}
+.m-hair {
+  position: absolute; left: 50%; top: 20px; transform: translateX(-50%);
+  width: 82%; aspect-ratio: 1 / .78;
+  border-radius: 52% 52% 40% 40%;
+  background: linear-gradient(165deg, var(--pink-2), var(--grape));
+  border: 3px solid var(--ink);
+}
+.m-hair::before, .m-hair::after {
+  content: ""; position: absolute; top: 42%; width: 26%; height: 62%;
+  background: linear-gradient(170deg, var(--pink-2), var(--grape));
+  border: 3px solid var(--ink); border-radius: 50% 50% 44% 44%;
+}
+.m-hair::before { left: -4%; transform: rotate(8deg); }
+.m-hair::after { right: -4%; transform: rotate(-8deg); }
+.m-face { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); width: 66%; }
+.m-eyes { display: flex; justify-content: space-between; padding: 0 6%; }
+.m-eye {
+  width: 34%; aspect-ratio: .78; background: var(--white);
+  border: 3px solid var(--ink); border-radius: 50%;
+  display: grid; place-items: center; overflow: hidden;
+  animation: blink 4.6s infinite var(--ease);
+  transform-origin: center;
+}
+.m-eye i {
+  width: 52%; aspect-ratio: .8; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--blue-2), var(--ink) 72%);
+}
+@keyframes blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  94% { transform: scaleY(.08); }
+  97% { transform: scaleY(1); }
+}
+.m-blush {
+  position: absolute; top: 58%; width: 18%; height: 10%;
+  background: rgba(255, 126, 182, .5); border-radius: 50%;
+}
+.m-blush.l { left: -2%; } .m-blush.r { right: -2%; }
+.m-mouth {
+  position: absolute; left: 50%; top: 76%; transform: translateX(-50%);
+  width: 16%; height: 9%; border: 3px solid var(--ink); border-top: 0;
+  border-radius: 0 0 50% 50%;
+}
+.m-bow {
+  position: absolute; right: 6%; top: 6%;
+  width: 22%; aspect-ratio: 1; background: var(--hot);
+  border: 3px solid var(--ink); border-radius: 50%;
+  display: grid; place-items: center; color: #fff; font-size: clamp(12px, 1.5vw, 17px);
+  transform: rotate(12deg);
+}
+/* 对话气泡 */
+.bubble {
+  position: relative; max-width: min(340px, 82vw);
+  background: var(--white); border: 3px solid var(--ink); border-radius: 26px;
+  padding: 18px 22px; font-size: 14.5px; line-height: 1.9; color: var(--ink);
+  box-shadow: 0 14px 32px rgba(255, 126, 182, .25);
+}
+.bubble::before, .bubble::after {
+  content: ""; position: absolute; left: 34px; top: -16px;
+  width: 0; height: 0; border: 12px solid transparent;
+  border-bottom-color: var(--ink);
+}
+.bubble::after { top: -10px; border-bottom-color: var(--white); }
+.bubble-name {
+  display: inline-block; margin-bottom: 8px;
+  padding: 3px 14px; border-radius: 999px;
+  background: var(--pink); color: var(--hot-2);
+  font-size: 11px; font-weight: 800; letter-spacing: .22em;
+}
+.bubble .egg-line { display: none; color: var(--hot-2); font-weight: 700; }
+.bubble.egg .egg-line { display: block; animation: pop .5s var(--bounce); }
+.bubble.egg .normal-line { display: none; }
+@keyframes pop {
+  0% { transform: scale(.72); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.char-hint { font-size: 11px; letter-spacing: .22em; color: var(--ink-2); }
+
+/* ---------- 贴纸卡片（工具） ---------- */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(248px, 1fr)); gap: clamp(18px, 2.6vw, 28px); }
+.sticker-card {
+  position: relative; display: flex; flex-direction: column; gap: 12px;
+  padding: clamp(22px, 3vw, 32px); text-decoration: none;
+  background: var(--white); border: 3px solid var(--ink); border-radius: var(--round);
+  box-shadow: 0 14px 30px rgba(255, 150, 200, .22);
+  transition: transform .45s var(--bounce);
+}
+.sticker-card:nth-child(2n) { transform: rotate(.8deg); }
+.sticker-card:nth-child(3n) { transform: rotate(-.8deg); }
+.sticker-card:hover { transform: translateY(-10px) rotate(-1.6deg) scale(1.035); }
+.sticker-card .badge {
+  position: absolute; top: -14px; right: 18px;
+  padding: 6px 15px; border-radius: 999px; border: 2.5px solid var(--ink);
+  font-size: 11px; font-weight: 800; letter-spacing: .18em;
+  transform: rotate(3deg);
+}
+.badge.b-pink { background: var(--pink); color: var(--hot-2); }
+.badge.b-blue { background: var(--blue); color: #2f6ea8; }
+.badge.b-mint { background: var(--mint); color: #2c8f6e; }
+.badge.b-grape { background: var(--grape); color: #7b53b8; }
+.card-ico {
+  width: 58px; height: 58px; display: grid; place-items: center; font-size: 27px;
+  border: 2.5px solid var(--ink); border-radius: 18px; background: var(--milk);
+}
+.sticker-card h3 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: .01em; }
+.sticker-card p { margin: 0; color: var(--ink-2); font-size: 13.5px; line-height: 1.9; }
+.card-link {
+  margin-top: auto; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  background: var(--milk); border: 2px solid var(--pink-2);
+  font-size: 12.5px; font-weight: 800; letter-spacing: .12em; color: var(--hot-2);
+  transition: transform .4s var(--bounce);
+}
+.sticker-card:hover .card-link { transform: translateX(6px); background: var(--pink); }
+
+/* ---------- 最新文章：贴纸便当格 ---------- */
+.bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: clamp(14px, 2vw, 22px); }
+.post {
+  grid-column: span 6; position: relative; display: flex; flex-direction: column; gap: 12px;
+  padding: clamp(20px, 2.8vw, 30px); text-decoration: none;
+  border: 3px solid var(--ink); border-radius: var(--round);
+  background: var(--white); overflow: hidden;
+  transition: transform .45s var(--bounce);
+}
+.post.big { grid-column: span 12; flex-direction: row; align-items: center; gap: clamp(16px, 3vw, 30px); }
+.post:hover { transform: translateY(-8px) rotate(.6deg) scale(1.02); }
+.post.t-pink { background: linear-gradient(140deg, #fff, var(--pink)); }
+.post.t-blue { background: linear-gradient(140deg, #fff, var(--blue)); }
+.post.t-mint { background: linear-gradient(140deg, #fff, var(--mint)); }
+.post.t-grape { background: linear-gradient(140deg, #fff, var(--grape)); }
+.post-no {
+  display: inline-grid; place-items: center;
+  width: 46px; height: 46px; flex: none;
+  border: 2.5px solid var(--ink); border-radius: 50%;
+  font-size: 15px; font-weight: 800; background: var(--white);
+}
+.post h3 { margin: 0; font-size: clamp(17px, 2.1vw, 22px); font-weight: 800; line-height: 1.55; }
+.post.big h3 { font-size: clamp(19px, 2.6vw, 30px); }
+.post-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-2); letter-spacing: .12em; }
+.chip {
+  padding: 4px 13px; border-radius: 999px; border: 2px solid var(--ink);
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; background: var(--white);
+  transition: transform .35s var(--bounce);
+}
+.post:hover .chip { transform: translateY(-3px) rotate(-2deg); }
+.post-arrow {
+  position: absolute; right: 18px; bottom: 18px;
+  width: 38px; height: 38px; display: grid; place-items: center;
+  border: 2.5px solid var(--ink); border-radius: 50%; background: var(--white);
+  font-size: 15px; transition: transform .45s var(--bounce);
+}
+.post:hover .post-arrow { transform: rotate(45deg) scale(1.12); background: var(--hot); color: #fff; }
+.post.big .post-arrow { position: static; }
+
+/* ---------- 关于 ---------- */
+.about { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(24px, 4vw, 52px); align-items: start; }
+.about-card {
+  padding: clamp(24px, 3.4vw, 38px); border: 3px solid var(--ink); border-radius: var(--round);
+  background: linear-gradient(150deg, #fff, var(--milk));
+  box-shadow: 0 16px 36px rgba(255, 150, 200, .2);
+}
+.about-card p { margin: 0 0 1.2em; color: var(--ink-2); font-size: 15px; line-height: 2.05; }
+.about-card strong { color: var(--hot-2); }
+.stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(12px, 2vw, 18px); margin-top: clamp(18px, 3vw, 28px); }
+.stat-pill {
+  padding: 18px 20px; border: 3px solid var(--ink); border-radius: 18px; background: var(--white);
+}
+.stat-pill b { display: block; font-size: clamp(26px, 3.4vw, 40px); font-weight: 800; color: var(--hot-2); line-height: 1.15; }
+.stat-pill span { font-size: 11px; letter-spacing: .24em; color: var(--ink-2); }
+.quote-card {
+  padding: clamp(24px, 3.4vw, 38px); border: 3px solid var(--ink); border-radius: var(--round);
+  background: linear-gradient(150deg, var(--pink), var(--grape));
+  color: var(--ink); font-size: clamp(17px, 2.2vw, 23px); font-weight: 800; line-height: 1.95;
+  transform: rotate(-1deg);
+}
+.quote-card .sig { display: block; margin-top: 18px; font-size: 13px; letter-spacing: .26em; color: var(--hot-2); font-weight: 700; }
+
+/* ---------- 页脚 ---------- */
+.anime-footer {
+  position: relative; z-index: 5; margin-top: clamp(30px, 5vw, 60px);
+  padding: clamp(56px, 8vw, 100px) 0 40px;
+  border-top: 3px solid var(--ink);
+  background: linear-gradient(transparent, rgba(255, 214, 232, .5));
+}
+.foot-big {
+  margin: 0 0 clamp(26px, 4vw, 42px);
+  font-size: clamp(42px, 8.4vw, 110px); font-weight: 800; letter-spacing: .01em; line-height: 1.06;
+}
+.foot-big .grad {
+  background: linear-gradient(110deg, var(--hot-2), var(--blue-2) 55%, var(--pink-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.foot-links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: clamp(22px, 3vw, 34px); }
+.foot-links a {
+  padding: 11px 22px; border-radius: 999px; text-decoration: none;
+  border: 2.5px solid var(--ink); background: var(--white);
+  font-size: 13px; font-weight: 700; letter-spacing: .12em;
+  transition: transform .4s var(--bounce), background .3s ease;
+}
+.foot-links a:hover { transform: translateY(-4px) rotate(-1deg); background: var(--pink); }
+.foot-bottom {
+  display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between;
+  padding-top: 22px; border-top: 2px dashed rgba(107, 91, 115, .35);
+  font-size: 12px; letter-spacing: .16em; color: var(--ink-2);
+}
+
+/* ---------- 点击迸发的小星星（transform / opacity 动效） ---------- */
+.spark {
+  position: fixed; z-index: 99997; pointer-events: none;
+  font-size: 18px; line-height: 1; will-change: transform, opacity;
+  animation: spark-fly .85s var(--ease) forwards;
+}
+@keyframes spark-fly {
+  0% { transform: translate(-50%, -50%) scale(.2) rotate(0deg); opacity: 0; }
+  22% { opacity: 1; }
+  100% {
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-char { order: -1; }
+  .about { grid-template-columns: 1fr; }
+}
+@media (max-width: 660px) {
+  .post, .post.big { grid-column: span 12; }
+  .post.big { flex-direction: column; align-items: flex-start; }
+  .stat-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-eye { animation: none; }
+  .spark { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 背景特效：光斑在后，樱花在前 -->
+<canvas id="bokehFx" class="bg-fx" aria-hidden="true"></canvas>
+<canvas id="sakuraFx" class="bg-fx" aria-hidden="true"></canvas>
+
+<!-- 统一导航 -->
+<nav class="style-nav">
+  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+  <a href="cyber.html">赛博霓虹</a>
+  <a href="glass.html">极光玻璃</a>
+  <a href="brutal.html">粗野主义</a>
+  <a href="terminal.html">黑客终端</a>
+  <a href="retro.html">蒸汽波</a>
+  <a href="win98.html">Win98</a>
+  <a href="nature.html">水墨自然</a>
+  <a href="swiss.html">瑞士排版</a>
+  <a href="anime.html" class="current">日系二次元</a>
+  <a href="lab.html">🧪 实验室</a>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="anime-hero">
+  <div class="hero-grid">
+    <div>
+      <div class="sticker">🌸 ANIME MODE · STYLE 09 · 日常系ブログ</div>
+      <h1 class="hero-title" aria-label="xvcenh 的博客">
+        <ruby>xvcenh<rt>エクスブイシーエヌエイチ</rt></ruby><br>
+        <span class="grad">的博客</span>
+      </h1>
+      <p class="hero-sub"><span id="heroType"></span></p>
+      <p class="hero-desc">
+        同一份内容，第九种人格：樱花飘落的背景、梦幻的光斑、圆圆的贴纸卡片，
+        还有一位会在你点击时眨眼的角色。点点页面任何地方，会有小星星蹦出来 ✦
+      </p>
+      <div class="hero-cta">
+        <a class="btn-k btn-main fx-ripple" href="#tools">🛠️ 开源工具</a>
+        <a class="btn-k btn-ghost fx-ripple" href="#posts">📖 最新文章</a>
+        <a class="btn-k btn-ghost fx-ripple" href="#about">💗 关于我</a>
+      </div>
+      <div class="hero-stats">
+        <div><b><span class="counter" data-target="8">0</span></b><span>POSTS</span></div>
+        <div><b><span class="counter" data-target="4">0</span></b><span>TOOLS</span></div>
+        <div><b><span class="counter" data-target="10">0</span></b><span>STYLES</span></div>
+        <div><b><span class="counter" data-target="13">0</span></b><span>FX</span></div>
+      </div>
+    </div>
+
+    <!-- 角色 + 对话框 -->
+    <div class="hero-char">
+      <div class="mascot" id="mascot" title="点我三下有惊喜？">
+        <div class="m-hair"></div>
+        <div class="m-head"></div>
+        <div class="m-face">
+          <div class="m-eyes">
+            <div class="m-eye"><i></i></div>
+            <div class="m-eye"><i></i></div>
+          </div>
+          <div class="m-blush l"></div>
+          <div class="m-blush r"></div>
+          <div class="m-mouth"></div>
+        </div>
+        <div class="m-bow">★</div>
+      </div>
+
+      <div class="bubble" id="bubble">
+        <div class="bubble-name">さくら / SAKURA</div>
+        <div class="normal-line" id="bubbleText"></div>
+        <div class="egg-line" id="bubbleEgg"></div>
+      </div>
+      <div class="char-hint">CLICK ×3 或 ↑↑↓↓←→←→BA 触发彩蛋</div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 开源工具 ================= -->
+<main class="wrap">
+  <section class="section" id="tools">
+    <div class="sec-head">
+      <div>
+        <span class="kana">オープンソース / OPEN SOURCE TOOLS</span>
+        <h2 class="sec-title">🛠️ <ruby>开源工具<rt>かいぎょう こうぐ</rt></ruby> <span class="grad">＋＋</span></h2>
+      </div>
+      <p class="sec-note">四个开源项目，四张贴纸卡片 —— 悬停会歪头弹跳，请温柔一点对待它们 (｡･ω･｡)</p>
+    </div>
+    <div class="cards">
+      <a class="sticker-card reveal" data-delay="0" href="https://xvcenh.github.io/svg-scene-engine/">
+        <div class="badge b-pink">NEW!</div>
+        <div class="card-ico">🎭</div>
+        <h3>SVG Scene Engine</h3>
+        <p>AI 驱动的 2D 场景合成引擎。</p>
+        <div class="card-link">去看看 → xvcenh.github.io</div>
+      </a>
+      <a class="sticker-card reveal" data-delay="90" href="https://xvcenh.github.io/svg-asset-library/">
+        <div class="badge b-blue">50+ ASSETS</div>
+        <div class="card-ico">🎨</div>
+        <h3>SVG Asset Library</h3>
+        <p>50+ 奇幻风格 SVG 素材库。</p>
+        <div class="card-link">去看看 → xvcenh.github.io</div>
+      </a>
+      <a class="sticker-card reveal" data-delay="180" href="https://github.com/xvcenh/claudescan">
+        <div class="badge b-mint">AI POWERED</div>
+        <div class="card-ico">🔍</div>
+        <h3>ClaudeScan</h3>
+        <p>AI 编程助手配置生成器。</p>
+        <div class="card-link">去看看 → github.com</div>
+      </a>
+      <a class="sticker-card reveal" data-delay="270" href="https://github.com/xvcenh/liltown">
+        <div class="badge b-grape">SIMULATION</div>
+        <div class="card-ico">🏘️</div>
+        <h3>LilTown</h3>
+        <p>终端 AI 村庄模拟器。</p>
+        <div class="card-link">去看看 → github.com</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= 最新文章 ================= -->
+  <section class="section" id="posts">
+    <div class="sec-head">
+      <div>
+        <span class="kana">さいしんぶんしょう / LATEST POSTS</span>
+        <h2 class="sec-title">📖 <ruby>最新文章<rt>さいしん ぶんしょう</rt></ruby> <span class="grad">♡</span></h2>
+      </div>
+      <p class="sec-note">八篇文章排成便当格 —— 滚动时会交错着蹦进来，阅读时请配一杯奶茶。</p>
+    </div>
+    <div class="bento">
+      <a class="post big t-pink reveal" data-delay="0" href="https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html">
+        <div class="post-no">01</div>
+        <div>
+          <h3>个人开发者如何让开源项目从 0 到 1000 Star</h3>
+          <div class="post-meta"><span>2026-05-04</span><span class="chip">开源</span><span class="chip">经验</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post big t-blue reveal" data-delay="80" href="https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html">
+        <div class="post-no">02</div>
+        <div>
+          <h3>Web 性能优化实战：从 Lighthouse 60 分到 95 分</h3>
+          <div class="post-meta"><span>2026-05-04</span><span class="chip">前端</span><span class="chip">性能</span></div>
+        </div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post t-mint reveal" data-delay="0" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html">
+        <div class="post-no">03</div>
+        <h3>GitHub Actions 自动化 CI/CD 实战：从零搭建生产级流水线</h3>
+        <div class="post-meta"><span>2026-05-03</span><span class="chip">部署</span><span class="chip">DevOps</span></div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post t-grape reveal" data-delay="90" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html">
+        <div class="post-no">04</div>
+        <h3>AI 辅助编程最佳实践：从 Copilot 到 Cursor 的高效工作流</h3>
+        <div class="post-meta"><span>2026-05-03</span><span class="chip">工具</span><span class="chip">AI</span></div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post t-blue reveal" data-delay="0" href="https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html">
+        <div class="post-no">05</div>
+        <h3>Vue 项目部署到 Nginx 后页面空白的解决方案</h3>
+        <div class="post-meta"><span>2026-03-19</span><span class="chip">软件</span><span class="chip">部署</span></div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post t-pink reveal" data-delay="90" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html">
+        <div class="post-no">06</div>
+        <h3>Git 工作流最佳实践与常见问题</h3>
+        <div class="post-meta"><span>2026-03-19</span><span class="chip">工具</span></div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post t-grape reveal" data-delay="0" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html">
+        <div class="post-no">07</div>
+        <h3>Docker 容器部署常见问题解决</h3>
+        <div class="post-meta"><span>2026-03-19</span><span class="chip">部署</span></div>
+        <div class="post-arrow">↗</div>
+      </a>
+      <a class="post t-mint reveal" data-delay="90" href="https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html">
+        <div class="post-no">08</div>
+        <h3>MySQL 慢查询优化实战</h3>
+        <div class="post-meta"><span>2026-03-19</span><span class="chip">数据库</span></div>
+        <div class="post-arrow">↗</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ================= 关于 ================= -->
+  <section class="section" id="about">
+    <div class="sec-head">
+      <div>
+        <span class="kana">わたしについて / ABOUT</span>
+        <h2 class="sec-title">💗 <ruby>关于<rt>かんじ</rt></ruby> <span class="grad">xvcenh</span></h2>
+      </div>
+      <p class="sec-note">xvcenh（徐辰），软件开发 / 运维部署 / 数据库管理 —— 也是一位把博客做成主题乐园的人。</p>
+    </div>
+    <div class="about">
+      <div class="about-card reveal">
+        <p><strong>xvcenh（徐辰）</strong>，软件开发 / 运维部署 / 数据库管理。白天写代码、管服务器、调数据库，晚上把这些整理成文章。</p>
+        <p>这是同一份内容的第九种风格：粉彩、圆角、贴纸与樱花。技术不甜，但阅读的体验可以甜。</p>
+        <div class="stat-grid">
+          <div class="stat-pill"><b><span class="counter" data-target="8">0</span></b><span>ARTICLES</span></div>
+          <div class="stat-pill"><b><span class="counter" data-target="4">0</span></b><span>OSS TOOLS</span></div>
+          <div class="stat-pill"><b><span class="counter" data-target="10">0</span></b><span>STYLE PAGES</span></div>
+          <div class="stat-pill"><b><span class="counter" data-target="0">0</span></b><span>DEPENDENCIES</span></div>
+        </div>
+      </div>
+      <div class="quote-card reveal-scale">
+        「能把复杂的事情讲简单的人，<br>运气都不会太差。」
+        <span class="sig">— xvcenh / 徐辰 · よろしくね！</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= 页脚 ================= -->
+<footer class="anime-footer">
+  <div class="wrap">
+    <h2 class="foot-big">またね！<br><span class="grad">SEE YOU NEXT ☆</span></h2>
+    <div class="foot-links">
+      <a href="index.html">🏠 回到首页</a>
+      <a href="lab.html">🧪 实验室</a>
+      <a href="nature.html">🍃 水墨自然</a>
+      <a href="swiss.html">🧭 瑞士排版</a>
+      <a href="https://github.com/xvcenh">🔗 GitHub</a>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 xvcenh · https://github.com/xvcenh · ANIME MODE</div>
+      <div>彩蛋：↑↑↓↓←→←→BA 或点击角色 3 次 · 点击页面任意处有小星星</div>
+    </div>
+  </div>
+</footer>
+
+<!-- 可选 vendor：撒花 -->
+<script src="assets/vendor/canvas-confetti.min.js"></script>
+<!-- 特效引擎 -->
+<script src="assets/fx.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 背景特效 1：樱花飘落（FX.petals） ---------- */
+  FX.petals(document.getElementById('sakuraFx'), {
+    count: 34, color: '255, 183, 197'
+  });
+
+  /* ---------- 背景特效 2：梦幻光斑（FX.bokeh） ---------- */
+  FX.bokeh(document.getElementById('bokehFx'), {
+    count: 12, rgb: '255, 190, 220', accent: '150, 205, 255', alpha: 0.3
+  });
+
+  /* ---------- 打字机：hero 台词感副标题（FX.typewriter） ---------- */
+  FX.typewriter(document.getElementById('heroType'), [
+    'よろしくね！欢迎来到 xvcenh 的博客～ ✦',
+    '今天的运势：适合写代码！(＾▽＾)',
+    '这里有 10 种风格，9 种已经上线啦 ✨',
+    '点点屏幕，会有小星星蹦出来哦 ★'
+  ], { speed: 58, pause: 2000 });
+
+  /* ---------- 打字机：角色对话框欢迎语 ---------- */
+  FX.typewriter(document.getElementById('bubbleText'), [
+    'いらっしゃいませ！欢迎光临～ (｡･ω･｡)',
+    '我是看板娘 さくら，请随意逛逛！',
+    '博客里有 8 篇新文章，慢慢看哦～'
+  ], { speed: 52, pause: 2300 });
+
+  /* ---------- 滚动揭示（元素交错入场） ---------- */
+  FX.reveal('.reveal, .reveal-scale');
+
+  /* ---------- 数字滚动 ---------- */
+  document.querySelectorAll('.counter').forEach(function (el) { FX.counter(el); });
+
+  /* ---------- 点击任意处迸发小星星（transform / opacity 动效） ---------- */
+  var SPARKS = ['✦', '★', '♥', '✧', '☆'];
+  var COLORS = ['#ff7eb6', '#89c7ff', '#c9a2ff', '#ffd166', '#7fe0c5'];
+  document.addEventListener('click', function (e) {
+    if (FX.REDUCED) return;
+    var n = 9;
+    for (var i = 0; i < n; i++) {
+      var s = document.createElement('span');
+      s.className = 'spark';
+      s.textContent = SPARKS[i % SPARKS.length];
+      var ang = (Math.PI * 2 * i) / n + Math.random() * 0.7;
+      var dist = 46 + Math.random() * 66;
+      s.style.left = e.clientX + 'px';
+      s.style.top = e.clientY + 'px';
+      s.style.color = COLORS[i % COLORS.length];
+      s.style.setProperty('--tx', (Math.cos(ang) * dist).toFixed(1) + 'px');
+      s.style.setProperty('--ty', (Math.sin(ang) * dist - 22).toFixed(1) + 'px');
+      s.style.setProperty('--rot', (Math.random() * 300 - 150).toFixed(0) + 'deg');
+      s.style.animationDelay = (i * 16) + 'ms';
+      document.body.appendChild(s);
+      setTimeout(function (node) { return function () { node.remove(); }; }(s), 1100);
+    }
+  }, { passive: true });
+
+  /* ---------- 彩蛋：撒花 + 角色说新台词 ---------- */
+  var bubble = document.getElementById('bubble');
+  var bubbleEgg = document.getElementById('bubbleEgg');
+  var eggTimer = 0;
+
+  /* 一次性打字（彩蛋台词用） */
+  function typeOnce(el, text, speed) {
+    el.textContent = '';
+    if (FX.REDUCED) { el.textContent = text; return; }
+    var i = 0;
+    (function tick() {
+      el.textContent = text.slice(0, ++i);
+      if (i < text.length) setTimeout(tick, speed || 42);
+    })();
+  }
+
+  var eggLines = [
+    '🎉 ひゃっほう！彩蛋解锁！今天也要开心写代码哦！',
+    '✨ 撒花撒花～ 你发现了隐藏的撒花技能！',
+    '💖 谢谢你陪我玩！记得常来博客看看～'
+  ];
+  var eggIdx = 0;
+
+  function triggerEgg(x, y) {
+    FX.confetti(x, y);                       /* canvas-confetti 桥接 */
+    FX.confetti(innerWidth * 0.25, innerHeight * 0.3);
+    FX.confetti(innerWidth * 0.78, innerHeight * 0.35);
+    FX.toast('🎉 彩蛋触发：樱花撒花模式 ON！');
+    bubble.classList.add('egg');
+    clearTimeout(eggTimer);
+    typeOnce(bubbleEgg, eggLines[eggIdx % eggLines.length], 38);
+    eggIdx++;
+    eggTimer = setTimeout(function () { bubble.classList.remove('egg'); }, 6500);
+    /* 角色开心跳一下 */
+    var m = document.getElementById('mascot');
+    m.style.transform = 'translateY(-14px) rotate(-3deg) scale(1.06)';
+    setTimeout(function () { m.style.transform = ''; }, 420);
+  }
+
+  /* 角色连点 3 次触发 */
+  var mascot = document.getElementById('mascot');
+  var clicks = 0, clickTimer = 0;
+  mascot.addEventListener('click', function (e) {
+    clicks++;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(function () { clicks = 0; }, 2200);
+    if (clicks >= 3) {
+      clicks = 0;
+      triggerEgg(e.clientX, e.clientY);
+    }
+  });
+
+  /* KONAMI 彩蛋 */
+  FX.konami(function () {
+    triggerEgg(innerWidth / 2, innerHeight * 0.4);
+  });
+
+  /* ---------- 自定义光标：粉色圆点 + 梦幻拖尾 ---------- */
+  FX.cursor({ trail: true, trailColor: 'rgba(255, 126, 182, .65)' });
+
+  /* ---------- 命令面板 ---------- */
+  FX.palette([
+    { icon: '🏠', label: '回到首页', hint: 'index.html', run: function () { location.href = 'index.html'; } },
+    { icon: '🌸', label: '日系二次元（当前）', hint: 'anime.html', run: function () { FX.toast('已在日系二次元页面'); } },
+    { icon: '🍃', label: '水墨自然风格', hint: 'nature.html', keywords: 'nature 水墨', run: function () { location.href = 'nature.html'; } },
+    { icon: '🧭', label: '瑞士排版风格', hint: 'swiss.html', keywords: 'swiss 瑞士', run: function () { location.href = 'swiss.html'; } },
+    { icon: '🧪', label: '炫技实验室', hint: 'lab.html', keywords: 'lab 特效', run: function () { location.href = 'lab.html'; } },
+    { icon: '🎉', label: '撒花彩蛋', hint: 'confetti', keywords: 'confetti party 彩蛋', run: function () { triggerEgg(innerWidth / 2, innerHeight / 2); } },
+    { icon: '💬', label: '让さくら说点什么', hint: 'bubble', keywords: 'bubble 对话', run: function () {
+      bubble.classList.add('egg');
+      typeOnce(bubbleEgg, 'こんちは！今天也要加油鸭！(ง •̀_•́)ง', 38);
+      clearTimeout(eggTimer);
+      eggTimer = setTimeout(function () { bubble.classList.remove('egg'); }, 5200);
+    } },
+    { icon: '🔗', label: 'GitHub 主页', hint: 'github.com/xvcenh', run: function () { window.open('https://github.com/xvcenh', '_blank'); } }
+  ], { placeholder: '输入命令，さくら会帮你执行～' });
+
+  /* ---------- 平滑锚点 ---------- */
+  FX.smoothScroll();
+})();
+</script>
+</body>
+</html>

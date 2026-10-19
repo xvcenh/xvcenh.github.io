@@ -16,9 +16,9 @@
         camera.position.set(0, 6, 24);
         camera.lookAt(0, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: window.devicePixelRatio <= 1.5, alpha: true, powerPreference: 'high-performance' });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.3;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -106,18 +106,18 @@
         }
 
         // 预生成纹理
-        const glowTexCore = createGlowTexture('rgba(140,200,255,1)', 'rgba(30,80,180,0.6)', 512);
-        const glowTexWarm = createGlowTexture('rgba(255,180,130,1)', 'rgba(200,80,30,0.5)', 256);
-        const glowTexCool = createGlowTexture('rgba(130,200,255,1)', 'rgba(30,100,200,0.5)', 256);
-        const glowTexGreen = createGlowTexture('rgba(140,230,180,1)', 'rgba(30,150,80,0.5)', 256);
-        const glowTexPurple = createGlowTexture('rgba(190,150,240,1)', 'rgba(100,40,180,0.5)', 256);
-        const glowTexGold = createGlowTexture('rgba(255,210,140,1)', 'rgba(200,140,30,0.5)', 256);
-        const glowTexSmall = createGlowTexture('rgba(180,210,240,0.9)', 'rgba(40,90,170,0.4)', 128);
+        const glowTexCore = createGlowTexture('rgba(140,200,255,1)', 'rgba(30,80,180,0.6)', 256);
+        const glowTexWarm = createGlowTexture('rgba(255,180,130,1)', 'rgba(200,80,30,0.5)', 128);
+        const glowTexCool = createGlowTexture('rgba(130,200,255,1)', 'rgba(30,100,200,0.5)', 128);
+        const glowTexGreen = createGlowTexture('rgba(140,230,180,1)', 'rgba(30,150,80,0.5)', 128);
+        const glowTexPurple = createGlowTexture('rgba(190,150,240,1)', 'rgba(100,40,180,0.5)', 128);
+        const glowTexGold = createGlowTexture('rgba(255,210,140,1)', 'rgba(200,140,30,0.5)', 128);
+        const glowTexSmall = createGlowTexture('rgba(180,210,240,0.9)', 'rgba(40,90,170,0.4)', 64);
         const ringTexBlue = createRingTexture('rgba(100,170,240,0.7)');
         const ringTexGold = createRingTexture('rgba(240,180,100,0.7)');
 
         // ==================== 星空背景 ====================
-        const starCount = 2800;
+        const starCount = 1400;
         const starGeom = new THREE.BufferGeometry();
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
@@ -219,11 +219,11 @@
               gl_FragColor = vec4(baseCol, 1.0);
             }`,
         });
-        const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(1.25, 64, 64), coreShaderMat);
+        const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(1.25, 48, 48), coreShaderMat);
         coreGroup.add(coreSphere);
 
         const coreGlowMid = new THREE.Mesh(
-            new THREE.SphereGeometry(1.55, 32, 32),
+            new THREE.SphereGeometry(1.55, 24, 24),
             new THREE.MeshBasicMaterial({
                 map: glowTexCore,
                 blending: THREE.AdditiveBlending,
@@ -245,7 +245,7 @@
         coreGroup.add(coreGlowOuter);
 
         const coreGlowFar = new THREE.Sprite(new THREE.SpriteMaterial({
-            map: createGlowTexture('rgba(100,160,230,0.7)', 'rgba(20,50,120,0.2)', 512),
+                map: createGlowTexture('rgba(100,160,230,0.7)', 'rgba(20,50,120,0.2)', 256),
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
@@ -256,7 +256,7 @@
 
         const coreDotsGroup = new THREE.Group();
         coreGroup.add(coreDotsGroup);
-        const coreDotCount = 180;
+        const coreDotCount = 120;
         const coreDotGeom = new THREE.BufferGeometry();
         const coreDotPositionsArr = new Float32Array(coreDotCount * 3);
         const coreDotData = [];
@@ -281,7 +281,7 @@
         const coreDots = new THREE.Points(coreDotGeom, coreDotMat);
         coreDotsGroup.add(coreDots);
 
-        const energyParticleCount = 120;
+        const energyParticleCount = 80;
         const energyGeom = new THREE.BufferGeometry();
         const energyPositionsArr = new Float32Array(energyParticleCount * 3);
         const energyData = [];
@@ -372,7 +372,7 @@
             scene.add(orbitGroup);
             orbitGroups.push({ group: orbitGroup, radius: orbitDef.radius });
 
-            const ringPointsCount = 256;
+            const ringPointsCount = 128;
             const ringGeom = new THREE.BufferGeometry();
             const ringVerts = new Float32Array(ringPointsCount * 3);
             for (let i = 0; i < ringPointsCount; i++) {
@@ -425,7 +425,7 @@
 
                 const tex = createPlanetTexture(planetDef.hue);
                 const planetMesh = new THREE.Mesh(
-                    new THREE.SphereGeometry(planetDef.size, 40, 40),
+                    new THREE.SphereGeometry(planetDef.size, 24, 24),
                     new THREE.MeshStandardMaterial({
                         map: tex,
                         roughness: 0.55,
@@ -459,7 +459,7 @@
                 const moonCount = 1 + Math.floor(Math.random() * 2);
                 const moons = [];
                 for (let m = 0; m < moonCount; m++) {
-                    const moonGeom = new THREE.SphereGeometry(0.08 + Math.random() * 0.1, 16, 16);
+                    const moonGeom = new THREE.SphereGeometry(0.08 + Math.random() * 0.1, 12, 12);
                     const moonMat = new THREE.MeshStandardMaterial({
                         color: new THREE.Color(`hsl(${planetDef.hue + 30}, 30%, 70%)`),
                         roughness: 0.4,
@@ -521,6 +521,18 @@
         const mouse = new THREE.Vector2();
         let hoveredPlanet = null;
         const allPlanetMeshes = allPlanetObjects.map(p => p.mesh);
+
+        let pendingHoverEvent = null;
+        let hoverScheduled = false;
+        function scheduleHover(evt) {
+            pendingHoverEvent = evt;
+            if (hoverScheduled) return;
+            hoverScheduled = true;
+            requestAnimationFrame(() => {
+                hoverScheduled = false;
+                if (pendingHoverEvent) updateHover(pendingHoverEvent);
+            });
+        }
 
         function updateHover(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -604,7 +616,7 @@
                 targetRotationOffsetY = rotationOffsetY + dy * 0.0008;
                 targetRotationOffsetY = Math.max(-1.2, Math.min(1.2, targetRotationOffsetY));
             }
-            updateHover(event);
+            scheduleHover(event);
         });
 
         window.addEventListener('mousedown', (event) => {
@@ -656,7 +668,7 @@
                     targetRotationOffsetY = rotationOffsetY + dy * 0.0008;
                     targetRotationOffsetY = Math.max(-1.2, Math.min(1.2, targetRotationOffsetY));
                 }
-                updateHover({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
+                scheduleHover({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
             }
         }, { passive: false });
         window.addEventListener('touchstart', (event) => {
@@ -754,10 +766,14 @@
         document.head.appendChild(clickStyle);
 
         // ==================== 窗口调整 ====================
+        let resizeTimer = null;
         window.addEventListener('resize', () => {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }, 150);
         });
 
         // ==================== 动画循环 ====================
@@ -767,6 +783,8 @@
 
         function animate(timestamp) {
             animFrameId = requestAnimationFrame(animate);
+
+            if (document.hidden) return;
 
             const dt = Math.min(clock.getDelta(), 0.1);
             globalTime += dt;

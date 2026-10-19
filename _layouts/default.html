@@ -747,8 +747,9 @@
     var c=document.getElementById('bg-stars'),x=c.getContext('2d'),s=[],w,h;
     function r(){w=c.width=innerWidth;h=c.height=innerHeight}
     r();window.addEventListener('resize',r);
-    for(var i=0;i<100;i++)s.push({x:Math.random()*w,y:Math.random()*h,r:.3+Math.random()*1.2,a:.2+Math.random()*.5,b:Math.random()*6.28,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.15});
+    for(var i=0;i<60;i++)s.push({x:Math.random()*w,y:Math.random()*h,r:.3+Math.random()*1.2,a:.2+Math.random()*.5,b:Math.random()*6.28,vx:(Math.random()-.5)*.15,vy:(Math.random()-.5)*.15});
     (function D(){
+      if(document.hidden){requestAnimationFrame(D);return;}
       x.clearRect(0,0,w,h);
       for(var i=0;i<s.length;i++){
         var p=s[i];p.x+=p.vx;p.y+=p.vy;
@@ -781,6 +782,7 @@
         <a href="/categories/" class="nav-link {% if page.url == '/categories/' %}active{% endif %}">分类</a>
         <a href="/search/" class="nav-link {% if page.url == '/search/' %}active{% endif %}">搜索</a>
         <a href="/projects/" class="nav-link {% if page.url == '/projects/' %}active{% endif %}">项目</a>
+        <a href="/super-blog/" class="nav-link">超级博客</a>
         <a href="/about/" class="nav-link {% if page.url == '/about/' %}active{% endif %}">关于</a>
       </nav>
     </div>

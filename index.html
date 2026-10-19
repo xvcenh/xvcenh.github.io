@@ -97,12 +97,21 @@ title: xvcenh的博客
                 <a href="/categories/部署/" class="category-tag">🚀 部署</a>
                 <a href="/categories/工具/" class="category-tag">🛠 工具</a>
                 <a href="/search/" class="category-tag">🔍 搜索</a>
+                <a href="/super-blog/" class="category-tag">🚀 超级博客</a>
                 <a href="/about/" class="category-tag">ℹ 关于</a>
             </div>
 
             <!-- 开源项目工具 -->
             <h2 class="section-title gradient-text">🧰 开源工具</h2>
             <div class="tools-grid">
+                <a href="/super-blog/" class="tool-card gradient-border">
+                    <div class="tool-icon" style="background: linear-gradient(135deg, #ff7847, #b39cff);">🚀</div>
+                    <div class="tool-info">
+                        <div class="tool-name">Super Blog Interface</div>
+                        <div class="tool-desc">10 种风格的实验性博客界面</div>
+                    </div>
+                    <div class="tool-arrow">→</div>
+                </a>
                 <a href="https://xvcenh.github.io/svg-scene-engine/" target="_blank" rel="noopener" class="tool-card gradient-border">
                     <div class="tool-icon" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">🎭</div>
                     <div class="tool-info">
@@ -196,7 +205,7 @@ title: xvcenh的博客
                 w = c.width = window.innerWidth; h = c.height = window.innerHeight;
             }
             resize();
-            for (let i = 0; i < 80; i++) {
+            for (let i = 0; i < 40; i++) {
                 stars.push({
                     x: Math.random() * w, y: Math.random() * h,
                     r: 0.3 + Math.random() * 1.2,
@@ -208,6 +217,7 @@ title: xvcenh的博客
             }
             window.addEventListener('resize', resize);
             function draw() {
+                if (document.hidden) { requestAnimationFrame(draw); return; }
                 ctx.clearRect(0, 0, w, h);
                 for (const s of stars) {
                     s.x += s.vx; s.y += s.vy;

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xvcenh 超级博客 · Super Blog Interface</title>
+<meta name="description" content="xvcenh(徐辰)的超级博客 — 十种风格子页面、Canvas 特效引擎、命令面板、彩蛋系统的实验性博客界面">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+/* ================= tokens ================= */
+:root {
+  --bg: #0a0e17;
+  --bg2: #0e1422;
+  --panel: #121a2b;
+  --line: rgba(255,255,255,.09);
+  --fg: #eef1f7;
+  --dim: #97a1b5;
+  --ember: #ff7847;
+  --mint: #6ee7c8;
+  --violet: #b39cff;
+  --amber: #ffc46b;
+  --glow: rgba(255,120,71,.35);
+  --fx-accent: var(--ember);
+}
+[data-theme="light"] {
+  --bg: #f4efe6;
+  --bg2: #efe7d8;
+  --panel: #fffdf8;
+  --line: rgba(30,26,20,.12);
+  --fg: #1c1d24;
+  --dim: #6b6558;
+  --ember: #e0521f;
+  --mint: #0e9c7c;
+  --violet: #6c4fd8;
+  --amber: #c98412;
+  --glow: rgba(224,82,31,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: "Space Grotesk", "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow-x: hidden;
+  transition: background .5s ease, color .5s ease;
+}
+::selection { background: var(--ember); color: #fff; }
+a { color: inherit; }
+
+/* ================= preloader ================= */
+#preloader {
+  position: fixed; inset: 0; z-index: 200000;
+  background: var(--bg); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+  transition: opacity .6s ease, visibility .6s;
+}
+#preloader.done { opacity: 0; visibility: hidden; }
+.pre-logo {
+  font: 700 clamp(34px, 7vw, 64px)/1 "JetBrains Mono", monospace;
+  letter-spacing: .12em;
+  background: linear-gradient(100deg, var(--ember), var(--amber), var(--mint));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.pre-bar { width: min(320px, 64vw); height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.pre-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ember), var(--mint)); transition: width .3s ease; }
+.pre-tip { font: 400 12px/1 "JetBrains Mono", monospace; color: var(--dim); letter-spacing: .18em; }
+
+/* ================= top nav ================= */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9500;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px clamp(14px, 3vw, 32px);
+  background: color-mix(in oklab, var(--bg) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font: 700 15px/1 "JetBrains Mono", monospace; letter-spacing: .06em;
+  text-decoration: none; user-select: none;
+}
+.brand-orb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, var(--amber), var(--ember) 55%, #7c2d12);
+  box-shadow: 0 0 18px var(--glow), inset -4px -6px 10px rgba(0,0,0,.35);
+  animation: orb-float 5s ease-in-out infinite;
+}
+@keyframes orb-float { 50% { transform: translateY(-3px) rotate(8deg); } }
+.top-links { display: flex; gap: 4px; margin-left: 18px; }
+.top-links a {
+  padding: 8px 13px; border-radius: 10px; text-decoration: none;
+  font-size: 13.5px; font-weight: 500; color: var(--dim);
+  transition: color .25s, background .25s;
+}
+.top-links a:hover { color: var(--fg); background: color-mix(in oklab, var(--ember) 14%, transparent); }
+.top-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--line);
+  background: transparent; color: var(--fg); cursor: pointer; font-size: 16px;
+  display: grid; place-items: center;
+  transition: border-color .25s, transform .25s, background .25s;
+}
+.icon-btn:hover { border-color: var(--ember); transform: translateY(-2px); background: color-mix(in oklab, var(--ember) 12%, transparent); }
+.kbd-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 11px; border: 1px solid var(--line);
+  background: transparent; color: var(--dim); cursor: pointer;
+  font: 500 12px/1 "JetBrains Mono", monospace;
+}
+.kbd-btn:hover { color: var(--fg); border-color: var(--ember); }
+@media (max-width: 860px) { .top-links { display: none; } .kbd-btn span { display: none; } }
+
+/* ================= hero ================= */
+.hero {
+  position: relative; min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 120px clamp(18px, 5vw, 72px) 60px;
+  overflow: hidden;
+}
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hero-aurora { opacity: .55; }
+.hero-stars { opacity: .9; }
+.hero-inner { position: relative; z-index: 3; max-width: 1240px; margin: 0 auto; width: 100%; }
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 8px 16px; border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--mint) 45%, transparent);
+  color: var(--mint); font: 500 12px/1 "JetBrains Mono", monospace;
+  letter-spacing: .14em;
+}
+.hero-tag i { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); animation: pulse 1.8s ease infinite; }
+@keyframes pulse { 50% { opacity: .25; transform: scale(1.5); } }
+.hero h1 {
+  margin: 26px 0 8px;
+  font: 700 clamp(58px, 13vw, 172px)/0.92 "Space Grotesk", sans-serif;
+  letter-spacing: -.03em;
+  display: flex; flex-wrap: wrap; gap: 0 .04em;
+}
+.hero h1 .ch {
+  display: inline-block;
+  background: linear-gradient(160deg, var(--fg) 20%, color-mix(in oklab, var(--fg) 55%, var(--ember)));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: ch-in .9s cubic-bezier(.2,.9,.25,1) both;
+}
+@keyframes ch-in { from { opacity: 0; transform: translateY(64px) rotate(6deg); filter: blur(10px); } }
+.hero h1 .ch.accent {
+  background: linear-gradient(160deg, var(--ember), var(--amber));
+  -webkit-background-clip: text; background-clip: text;
+}
+.hero-sub {
+  margin: 20px 0 0; font-size: clamp(17px, 2.4vw, 25px); font-weight: 500;
+  min-height: 1.5em; color: var(--fg);
+}
+.hero-sub .typed-cursor-now { color: var(--ember); }
+.hero-desc {
+  margin: 18px 0 0; max-width: 560px;
+  color: var(--dim); font-size: 15.5px; line-height: 1.85;
+}
+.hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 38px; }
+.btn {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 15px 30px; border-radius: 14px; border: 0;
+  font: 600 15px/1 "Space Grotesk", sans-serif; text-decoration: none;
+  cursor: pointer; will-change: transform;
+  transition: box-shadow .35s ease, transform .35s ease;
+}
+.btn-primary { background: linear-gradient(120deg, var(--ember), var(--amber)); color: #251207; box-shadow: 0 14px 40px var(--glow); }
+.btn-primary:hover { box-shadow: 0 22px 60px var(--glow); }
+.btn-ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.btn-ghost:hover { border-color: var(--mint); color: var(--mint); }
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: clamp(18px, 4vw, 54px);
+  margin-top: 62px; padding-top: 30px; border-top: 1px solid var(--line);
+}
+.hero-meta div { display: flex; flex-direction: column; gap: 6px; }
+.hero-meta b { font: 700 clamp(26px, 3.4vw, 40px)/1 "Space Grotesk", sans-serif; color: var(--amber); }
+.hero-meta span { font: 500 11px/1 "JetBrains Mono", monospace; color: var(--dim); letter-spacing: .16em; }
+.scroll-hint {
+  position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+  z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--dim); font: 400 11px/1 "JetBrains Mono", monospace; letter-spacing: .22em;
+}
+.scroll-hint i { width: 1px; height: 42px; background: linear-gradient(var(--ember), transparent); animation: hint 1.7s ease infinite; }
+@keyframes hint { 0% { transform: scaleY(0); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: top; } 56% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* ================= marquee ================= */
+.marquee {
+  overflow: hidden; padding: 16px 0;
+  background: var(--ember); color: #2b1105;
+  border-top: 2px solid var(--line); border-bottom: 2px solid var(--line);
+  transform: rotate(-1.1deg) scale(1.02);
+}
+.marquee-track { display: flex; gap: 42px; width: max-content; animation: marq 26s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee-track span { font: 700 17px/1 "JetBrains Mono", monospace; letter-spacing: .12em; white-space: nowrap; }
+@keyframes marq { to { transform: translateX(-50%); } }
+
+/* ================= sections ================= */
+.section { max-width: 1240px; margin: 0 auto; padding: clamp(76px, 10vw, 130px) clamp(18px, 5vw, 40px); position: relative; }
+.sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 52px; flex-wrap: wrap; }
+.sec-kicker { font: 500 12px/1 "JetBrains Mono", monospace; letter-spacing: .3em; color: var(--ember); margin-bottom: 16px; }
+.sec-title {
+  margin: 0; font: 700 clamp(34px, 5.6vw, 66px)/1.04 "Space Grotesk", sans-serif; letter-spacing: -.025em;
+}
+.sec-title em { font-style: normal; color: var(--amber); }
+.sec-note { max-width: 380px; color: var(--dim); font-size: 14.5px; line-height: 1.85; }
+
+/* tools */
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+.tool-card {
+  position: relative; display: block; text-decoration: none;
+  padding: 26px 24px 24px; border-radius: 20px;
+  background: linear-gradient(160deg, var(--panel), color-mix(in oklab, var(--panel) 82%, var(--ember)));
+  border: 1px solid var(--line);
+  overflow: hidden;
+  transition: transform .5s cubic-bezier(.2,.9,.25,1), border-color .4s, box-shadow .5s;
+}
+.tool-card:hover { transform: translateY(-7px); border-color: color-mix(in oklab, var(--ember) 55%, transparent); box-shadow: 0 26px 60px rgba(0,0,0,.32); }
+.tool-ico {
+  width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center;
+  font-size: 25px; margin-bottom: 20px;
+  background: color-mix(in oklab, var(--ember) 16%, transparent);
+}
+.tool-card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -.01em; }
+.tool-card p { margin: 0; color: var(--dim); font-size: 13.5px; line-height: 1.75; min-height: 3.4em; }
+.tool-arrow {
+  margin-top: 18px; display: inline-flex; align-items: center; gap: 8px;
+  color: var(--amber); font: 600 12.5px/1 "JetBrains Mono", monospace; letter-spacing: .1em;
+}
+.tool-card:hover .tool-arrow { gap: 14px; }
+.tool-arrow span { transition: gap .3s; }
+
+/* posts */
+.posts-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+.post-card {
+  grid-column: span 4; position: relative; text-decoration: none;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 26px 24px; border-radius: 20px;
+  border: 1px solid var(--line); background: var(--panel);
+  transition: transform .5s cubic-bezier(.2,.9,.25,1), border-color .4s, background .4s;
+}
+.post-card.wide { grid-column: span 6; }
+.post-card:hover { transform: translateY(-6px); border-color: color-mix(in oklab, var(--mint) 50%, transparent); background: color-mix(in oklab, var(--panel) 88%, var(--mint)); }
+.post-top { display: flex; align-items: center; gap: 10px; font: 500 11.5px/1 "JetBrains Mono", monospace; color: var(--dim); }
+.post-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); }
+.post-card h3 { margin: 0; font-size: clamp(17px, 2vw, 21px); line-height: 1.42; letter-spacing: -.012em; }
+.post-card .excerpt { color: var(--dim); font-size: 13.5px; line-height: 1.8; margin: 0; }
+.tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; padding-top: 8px; }
+.tag {
+  padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--dim);
+  font: 500 11px/1 "JetBrains Mono", monospace;
+  transition: color .25s, border-color .25s, transform .25s;
+}
+.post-card:hover .tag { color: var(--mint); border-color: color-mix(in oklab, var(--mint) 45%, transparent); transform: translateY(-2px); }
+.post-read {
+  position: absolute; right: 22px; top: 22px;
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--line); display: grid; place-items: center;
+  color: var(--dim); font-size: 15px;
+  transition: background .3s, color .3s, transform .3s;
+}
+.post-card:hover .post-read { background: var(--mint); color: #06251c; transform: rotate(-45deg); }
+@media (max-width: 1020px) { .post-card, .post-card.wide { grid-column: span 6; } }
+@media (max-width: 680px) { .post-card, .post-card.wide { grid-column: span 12; } }
+
+/* style gallery */
+.style-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.style-card {
+  position: relative; display: block; text-decoration: none;
+  aspect-ratio: 4/3.1; border-radius: 18px; overflow: hidden;
+  border: 1px solid var(--line);
+  transition: transform .5s cubic-bezier(.2,.9,.25,1), box-shadow .5s;
+}
+.style-card:hover { transform: translateY(-8px) rotate(-1deg); box-shadow: 0 30px 70px rgba(0,0,0,.4); }
+.style-thumb { position: absolute; inset: 0; }
+.style-meta {
+  position: absolute; inset: auto 0 0 0; padding: 18px 18px 16px;
+  background: linear-gradient(transparent, rgba(8,10,18,.88) 62%);
+  color: #fff; transform: translateY(8px); transition: transform .4s ease;
+}
+.style-card:hover .style-meta { transform: none; }
+.style-meta h4 { margin: 0 0 5px; font-size: 16px; letter-spacing: -.01em; }
+.style-meta p { margin: 0; font: 400 11px/1.6 "JetBrains Mono", monospace; opacity: .72; }
+.style-badge {
+  position: absolute; top: 13px; left: 13px; z-index: 2;
+  padding: 6px 11px; border-radius: 999px;
+  background: rgba(10,12,20,.62); backdrop-filter: blur(8px);
+  color: #fff; font: 500 11px/1 "JetBrains Mono", monospace; letter-spacing: .12em;
+}
+/* thumbs */
+.thumb-cyber { background: linear-gradient(140deg, #12021f, #2b0a4e 45%, #00e5ff22), radial-gradient(circle at 78% 22%, #ff2bd6aa, transparent 55%); }
+.thumb-glass { background: linear-gradient(140deg, #2337ff, #a15bff 48%, #ff8a5c); }
+.thumb-brutal { background: repeating-linear-gradient(45deg, #ffd23f 0 26px, #161616 26px 52px); }
+.thumb-terminal { background: #030a05, radial-gradient(circle at 30% 30%, #0c3d1c, #030a05); background-blend-mode: multiply; }
+.thumb-retro { background: linear-gradient(180deg, #2b1055, #7816a5 52%, #ff6ec7 72%, #ffd166 92%); }
+.thumb-win98 { background: linear-gradient(180deg, #3a6ea5 0 55%, #c0c0c0 55%); }
+.thumb-nature { background: linear-gradient(150deg, #e9e2d0, #cbbfa3 45%, #6a7b5c); }
+.thumb-swiss { background: linear-gradient(135deg, #f2f0eb 0 62%, #e13223 62%); }
+.thumb-anime { background: linear-gradient(150deg, #ffe3f1, #b8e1ff 55%, #e8d5ff); }
+.thumb-lab { background: conic-gradient(from 210deg, #0a0e17, #ff7847, #6ee7c8, #b39cff, #0a0e17); }
+
+/* stats strip */
+.stats-strip {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 22px; overflow: hidden;
+}
+.stat { background: var(--bg); padding: 34px 26px; }
+.stat b { display: block; font: 700 clamp(30px, 4vw, 48px)/1 "Space Grotesk", sans-serif; color: var(--mint); }
+.stat b small { font-size: .5em; color: var(--amber); margin-left: 4px; }
+.stat span { display: block; margin-top: 10px; font: 500 11.5px/1.5 "JetBrains Mono", monospace; color: var(--dim); letter-spacing: .12em; }
+
+/* timeline / about */
+.about-wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: clamp(28px, 5vw, 70px); align-items: start; }
+@media (max-width: 900px) { .about-wrap { grid-template-columns: 1fr; } }
+.timeline { position: relative; padding-left: 26px; }
+.timeline::before {
+  content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px;
+  background: linear-gradient(var(--ember), var(--mint), transparent);
+}
+.tl-item { position: relative; padding-bottom: 30px; }
+.tl-item::before {
+  content: ""; position: absolute; left: -26px; top: 5px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--bg); border: 3px solid var(--ember);
+}
+.tl-item h4 { margin: 0 0 6px; font-size: 16px; }
+.tl-item p { margin: 0; color: var(--dim); font-size: 13.5px; line-height: 1.8; }
+.tl-item time { font: 500 11px/1 "JetBrains Mono", monospace; color: var(--amber); letter-spacing: .14em; }
+.term-card {
+  border-radius: 20px; overflow: hidden; border: 1px solid var(--line);
+  background: #05080d; box-shadow: 0 30px 80px rgba(0,0,0,.4);
+}
+.term-bar {
+  display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+  background: #0c1119; border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.term-bar i { width: 11px; height: 11px; border-radius: 50%; }
+.term-bar i:nth-child(1) { background: #ff5f57; }
+.term-bar i:nth-child(2) { background: #febc2e; }
+.term-bar i:nth-child(3) { background: #28c840; }
+.term-bar span { margin-left: 10px; font: 400 11px/1 "JetBrains Mono", monospace; color: #66707f; }
+.term-body { padding: 22px 20px; font: 400 13px/1.9 "JetBrains Mono", monospace; color: #b9c3d2; min-height: 280px; }
+.term-body .c-ember { color: var(--ember); }
+.term-body .c-mint { color: var(--mint); }
+.term-body .c-violet { color: var(--violet); }
+.term-body .c-dim { color: #5b6572; }
+
+/* footer */
+footer {
+  border-top: 1px solid var(--line);
+  padding: clamp(56px, 8vw, 90px) clamp(18px, 5vw, 40px) 36px;
+  background: linear-gradient(transparent, color-mix(in oklab, var(--bg) 82%, var(--ember)));
+}
+.foot-inner { max-width: 1240px; margin: 0 auto; }
+.foot-big {
+  font: 700 clamp(42px, 9vw, 120px)/.95 "Space Grotesk", sans-serif;
+  letter-spacing: -.04em; margin: 0 0 36px;
+  background: linear-gradient(120deg, var(--fg) 30%, color-mix(in oklab, var(--fg) 30%, var(--ember)));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.foot-links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 34px; }
+.foot-links a {
+  padding: 10px 18px; border: 1px solid var(--line); border-radius: 999px;
+  text-decoration: none; font-size: 13px; color: var(--dim);
+  transition: all .3s ease;
+}
+.foot-links a:hover { color: var(--fg); border-color: var(--ember); transform: translateY(-3px); }
+.foot-bottom {
+  display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between;
+  padding-top: 24px; border-top: 1px solid var(--line);
+  font: 400 11.5px/1.8 "JetBrains Mono", monospace; color: var(--dim);
+}
+.egg-hint kbd {
+  padding: 2px 7px; border: 1px solid var(--line); border-radius: 6px;
+  font: inherit; color: var(--amber);
+}
+
+/* rainbow party mode */
+body.party {
+  animation: party-bg 7s linear infinite;
+}
+@keyframes party-bg {
+  0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); }
+}
+body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
+@keyframes party-jump { to { transform: translateY(-12px) rotate(3deg); } }
+</style>
+</head>
+<body>
+
+<!-- ================= preloader ================= -->
+<div id="preloader">
+  <div class="pre-logo" id="preLogo">XVCENH</div>
+  <div class="pre-bar"><i id="preBar"></i></div>
+  <div class="pre-tip">LOADING SUPER BLOG INTERFACE</div>
+</div>
+
+<!-- ================= topbar ================= -->
+<nav class="topbar">
+  <a class="brand" href="index.html" id="brandLogo"><span class="brand-orb"></span>xvcenh<span style="color:var(--ember)">.</span>blog</a>
+  <div class="top-links">
+    <a href="#tools">开源工具</a>
+    <a href="#posts">最新文章</a>
+    <a href="#styles">风格展馆</a>
+    <a href="#about">关于</a>
+    <a href="lab.html">🧪 实验室</a>
+  </div>
+  <div class="top-actions">
+    <button class="kbd-btn" id="paletteBtn">⌘<span>K 命令面板</span></button>
+    <button class="icon-btn" id="themeBtn" title="切换明暗">◐</button>
+    <a class="icon-btn" href="https://github.com/xvcenh" title="GitHub" style="text-decoration:none">⌘</a>
+  </div>
+</nav>
+
+<!-- ================= hero ================= -->
+<header class="hero">
+  <canvas class="hero-aurora" id="heroAurora"></canvas>
+  <canvas class="hero-stars interactive" id="heroStars"></canvas>
+  <div class="hero-inner">
+    <div class="hero-tag"><i></i>SUPER BLOG INTERFACE · v3.0 · 炫技版</div>
+    <h1 id="heroTitle"><span class="ch">X</span><span class="ch">V</span><span class="ch accent">C</span><span class="ch">E</span><span class="ch">N</span><span class="ch accent">H</span></h1>
+    <p class="hero-sub"><span id="typedTarget"></span></p>
+    <p class="hero-desc">
+      这是一个把「博客」当成「作品」来做的实验性界面 —— 10 种截然不同的风格子页面、
+      自研 Canvas 特效引擎、命令面板、彩蛋系统，以及从开源社区移植来的经典交互。
+      每一次滚动、悬停与点击，都应该有一点惊喜。
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-primary fx-ripple" data-magnetic href="#styles">进入风格展馆 <span>→</span></a>
+      <a class="btn btn-ghost fx-ripple" data-magnetic href="lab.html">🧪 打开炫技实验室</a>
+    </div>
+    <div class="hero-meta">
+      <div><b><span class="counter" data-target="10">0</span></b><span>STYLE PAGES</span></div>
+      <div><b><span class="counter" data-target="13">0</span></b><span>CANVAS FX</span></div>
+      <div><b><span class="counter" data-target="42">0</span></b><span>TECH POSTS</span></div>
+      <div><b><span class="counter" data-target="4">0</span></b><span>OSS TOOLS</span></div>
+      <div><b><span class="counter" data-target="0" data-suffix="KB">0</span></b><span>FRAMEWORK DEPS</span></div>
+    </div>
+  </div>
+  <div class="scroll-hint"><span>SCROLL</span><i></i></div>
+</header>
+
+<!-- ================= marquee ================= -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track" id="marqTrack">
+    <span>🎨 10 种风格子页面</span><span>✦</span>
+    <span>⚡ CANVAS FX ENGINE</span><span>✦</span>
+    <span>⌨ COMMAND PALETTE ⌘K</span><span>✦</span>
+    <span>🥚 KONAMI CODE 彩蛋</span><span>✦</span>
+    <span>🌙 LIGHT / DARK</span><span>✦</span>
+    <span>📦 移植开源项目 6+</span><span>✦</span>
+    <span>♿ prefers-reduced-motion</span><span>✦</span>
+    <span>🚀 GITHUB PAGES READY</span><span>✦</span>
+  </div>
+</div>
+
+<!-- ================= tools ================= -->
+<section class="section" id="tools">
+  <div class="sec-head">
+    <div>
+      <div class="sec-kicker reveal">OPEN SOURCE TOOLS</div>
+      <h2 class="sec-title reveal">我做的那些 <em>小玩意</em></h2>
+    </div>
+    <p class="sec-note reveal">四个开源项目 —— 从 AI 场景引擎到终端村庄模拟器。全部开源，随便玩。</p>
+  </div>
+  <div class="tools-grid">
+    <a class="tool-card reveal-scale" data-tilt href="https://xvcenh.github.io/svg-scene-engine/">
+      <div class="tool-ico">🎭</div>
+      <h3>SVG Scene Engine</h3>
+      <p>AI 驱动的 2D 场景合成引擎，一句话生成可编辑的 SVG 场景插画。</p>
+      <div class="tool-arrow"><span>查看项目</span> →</div>
+    </a>
+    <a class="tool-card reveal-scale" data-tilt href="https://xvcenh.github.io/svg-asset-library/">
+      <div class="tool-ico">🎨</div>
+      <h3>SVG Asset Library</h3>
+      <p>50+ 奇幻风格 SVG 素材库，可拖拽、可换色、可直接复制进设计稿。</p>
+      <div class="tool-arrow"><span>查看项目</span> →</div>
+    </a>
+    <a class="tool-card reveal-scale" data-tilt href="https://github.com/xvcenh/claudescan">
+      <div class="tool-ico">🔍</div>
+      <h3>ClaudeScan</h3>
+      <p>AI 编程助手配置生成器，扫描仓库并产出最优的助手配置文件。</p>
+      <div class="tool-arrow"><span>查看项目</span> →</div>
+    </a>
+    <a class="tool-card reveal-scale" data-tilt href="https://github.com/xvcenh/liltown">
+      <div class="tool-ico">🏘️</div>
+      <h3>LilTown</h3>
+      <p>终端里的 AI 村庄模拟器，一群 Agent 在你的终端里过日子。</p>
+      <div class="tool-arrow"><span>查看项目</span> →</div>
+    </a>
+  </div>
+</section>
+
+<!-- ================= posts ================= -->
+<section class="section" id="posts" style="padding-top:0">
+  <div class="sec-head">
+    <div>
+      <div class="sec-kicker reveal">LATEST WRITING</div>
+      <h2 class="sec-title reveal">最新 <em>文章</em></h2>
+    </div>
+    <p class="sec-note reveal">软件、硬件、数据库、部署、工具 —— 五大技术领域的实战踩坑与解决方案。</p>
+  </div>
+  <div class="posts-grid">
+    <a class="post-card wide reveal" href="https://xvcenh.github.io/%E5%BC%80%E6%BA%90/%E7%BB%8F%E9%AA%8C/2026/05/04/open-source-growth.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot"></span>2026-05-04 · 开源实战</div>
+      <h3>个人开发者如何让开源项目从 0 到 1000 Star</h3>
+      <p class="excerpt">冷启动、定位、README 工程、社区运营 —— 一个 solo 开发者的开源增长完整复盘。</p>
+      <div class="tags"><span class="tag">开源</span><span class="tag">经验</span><span class="tag">增长</span></div>
+    </a>
+    <a class="post-card wide reveal" href="https://xvcenh.github.io/%E5%89%8D%E7%AB%AF/%E6%80%A7%E8%83%BD/2026/05/04/web-performance-optimization.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--mint)"></span>2026-05-04 · 前端性能</div>
+      <h3>Web 性能优化实战：从 Lighthouse 60 分到 95 分</h3>
+      <p class="excerpt">逐条拆解性能面板：关键渲染路径、图片策略、JS 执行与缓存，把分数一点点磨上去。</p>
+      <div class="tags"><span class="tag">前端</span><span class="tag">性能</span><span class="tag">Lighthouse</span></div>
+    </a>
+    <a class="post-card reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/devops/2026/05/03/github-actions-cicd.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--violet)"></span>2026-05-03</div>
+      <h3>GitHub Actions 自动化 CI/CD 实战</h3>
+      <p class="excerpt">从零搭建生产级流水线：构建、测试、缓存、密钥管理与自动发布。</p>
+      <div class="tags"><span class="tag">部署</span><span class="tag">DevOps</span></div>
+    </a>
+    <a class="post-card reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/ai/2026/05/03/ai-coding-best-practices.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--amber)"></span>2026-05-03</div>
+      <h3>AI 辅助编程最佳实践：从 Copilot 到 Cursor</h3>
+      <p class="excerpt">提示词工程、上下文管理与人机分工 —— 让 AI 真正提效而不是制造债务。</p>
+      <div class="tags"><span class="tag">工具</span><span class="tag">AI</span></div>
+    </a>
+    <a class="post-card reveal" href="https://xvcenh.github.io/%E8%BD%AF%E4%BB%B6/%E9%83%A8%E7%BD%B2/2026/03/19/vue-nginx-deployment-issue.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot"></span>2026-03-19</div>
+      <h3>Vue 部署到 Nginx 后页面空白的解决方案</h3>
+      <p class="excerpt">路由模式、base 路径、静态资源 404 —— 一次排查三个坑。</p>
+      <div class="tags"><span class="tag">软件</span><span class="tag">部署</span></div>
+    </a>
+    <a class="post-card reveal" href="https://xvcenh.github.io/%E5%B7%A5%E5%85%B7/2026/03/19/git-workflow.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--mint)"></span>2026-03-19</div>
+      <h3>Git 工作流最佳实践与常见问题</h3>
+      <p class="excerpt">分支模型、rebase vs merge、冲突处理与历史清理的实用指南。</p>
+      <div class="tags"><span class="tag">工具</span><span class="tag">Git</span></div>
+    </a>
+    <a class="post-card reveal" href="https://xvcenh.github.io/%E9%83%A8%E7%BD%B2/2026/03/19/docker-deployment.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--violet)"></span>2026-03-19</div>
+      <h3>Docker 容器部署常见问题解决</h3>
+      <p class="excerpt">网络、挂载、时区、日志与镜像瘦身 —— 容器化部署的高频问题清单。</p>
+      <div class="tags"><span class="tag">部署</span><span class="tag">Docker</span></div>
+    </a>
+    <a class="post-card reveal" href="https://xvcenh.github.io/%E6%95%B0%E6%8D%AE%E5%BA%93/2026/03/19/mysql-slow-query.html">
+      <div class="post-read">↗</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--amber)"></span>2026-03-19</div>
+      <h3>MySQL 慢查询优化实战</h3>
+      <p class="excerpt">EXPLAIN 输出解读、索引失效场景与 SQL 改写技巧。</p>
+      <div class="tags"><span class="tag">数据库</span><span class="tag">MySQL</span></div>
+    </a>
+    <a class="post-card reveal" href="lab.html">
+      <div class="post-read">→</div>
+      <div class="post-top"><span class="post-dot" style="background:var(--ember)"></span>互动实验</div>
+      <h3>🧪 炫技实验室：13 种 Canvas 特效现场把玩</h3>
+      <p class="excerpt">星野、极光、点阵星球、烟花、数字雨、超空间跃迁…… 全部可交互、可调参。</p>
+      <div class="tags"><span class="tag">Canvas</span><span class="tag">互动</span><span class="tag">彩蛋</span></div>
+    </a>
+  </div>
+</section>
+
+<!-- ================= style gallery ================= -->
+<section class="section" id="styles" style="padding-top:0">
+  <div class="sec-head">
+    <div>
+      <div class="sec-kicker reveal">STYLE GALLERY · 10 PAGES</div>
+      <h2 class="sec-title reveal">风格<em>展馆</em></h2>
+    </div>
+    <p class="sec-note reveal">同一个博客，十种人格。点进去看看同一份内容如何在完全不同的视觉语言里重生。</p>
+  </div>
+  <div class="style-grid">
+    <a class="style-card reveal-scale" href="cyber.html"><div class="style-thumb thumb-cyber"></div><div class="style-badge">01 / CYBER</div><div class="style-meta"><h4>赛博霓虹</h4><p>GLITCH · MATRIX RAIN · NEON</p></div></a>
+    <a class="style-card reveal-scale" href="glass.html"><div class="style-thumb thumb-glass"></div><div class="style-badge">02 / GLASS</div><div class="style-meta"><h4>极光玻璃</h4><p>GLASSMORPHISM · BOKEH</p></div></a>
+    <a class="style-card reveal-scale" href="brutal.html"><div class="style-thumb thumb-brutal"></div><div class="style-badge">03 / BRUTAL</div><div class="style-meta"><h4>粗野主义</h4><p>NEO-BRUTALISM · RAW</p></div></a>
+    <a class="style-card reveal-scale" href="terminal.html"><div class="style-thumb thumb-terminal"></div><div class="style-badge">04 / TERM</div><div class="style-meta"><h4>黑客终端</h4><p>INTERACTIVE SHELL</p></div></a>
+    <a class="style-card reveal-scale" href="retro.html"><div class="style-thumb thumb-retro"></div><div class="style-badge">05 / RETRO</div><div class="style-meta"><h4>蒸汽波</h4><p>VAPORWAVE · SYNTHWAVE</p></div></a>
+    <a class="style-card reveal-scale" href="win98.html"><div class="style-thumb thumb-win98"></div><div class="style-badge">06 / WIN98</div><div class="style-meta"><h4>Win98 桌面</h4><p>98.CSS · DRAGGABLE WINDOWS</p></div></a>
+    <a class="style-card reveal-scale" href="nature.html"><div class="style-thumb thumb-nature"></div><div class="style-badge">07 / NATURE</div><div class="style-meta"><h4>水墨自然</h4><p>PAPER · PETALS · INK</p></div></a>
+    <a class="style-card reveal-scale" href="swiss.html"><div class="style-thumb thumb-swiss"></div><div class="style-badge">08 / SWISS</div><div class="style-meta"><h4>瑞士排版</h4><p>GRID · TYPOGRAPHY</p></div></a>
+    <a class="style-card reveal-scale" href="anime.html"><div class="style-thumb thumb-anime"></div><div class="style-badge">09 / ANIME</div><div class="style-meta"><h4>日系二次元</h4><p>SAKURA · TYPEWRITER</p></div></a>
+    <a class="style-card reveal-scale" href="lab.html"><div class="style-thumb thumb-lab"></div><div class="style-badge">10 / LAB</div><div class="style-meta"><h4>炫技实验室</h4><p>ALL FX · PLAYGROUND</p></div></a>
+  </div>
+</section>
+
+<!-- ================= stats ================= -->
+<section class="section" style="padding-top:0">
+  <div class="stats-strip reveal-scale">
+    <div class="stat"><b><span class="counter" data-target="128">0</span>+</b><span>COMMITS THIS YEAR</span></div>
+    <div class="stat"><b><span class="counter" data-target="13">0</span></b><span>RENDERERS IN FX.JS</span></div>
+    <div class="stat"><b><span class="counter" data-target="60">0</span><small>fps</small></b><span>TARGET FRAMERATE</span></div>
+    <div class="stat"><b><span class="counter" data-target="100">0</span><small>%</small></b><span>零框架 · 原生实现</span></div>
+  </div>
+</section>
+
+<!-- ================= about ================= -->
+<section class="section" id="about" style="padding-top:0">
+  <div class="sec-head">
+    <div>
+      <div class="sec-kicker reveal">ABOUT & TIMELINE</div>
+      <h2 class="sec-title reveal">关于 <em>xvcenh</em></h2>
+    </div>
+    <p class="sec-note reveal">徐辰 · 软件开发 / 运维部署 / 数据库管理 —— 用写博客的方式把踩过的坑变成别人的捷径。</p>
+  </div>
+  <div class="about-wrap">
+    <div class="timeline">
+      <div class="tl-item reveal"><time>2026 · NOW</time><h4>超级博客界面 v3</h4><p>把博客做成作品：10 种风格、自研 Canvas 引擎、命令面板与彩蛋系统。</p></div>
+      <div class="tl-item reveal"><time>2026 · 05</time><h4>开源增长 0 → 1000 Star</h4><p>复盘个人开发者做开源的完整方法论，从定位到社区运营。</p></div>
+      <div class="tl-item reveal"><time>2026 · 03</time><h4>运维与数据库系列</h4><p>Docker / Nginx / Git / MySQL 慢查询 —— 实战踩坑合集上线。</p></div>
+      <div class="tl-item reveal"><time>2025</time><h4>SVG 系列工具发布</h4><p>SVG Scene Engine 与 Asset Library 开源，服务插画与设计场景。</p></div>
+    </div>
+    <div class="term-card reveal-scale">
+      <div class="term-bar"><i></i><i></i><i></i><span>xvcenh@blog: ~</span></div>
+      <div class="term-body" id="aboutTerm">
+        <div><span class="c-mint">➜</span> <span class="c-violet">~</span> whoami</div>
+        <div class="c-ember">xvcenh（徐辰） — 软件开发 / 运维 / 数据库</div>
+        <div style="height:10px"></div>
+        <div><span class="c-mint">➜</span> <span class="c-violet">~</span> cat interests.txt</div>
+        <div class="c-dim">前端工程 · 性能优化 · DevOps · AI 工具链 · 开源</div>
+        <div style="height:10px"></div>
+        <div><span class="c-mint">➜</span> <span class="c-violet">~</span> ./show-off.sh</div>
+        <div>✨ 10 风格页面 · 🧪 13 种特效 · ⌨️ 命令面板 · 🥚 彩蛋</div>
+        <div style="height:10px"></div>
+        <div><span class="c-mint">➜</span> <span class="c-violet">~</span> <span class="fx-cursor">▌</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= footer ================= -->
+<footer>
+  <div class="foot-inner">
+    <h2 class="foot-big">LET'S BUILD<br>SOMETHING LOUD.</h2>
+    <div class="foot-links">
+      <a href="https://github.com/xvcenh">GitHub</a>
+      <a href="https://github.com/xvcenh/xvcenh.github.io">博客源码</a>
+      <a href="lab.html">炫技实验室</a>
+      <a href="terminal.html">终端模式</a>
+      <a href="cyber.html">赛博模式</a>
+      <a href="#styles">全部风格</a>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 xvcenh · 零框架 · 原生 Canvas · 可部署于 GitHub Pages</div>
+      <div class="egg-hint">🥚 彩蛋提示：试试 <kbd>↑↑↓↓←→←→BA</kbd> 或 <kbd>⌘K</kbd></div>
+    </div>
+  </div>
+</footer>
+
+<!-- vendor libs -->
+<script src="assets/vendor/canvas-confetti.min.js"></script>
+<script src="assets/vendor/typed.umd.js"></script>
+<script src="assets/vendor/vanilla-tilt.min.js"></script>
+<script src="assets/fx.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- preloader ---------- */
+  var bar = document.getElementById('preBar'), pre = document.getElementById('preloader');
+  var p = 0;
+  var preTick = setInterval(function () {
+    p = Math.min(100, p + Math.random() * 22);
+    bar.style.width = p + '%';
+    if (p >= 100) {
+      clearInterval(preTick);
+      setTimeout(function () { pre.classList.add('done'); }, 260);
+    }
+  }, 130);
+
+  /* ---------- hero letters ---------- */
+  document.querySelectorAll('#heroTitle .ch').forEach(function (ch, i) {
+    ch.style.animationDelay = (0.15 + i * 0.075) + 's';
+    ch.addEventListener('mouseenter', function () {
+      FX.scramble(ch, { text: ch.textContent, speed: 8 });
+    });
+    ch.style.cursor = 'pointer';
+    ch.setAttribute('data-hover', '');
+  });
+
+  /* ---------- hero canvases ---------- */
+  FX.aurora(document.getElementById('heroAurora'), {
+    hues: [[18, 92, 58], [330, 84, 56], [168, 88, 52], [268, 80, 56]],
+    alpha: 0.22, width: 120, blur: 34
+  });
+  FX.starfield(document.getElementById('heroStars'), {
+    count: 260, speed: 0.3, shootEvery: 2400
+  });
+
+  /* ---------- typed subtitle ---------- */
+  if (window.Typed) {
+    new Typed('#typedTarget', {
+      strings: [
+        '把「博客」做成「作品」的人 ✦',
+        '软件 · 硬件 · 数据库 · 部署 · 工具',
+        '10 种风格页面，同一份内容的 10 次重生',
+        '按下 ⌘K，这个博客会听你指挥',
+        'Hi, I\'m xvcenh. Let\'s break the default UI.'
+      ],
+      typeSpeed: 48, backSpeed: 22, backDelay: 1900, loop: true, smartBackspace: true
+    });
+  } else {
+    document.getElementById('typedTarget').textContent = '把「博客」做成「作品」的人 ✦';
+  }
+
+  /* ---------- counters / reveal ---------- */
+  document.querySelectorAll('.counter').forEach(function (el) { FX.counter(el); });
+  FX.reveal('.reveal, .reveal-scale, .reveal-left');
+  FX.smoothScroll();
+  FX.ripple();
+
+  /* ---------- magnetic buttons & tilt cards ---------- */
+  document.querySelectorAll('[data-magnetic]').forEach(function (el) { FX.magnetic(el); });
+  if (window.VanillaTilt) {
+    VanillaTilt.init(document.querySelectorAll('[data-tilt]'), {
+      max: 6, speed: 600, glare: true, 'max-glare': 0.16, scale: 1.015
+    });
+  }
+
+  /* ---------- marquee duplication ---------- */
+  var track = document.getElementById('marqTrack');
+  track.innerHTML += track.innerHTML;
+
+  /* ---------- theme toggle ---------- */
+  var themeBtn = document.getElementById('themeBtn');
+  themeBtn.addEventListener('click', function () {
+    var root = document.documentElement;
+    var next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    root.dataset.theme = next;
+    FX.toast(next === 'light' ? '☀️ 已切换到明亮模式' : '🌙 已切换到暗黑模式');
+  });
+
+  /* ---------- command palette ---------- */
+  var pal = FX.palette([
+    { icon: '🏠', label: '回到首页', hint: 'index.html', run: function () { location.href = 'index.html'; } },
+    { icon: '🧪', label: '炫技实验室', hint: 'lab.html', keywords: 'lab effects 特效', run: function () { location.href = 'lab.html'; } },
+    { icon: '🌃', label: '赛博霓虹风格', hint: 'cyber.html', keywords: 'cyber 赛博', run: function () { location.href = 'cyber.html'; } },
+    { icon: '🫧', label: '极光玻璃风格', hint: 'glass.html', keywords: 'glass 玻璃', run: function () { location.href = 'glass.html'; } },
+    { icon: '🧱', label: '粗野主义风格', hint: 'brutal.html', keywords: 'brutal', run: function () { location.href = 'brutal.html'; } },
+    { icon: '🖥️', label: '黑客终端风格', hint: 'terminal.html', keywords: 'terminal 终端', run: function () { location.href = 'terminal.html'; } },
+    { icon: '📼', label: '蒸汽波风格', hint: 'retro.html', keywords: 'retro 蒸汽波', run: function () { location.href = 'retro.html'; } },
+    { icon: '💾', label: 'Win98 桌面风格', hint: 'win98.html', keywords: 'win98 windows', run: function () { location.href = 'win98.html'; } },
+    { icon: '🍃', label: '水墨自然风格', hint: 'nature.html', keywords: 'nature 水墨', run: function () { location.href = 'nature.html'; } },
+    { icon: '🧭', label: '瑞士排版风格', hint: 'swiss.html', keywords: 'swiss 瑞士', run: function () { location.href = 'swiss.html'; } },
+    { icon: '🌸', label: '日系二次元风格', hint: 'anime.html', keywords: 'anime 二次元', run: function () { location.href = 'anime.html'; } },
+    { icon: '🌓', label: '切换明暗主题', hint: 'theme', keywords: 'theme dark light', run: function () { themeBtn.click(); } },
+    { icon: '🎆', label: '放一场烟花', hint: 'confetti', keywords: 'firework party', run: function () { FX.confetti(); FX.toast('🎆 砰！'); } },
+    { icon: '🎉', label: '派对模式（彩蛋）', hint: 'party', keywords: 'party rainbow', run: function () { toggleParty(); } },
+    { icon: '📜', label: '查看本站源码', hint: 'github', run: function () { window.open('https://github.com/xvcenh/xvcenh.github.io', '_blank'); } }
+  ], { placeholder: '跳转页面 / 执行命令…' });
+  document.getElementById('paletteBtn').addEventListener('click', pal.open);
+
+  /* ---------- easter eggs ---------- */
+  var party = false;
+  function toggleParty() {
+    party = !party;
+    document.body.classList.toggle('party', party);
+    if (party) {
+      FX.confetti(innerWidth * 0.3, innerHeight * 0.35);
+      FX.confetti(innerWidth * 0.7, innerHeight * 0.4);
+      FX.toast('🎉 派对模式已开启！再按一次关闭');
+    } else FX.toast('派对模式已关闭');
+  }
+  FX.konami(function () {
+    toggleParty();
+    if (window.confetti) {
+      var end = Date.now() + 2200;
+      (function frame() {
+        confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 } });
+        confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 } });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+    FX.toast('🥚 KONAMI CODE 已解锁：↑↑↓↓←→←→BA');
+  });
+
+  /* logo 点击 5 次 */
+  var logoClicks = 0, logoTimer = 0;
+  document.getElementById('brandLogo').addEventListener('click', function (e) {
+    e.preventDefault();
+    logoClicks++;
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(function () { logoClicks = 0; }, 1600);
+    if (logoClicks >= 5) {
+      logoClicks = 0;
+      FX.confetti(e.clientX, e.clientY);
+      FX.toast('🥚 找到隐藏彩蛋：Logo 连点！');
+    } else {
+      scrollTo({ top: 0, behavior: FX.REDUCED ? 'auto' : 'smooth' });
+    }
+  });
+
+  /* ---------- custom cursor ---------- */
+  FX.cursor({ trail: true, trailColor: 'rgba(255,120,71,.65)' });
+
+  /* ---------- keyboard shortcut hint ---------- */
+  addEventListener('keydown', function (e) {
+    if (e.key === '?' && !e.metaKey && !e.ctrlKey && !/input|textarea/i.test(e.target.tagName)) {
+      FX.toast('⌨️ 快捷键：<b>⌘K</b> 命令面板 · <b>↑↑↓↓←→←→BA</b> 彩蛋 · <b>?</b> 帮助');
+    }
+  });
+})();
+</script>
+</body>
+</html>
