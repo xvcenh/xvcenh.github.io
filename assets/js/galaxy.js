@@ -116,8 +116,8 @@
         const ringTexBlue = createRingTexture('rgba(100,170,240,0.7)');
         const ringTexGold = createRingTexture('rgba(240,180,100,0.7)');
 
-        // ==================== 星空背景 ====================
-        const starCount = 2800;
+        // ==================== 星空背景 - 优化版 ====================
+        const starCount = 800; // 从2800降低到800
         const starGeom = new THREE.BufferGeometry();
         const starPositions = new Float32Array(starCount * 3);
         const starColors = new Float32Array(starCount * 3);
@@ -129,31 +129,22 @@
             starPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
             starPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
             starPositions[i * 3 + 2] = radius * Math.cos(phi);
-            const colorChoice = Math.random();
-            if (colorChoice < 0.08) {
-                starColors[i * 3] = 0.7; starColors[i * 3 + 1] = 0.75; starColors[i * 3 + 2] = 1.0;
-            } else if (colorChoice < 0.18) {
-                starColors[i * 3] = 0.9; starColors[i * 3 + 1] = 0.85; starColors[i * 3 + 2] = 0.7;
-            } else if (colorChoice < 0.22) {
-                starColors[i * 3] = 1.0; starColors[i * 3 + 1] = 0.7; starColors[i * 3 + 2] = 0.5;
-            } else {
-                const brightness = 0.55 + Math.random() * 0.45;
-                starColors[i * 3] = brightness;
-                starColors[i * 3 + 1] = brightness;
-                starColors[i * 3 + 2] = brightness;
-            }
-            starSizes[i] = 0.04 + Math.random() * 0.28;
+            const brightness = 0.6 + Math.random() * 0.4;
+            starColors[i * 3] = brightness;
+            starColors[i * 3 + 1] = brightness;
+            starColors[i * 3 + 2] = brightness;
+            starSizes[i] = 0.05 + Math.random() * 0.15;
         }
         starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
         starGeom.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
         starGeom.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
         const starMat = new THREE.PointsMaterial({
-            size: 0.12,
+            size: 0.08,
             vertexColors: true,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.85,
+            opacity: 0.7,
             sizeAttenuation: true,
         });
         const starField = new THREE.Points(starGeom, starMat);
@@ -256,7 +247,7 @@
 
         const coreDotsGroup = new THREE.Group();
         coreGroup.add(coreDotsGroup);
-        const coreDotCount = 180;
+        const coreDotCount = 80; // 从180降低到80
         const coreDotGeom = new THREE.BufferGeometry();
         const coreDotPositionsArr = new Float32Array(coreDotCount * 3);
         const coreDotData = [];
@@ -271,17 +262,17 @@
         }
         coreDotGeom.setAttribute('position', new THREE.BufferAttribute(coreDotPositionsArr, 3));
         const coreDotMat = new THREE.PointsMaterial({
-            size: 0.04,
+            size: 0.05,
             color: 0xa8d4f8,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.75,
+            opacity: 0.7,
         });
         const coreDots = new THREE.Points(coreDotGeom, coreDotMat);
         coreDotsGroup.add(coreDots);
 
-        const energyParticleCount = 120;
+        const energyParticleCount = 40; // 从120降低到40
         const energyGeom = new THREE.BufferGeometry();
         const energyPositionsArr = new Float32Array(energyParticleCount * 3);
         const energyData = [];
@@ -301,12 +292,12 @@
         }
         energyGeom.setAttribute('position', new THREE.BufferAttribute(energyPositionsArr, 3));
         const energyMat = new THREE.PointsMaterial({
-            size: 0.06,
+            size: 0.08,
             color: 0x90c8f0,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.5,
         });
         const energyParticles = new THREE.Points(energyGeom, energyMat);
         coreGroup.add(energyParticles);

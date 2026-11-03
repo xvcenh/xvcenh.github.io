@@ -13,9 +13,11 @@ title: xvcenh的博客
     <meta name="author" content="xvcenh">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <link rel="canonical" href="https://xvcenh.github.io/">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- 字体加载延迟，优先显示内容 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- 移除 JetBrains Mono，使用系统字体替代 -->
     {% seo %}
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
@@ -167,7 +169,7 @@ title: xvcenh的博客
         </div>
     </div>
 
-    <!-- Three.js Import Map -->
+    <!-- Three.js Import Map - 懒加载 -->
     <script type="importmap">
         {
             "imports": {
@@ -177,15 +179,21 @@ title: xvcenh的博客
         }
     </script>
 
-    <script type="module" src="/assets/js/galaxy.js"></script>
+    <!-- 3D场景懒加载 -->
+    <script type="module">
+        // 延迟加载3D场景
+        setTimeout(() => {
+            import('/assets/js/galaxy.js');
+        }, 1000);
+    </script>
 
     <!-- XVCENH 几何拼字动画（外置脚本） -->
     <script src="/assets/js/xvcenh.js"></script>
 
-    <!-- 星空 + 卡片效果 -->
+    <!-- 星空 + 卡片效果 - 优化版 -->
     <script>
     (function() {
-        // 星空粒子系统
+        // 星空粒子系统 - 简化版
         (function() {
             const c = document.querySelector('.stars-bg');
             if (!c || c.tagName !== 'CANVAS') return;
@@ -196,13 +204,13 @@ title: xvcenh的博客
                 w = c.width = window.innerWidth; h = c.height = window.innerHeight;
             }
             resize();
-            for (let i = 0; i < 80; i++) {
+            for (let i = 0; i < 40; i++) {
                 stars.push({
                     x: Math.random() * w, y: Math.random() * h,
-                    r: 0.3 + Math.random() * 1.2,
-                    vx: (Math.random() - 0.5) * 0.15,
-                    vy: (Math.random() - 0.5) * 0.15,
-                    a: 0.2 + Math.random() * 0.5,
+                    r: 0.2 + Math.random() * 0.8,
+                    vx: (Math.random() - 0.5) * 0.1,
+                    vy: (Math.random() - 0.5) * 0.1,
+                    a: 0.2 + Math.random() * 0.3,
                     blink: Math.random() * Math.PI * 2
                 });
             }
@@ -246,7 +254,7 @@ title: xvcenh的博客
             observer.observe(card);
         });
 
-        // 3D 倾斜
+        // 3D 倾斜 - 简化版
         let tiltedCard = null;
 
         contentSection.addEventListener('mousemove', (e) => {
@@ -265,7 +273,7 @@ title: xvcenh的博客
             const r = card.getBoundingClientRect();
             const x = (e.clientX - r.left) / r.width - 0.5;
             const y = (e.clientY - r.top) / r.height - 0.5;
-            card.style.transform = `translateY(0) rotateX(${y * -6}deg) rotateY(${x * 8}deg)`;
+            card.style.transform = `translateY(0) rotateX(${y * -4}deg) rotateY(${x * 5}deg)`;
         });
 
         contentSection.addEventListener('mouseleave', () => {
