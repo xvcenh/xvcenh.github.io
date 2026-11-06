@@ -7,3 +7,6 @@ vendor/
 
 # 本机 bundler 4 生成的锁文件会让 CI 的 Ruby 3.1 构建失败，不入库
 Gemfile.lock
+
+# AI 协作工具的本地记忆，不属站点内容
+.workbuddy/

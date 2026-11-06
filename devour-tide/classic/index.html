@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吞噬之潮 · Devour Tide</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <!-- ============ 主菜单 ============ -->
+  <div class="screen center" id="scr-menu">
+    <div class="title-wrap">
+      <h1 class="game-title">吞噬之潮</h1>
+      <div class="game-sub">D E V O U R &nbsp;·&nbsp; T I D E</div>
+    </div>
+    <div class="menu-grid">
+      <button class="btn big" data-act="solo"><span class="ico">🐟</span><b>单人远征</b><small>关卡模式 · 6 大场景 · 通关深渊</small></button>
+      <button class="btn big" data-act="coop"><span class="ico">🤝</span><b>双人合作</b><small>同屏并肩 · 共享进化 · 复活队友</small></button>
+      <button class="btn big" data-act="versus"><span class="ico">⚔️</span><b>双人竞争</b><small>抢食夺点 · 鱼尽之后 · 终局撕咬</small></button>
+      <button class="btn big" data-act="endless"><span class="ico">🌊</span><b>无尽生存</b><small>无限递增难度 · 本地纪录</small></button>
+    </div>
+    <div class="menu-row">
+      <button class="btn" data-act="customize">🎨 捏鱼工坊</button>
+      <button class="btn" data-act="settings">⚙️ 设置</button>
+      <button class="btn" data-act="howto">📖 玩法说明</button>
+    </div>
+    <div class="hint">P1：WASD 移动 · 空格 冲刺 · F 复活队友　|　P2：方向键 移动 · 回车 冲刺 · 右Shift 复活　|　Esc 暂停 · M 静音</div>
+  </div>
+
+  <!-- ============ 捏鱼工坊 ============ -->
+  <div class="screen center" id="scr-custom">
+    <h2 class="screen-title">🎨 捏鱼工坊</h2>
+    <div class="custom-wrap">
+      <div class="preview-box">
+        <canvas id="fishPreview" width="460" height="300"></canvas>
+        <div class="tab-row">
+          <button class="tab active" data-tab="0">P1 小鱼</button>
+          <button class="tab" data-tab="1">P2 小鱼</button>
+        </div>
+        <div class="preset-row">
+          <button class="btn small" data-act="savePreset">💾 保存预设</button>
+          <button class="btn small" data-act="loadPreset">📂 载入预设</button>
+          <button class="btn small" data-act="randomFish">🎲 随机生成</button>
+        </div>
+      </div>
+      <div class="control-box" id="customControls">
+        <label>名字 <input type="text" id="fcName" maxlength="10" value="小鱼"></label>
+        <label>鱼种
+          <select id="fcSpecies">
+            <option value="0">🐠 小丑鱼（高机动）</option>
+            <option value="1">🐡 河豚（高成长）</option>
+            <option value="2">🐟 旗鱼（高速度）</option>
+            <option value="3">💡 灯笼鱼（深海视野）</option>
+            <option value="4">🎐 水母（毒性体表）</option>
+            <option value="5">🦈 鲨鱼幼崽（吞噬力）</option>
+          </select>
+        </label>
+        <div class="two-col">
+          <label>主色 <input type="color" id="fcColor1" value="#ff9a4d"></label>
+          <label>副色 <input type="color" id="fcColor2" value="#ffd23f"></label>
+        </div>
+        <label>体型比例 <input type="range" id="fcHgt" min="0.22" max="0.62" step="0.01" value="0.34"><em id="fcHgtV">0.34</em></label>
+        <label>鳍形 <select id="fcFin"></select></label>
+        <label>尾形 <select id="fcTail"></select></label>
+        <label>眼型 <select id="fcEye"></select></label>
+        <label>花纹 <select id="fcPattern"></select></label>
+        <label>发光 <select id="fcGlow"></select></label>
+        <label>配饰 <select id="fcAcc"></select></label>
+      </div>
+    </div>
+    <div class="menu-row">
+      <button class="btn" data-act="customBack">← 返回主菜单</button>
+      <button class="btn primary" data-act="customSave">✔ 保存并返回</button>
+    </div>
+  </div>
+
+  <!-- ============ 设置 ============ -->
+  <div class="screen center" id="scr-settings">
+    <h2 class="screen-title">⚙️ 设置</h2>
+    <div class="control-box slim">
+      <label>音量 <input type="range" id="setVolume" min="0" max="1" step="0.05" value="0.7"><em id="setVolumeV">70%</em></label>
+      <label>粒子质量
+        <select id="setQuality">
+          <option value="2">高（华丽）</option>
+          <option value="1" selected>中（均衡）</option>
+          <option value="0">低（流畅优先）</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" id="setShake" checked> 屏幕震动</label>
+      <label class="check"><input type="checkbox" id="setFps"> 显示帧率</label>
+      <label class="check"><input type="checkbox" id="setTips" checked> 游戏提示</label>
+    </div>
+    <div class="menu-row">
+      <button class="btn" data-act="settingsBack">← 返回</button>
+    </div>
+  </div>
+
+  <!-- ============ 玩法说明 ============ -->
+  <div class="screen center" id="scr-howto">
+    <h2 class="screen-title">📖 玩法说明</h2>
+    <div class="howto-box">
+      <p><b>🐟 核心规则</b>：吞食比自己小的鱼成长，躲开比自己大的鱼。被咬会损失体型，体型过小会被吞食。</p>
+      <p><b>🃏 Rogue 进化</b>：吞食攒进化点，升级时三选一。凑齐同流派卡牌激活羁绊 —— 速度流 / 剧毒流 / 巨兽流 / 灵巧流 / 诅咒流。</p>
+      <p><b>🌍 场景机制</b>：珊瑚礁 → 荧光水母（电网！）→ 沉船暗流 → 冰海浮冰白雾 → 火山喷发 → 深渊黑暗。</p>
+      <p><b>🤝 合作</b>：队友倒下后靠近按 F / 右Shift 复活（消耗自身体型）。BOSS 需要两人同时咬住弱点。</p>
+      <p><b>⚔️ 竞争</b>：互相抢食抢进化点；当场上鱼被吃完，进入<b>终局撕咬</b> —— 互相撕咬，体型小的被吞掉。</p>
+      <p><b>🎮 操作</b>：P1 = WASD + 空格冲刺；P2 = 方向键 + 回车冲刺；支持手柄。</p>
+    </div>
+    <div class="menu-row"><button class="btn" data-act="howtoBack">← 返回</button></div>
+  </div>
+
+  <!-- ============ HUD ============ -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="player-card" id="pc0">
+        <div class="pc-name"><i class="dot p1"></i><span>P1</span></div>
+        <div class="bar"><i class="fill p1" id="pc0Size"></i></div>
+        <div class="bar thin"><i class="fill xp" id="pc0Xp"></i></div>
+        <div class="pc-meta"><span id="pc0Lv">Lv.1</span><span id="pc0Ep">0 EP</span><span id="pc0Combo"></span></div>
+        <div class="pc-cards" id="pc0Cards"></div>
+      </div>
+      <div class="obj-box">
+        <div class="obj-name" id="objName">第一关 · 初入浅滩</div>
+        <div class="bar obj"><i class="fill" id="objFill"></i></div>
+        <div class="obj-tip" id="objTip">吞食 26 条小鱼完成进化</div>
+      </div>
+      <div class="player-card" id="pc1">
+        <div class="pc-name"><i class="dot p2"></i><span>P2</span></div>
+        <div class="bar"><i class="fill p2" id="pc1Size"></i></div>
+        <div class="bar thin"><i class="fill xp" id="pc1Xp"></i></div>
+        <div class="pc-meta"><span id="pc1Lv">Lv.1</span><span id="pc1Ep">0 EP</span><span id="pc1Combo"></span></div>
+        <div class="pc-cards" id="pc1Cards"></div>
+      </div>
+    </div>
+    <div class="boss-bar hidden" id="bossBar"><span>🐋 深渊巨口鲸</span><div class="bar obj"><i class="fill boss" id="bossFill"></i></div></div>
+    <div class="fps hidden" id="fpsTag">60 FPS</div>
+  </div>
+
+  <!-- ============ 场景横幅 ============ -->
+  <div class="banner hidden" id="banner">
+    <h2 id="bannerTitle"></h2>
+    <p id="bannerSub"></p>
+  </div>
+
+  <!-- ============ 抽卡 ============ -->
+  <div class="screen center" id="scr-cards">
+    <h2 class="screen-title" id="cardTitle">⬆️ 选择进化</h2>
+    <div class="cards-row" id="cardRow"></div>
+    <div class="hint">点击卡片选择 · 也可按 1 / 2 / 3</div>
+  </div>
+
+  <!-- ============ 结算 ============ -->
+  <div class="screen center" id="scr-results">
+    <h2 class="screen-title" id="resTitle">🏆 胜利</h2>
+    <div class="res-body" id="resBody"></div>
+    <div class="menu-row">
+      <button class="btn primary" data-act="retry">🔄 再来一局</button>
+      <button class="btn" data-act="menu">🏠 返回主菜单</button>
+    </div>
+  </div>
+
+  <!-- ============ 暂停 ============ -->
+  <div class="screen center" id="scr-pause">
+    <h2 class="screen-title">⏸ 暂停</h2>
+    <div class="menu-col">
+      <button class="btn primary" data-act="resume">▶ 继续游戏</button>
+      <button class="btn" data-act="settings">⚙️ 设置</button>
+      <button class="btn" data-act="retry">🔄 重新开始</button>
+      <button class="btn" data-act="menu">🏠 返回主菜单</button>
+    </div>
+    <div class="hint">按 Esc 继续</div>
+  </div>
+</div>
+
+<script src="utils.js"></script>
+<script src="audio.js"></script>
+<script src="fish.js"></script>
+<script src="data.js"></script>
+<script src="game.js"></script>
+<script src="ui.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

@@ -1,186 +1,3759 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>吞噬之潮 · Devour Tide</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>深海 · 大鱼吃小鱼 豪华版</title>
+<style>
+:root{
+  --glass-bg:rgba(12,30,56,.55);
+  --glass-br:rgba(140,210,255,.22);
+  --ink:#eaf6ff;
+  --dim:#9fc6e8;
+  --neon:#4be3ff;
+  --pink:#ff7ecf;
+  --gold:#ffd166;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--ink);
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  user-select:none;-webkit-user-select:none;touch-action:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hidden{display:none!important}
+
+/* ---------- 通用玻璃面板 ---------- */
+.glass{background:var(--glass-bg);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
+  border:1px solid var(--glass-br);border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,8,24,.55),inset 0 1px 0 rgba(255,255,255,.14)}
+
+/* ---------- 屏幕容器 ---------- */
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(10px,2.2vh,22px);padding:clamp(14px,3vw,32px);overflow-y:auto;overflow-x:hidden}
+.screen::-webkit-scrollbar{width:6px}
+.screen::-webkit-scrollbar-thumb{background:rgba(120,190,255,.35);border-radius:8px}
+
+/* ---------- 按钮 ---------- */
+.btn{position:relative;min-width:min(300px,80vw);padding:14px 26px;border-radius:16px;cursor:pointer;
+  border:1px solid rgba(140,210,255,.3);color:var(--ink);font-size:clamp(15px,2.2vw,19px);font-weight:600;
+  letter-spacing:.05em;overflow:hidden;
+  background:linear-gradient(160deg,rgba(38,92,158,.88),rgba(18,44,88,.94));
+  box-shadow:0 10px 28px rgba(0,20,60,.5),inset 0 1px 0 rgba(255,255,255,.18);
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+.btn::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);
+  transform:skewX(-18deg);transition:left .5s ease}
+.btn:hover{transform:translateY(-2px) scale(1.02);filter:brightness(1.14);box-shadow:0 16px 38px rgba(30,120,255,.35)}
+.btn:hover::after{left:130%}
+.btn:active{transform:translateY(1px) scale(.98)}
+.btn-primary{background:linear-gradient(160deg,#22c1ff,#7b5cff);border-color:rgba(195,232,255,.55);
+  box-shadow:0 14px 38px rgba(56,140,255,.45),inset 0 1px 0 rgba(255,255,255,.4)}
+.btn-ghost{background:rgba(255,255,255,.07);border-color:rgba(160,210,255,.22)}
+.btn-small{min-width:0;padding:10px 20px;font-size:15px}
+
+/* ---------- 标题 ---------- */
+.title-wrap{text-align:center;animation:floaty 6s ease-in-out infinite}
+.title{font-size:clamp(36px,8vw,78px);font-weight:800;letter-spacing:.06em;line-height:1.12;
+  background:linear-gradient(120deg,#8ef1ff 0%,#b7a4ff 38%,#ff9bd6 68%,#8ef1ff 100%);
+  background-size:220% 220%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(90,190,255,.55));animation:shimmer 9s linear infinite}
+.title-glow{white-space:nowrap}
+.title-sub{margin-top:8px;font-size:clamp(12px,2.4vw,17px);letter-spacing:.34em;color:var(--dim);text-transform:uppercase}
+@keyframes shimmer{0%{background-position:0% 50%}100%{background-position:220% 50%}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.menu-btns{display:flex;flex-direction:column;gap:12px;align-items:center;width:100%}
+.menu-record{padding:12px 22px;font-size:clamp(12px,2.4vw,15px);color:var(--dim);letter-spacing:.08em}
+.menu-record b{color:var(--gold);font-size:1.15em;margin:0 2px}
+
+.screen-title{font-size:clamp(19px,3.4vw,28px);letter-spacing:.16em;color:#cfeaff;
+  text-shadow:0 0 18px rgba(90,190,255,.5)}
+.row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+
+/* ---------- 选鱼 / 装扮 ---------- */
+.fish-grid{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:980px;width:100%}
+.fish-card{width:min(220px,44vw);padding:16px 14px;border-radius:18px;cursor:pointer;text-align:center;
+  background:rgba(14,34,62,.6);border:1px solid rgba(140,210,255,.2);backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.fish-card:hover{transform:translateY(-4px) scale(1.03);border-color:rgba(120,220,255,.55)}
+.fish-card.selected{border-color:var(--neon);box-shadow:0 0 0 2px rgba(75,227,255,.5),0 14px 40px rgba(40,160,255,.35)}
+.fish-card.locked{filter:grayscale(.75) brightness(.7);cursor:not-allowed}
+.fish-orb{width:86px;height:86px;margin:0 auto 10px;border-radius:50%;position:relative;
+  box-shadow:0 10px 30px rgba(0,20,50,.55),inset 0 -10px 24px rgba(0,0,24,.35),inset 0 8px 18px rgba(255,255,255,.28)}
+.fish-orb::after{content:"";position:absolute;right:16%;top:26%;width:16%;height:16%;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#fff 0%,#dff 42%,#0b1a2c 78%)}
+.fish-name{font-size:17px;font-weight:700;letter-spacing:.08em}
+.fish-passive{margin-top:6px;font-size:12px;line-height:1.55;color:var(--dim)}
+.fish-lock{margin-top:6px;font-size:11px;color:#ffb0a8;letter-spacing:.05em}
+
+.cos-tabs{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.tab{padding:9px 22px;border-radius:12px;cursor:pointer;font-size:14px;letter-spacing:.12em;
+  color:var(--dim);background:rgba(255,255,255,.06);border:1px solid rgba(140,210,255,.18);transition:.18s}
+.tab.active{color:#04121f;background:linear-gradient(150deg,#7de8ff,#9fb6ff);font-weight:700}
+.cos-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;max-width:900px;width:100%}
+.cos-card{width:min(150px,28vw);padding:12px 10px;border-radius:14px;cursor:pointer;text-align:center;
+  background:rgba(14,34,62,.55);border:1px solid rgba(140,210,255,.18);transition:.18s}
+.cos-card:hover{transform:translateY(-3px);border-color:rgba(120,220,255,.5)}
+.cos-card.selected{border-color:var(--pink);box-shadow:0 0 0 2px rgba(255,126,207,.45)}
+.cos-card.locked{filter:grayscale(.7) brightness(.65);cursor:not-allowed}
+.cos-dot{width:44px;height:44px;border-radius:50%;margin:0 auto 8px;box-shadow:inset 0 -8px 16px rgba(0,0,20,.4),0 6px 18px rgba(0,20,50,.5)}
+.cos-name{font-size:13px;letter-spacing:.06em}
+.cos-lock{font-size:10px;color:#ffb0a8;margin-top:4px}
+
+/* ---------- 卡牌 ---------- */
+.card-title{font-size:clamp(21px,4.2vw,34px);letter-spacing:.18em;
+  background:linear-gradient(110deg,#9ff2ff,#c7b3ff,#ff9fd6);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 20px rgba(120,190,255,.5))}
+.card-hint{font-size:13px;color:var(--dim);letter-spacing:.12em}
+.card-row{display:flex;gap:clamp(12px,2.4vw,26px);flex-wrap:wrap;justify-content:center;align-items:stretch}
+.card{width:min(280px,86vw);padding:22px 20px 20px;border-radius:20px;cursor:pointer;text-align:left;
+  background:linear-gradient(165deg,rgba(22,52,92,.82),rgba(10,26,50,.92));border:1px solid rgba(150,215,255,.28);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);position:relative;overflow:hidden;
+  transition:transform .2s ease,box-shadow .2s ease}
+.card:hover{transform:translateY(-8px) scale(1.03)}
+.card::before{content:"";position:absolute;inset:0;opacity:.16;pointer-events:none;
+  background:radial-gradient(120% 80% at 20% 0%,var(--rc,#7dd3fc),transparent 60%)}
+.card-rar{display:inline-block;padding:4px 12px;border-radius:999px;font-size:11px;letter-spacing:.22em;
+  color:#04121f;background:var(--rc,#7dd3fc);font-weight:800}
+.card-name{margin-top:12px;font-size:20px;font-weight:800;letter-spacing:.1em}
+.card-desc{margin-top:10px;font-size:14px;line-height:1.7;color:#cfe6fa}
+.card-tag{margin-top:14px;font-size:11px;letter-spacing:.14em;color:var(--dim)}
+.rar-common{--rc:#7dd3fc}.rar-rare{--rc:#60a5fa}.rar-epic{--rc:#c084fc}.rar-legend{--rc:#fbbf24}.rar-curse{--rc:#fb7185}
+.synergy-bar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:860px}
+.synergy-chip{padding:8px 16px;border-radius:999px;font-size:12px;letter-spacing:.08em;
+  background:rgba(90,170,255,.16);border:1px solid rgba(130,200,255,.35);color:#cfeaff}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:8;pointer-events:none;
+  padding:max(12px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) 12px max(14px,env(safe-area-inset-left))}
+.hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hud-left,.hud-right{padding:12px 18px;border-radius:18px;min-width:0}
+.hud-score{font-size:clamp(20px,4.2vw,32px);font-weight:800;letter-spacing:.06em;
+  background:linear-gradient(110deg,#b7f3ff,#9fb6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hud-label{font-size:11px;letter-spacing:.28em;color:var(--dim)}
+.hud-combo{margin-top:4px;font-size:clamp(13px,2.6vw,17px);font-weight:700;color:var(--gold);
+  text-shadow:0 0 14px rgba(255,209,102,.55)}
+.hud-stage{margin-top:6px;font-size:clamp(12px,2.4vw,15px);letter-spacing:.12em;color:#bfe8ff}
+.hud-goal{margin-top:2px;font-size:clamp(11px,2.2vw,13px);color:var(--dim);letter-spacing:.08em}
+.hud-hp{font-size:clamp(16px,3.4vw,22px);letter-spacing:.12em;color:#ff8fa3;text-shadow:0 0 16px rgba(255,110,140,.6)}
+.hud-dash{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.22em;color:var(--dim)}
+.bar{width:clamp(72px,16vw,120px);height:8px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
+.bar>div{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#4be3ff,#7b5cff);transition:width .12s linear}
+#bossWrap{position:fixed;left:50%;transform:translateX(-50%);top:max(74px,calc(env(safe-area-inset-top) + 66px));
+  width:min(560px,86vw);padding:10px 18px 14px;border-radius:16px;z-index:9;pointer-events:none}
+.boss-name{font-size:clamp(12px,2.6vw,16px);letter-spacing:.32em;color:#ffd9a8;text-align:center;margin-bottom:8px}
+.boss-bar{height:12px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
+.boss-bar>div{height:100%;width:100%;border-radius:999px;
+  background:linear-gradient(90deg,#ff5e3a,#ffb45c,#ffe28a);transition:width .18s ease}
+#touchHint{position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));
+  z-index:9;font-size:12px;letter-spacing:.18em;color:rgba(190,225,255,.75);pointer-events:none}
+
+/* ---------- 结算 ---------- */
+.result-title{font-size:clamp(26px,6vw,52px);letter-spacing:.22em;
+  background:linear-gradient(110deg,#9ff2ff,#ffd166,#ff9fd6);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 22px rgba(255,190,120,.45))}
+.result-glass{width:min(620px,92vw);padding:22px 26px;display:flex;flex-direction:column;gap:10px}
+.result-row{display:flex;justify-content:space-between;align-items:baseline;gap:14px;
+  padding:8px 2px;border-bottom:1px dashed rgba(140,210,255,.16);font-size:clamp(13px,2.6vw,16px);color:var(--dim)}
+.result-row b{color:var(--ink);font-size:1.22em;letter-spacing:.06em}
+.result-big{font-size:clamp(24px,5.4vw,40px);font-weight:800;letter-spacing:.1em;
+  background:linear-gradient(110deg,#7de8ff,#b7a4ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.newbest{display:inline-block;padding:4px 14px;border-radius:999px;font-size:12px;letter-spacing:.22em;
+  color:#04121f;background:linear-gradient(110deg,#ffd166,#ff9d3c);font-weight:800;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.unlock-chip{display:inline-block;padding:6px 14px;margin:4px 6px 0 0;border-radius:999px;font-size:12px;
+  letter-spacing:.1em;background:rgba(120,220,190,.18);border:1px solid rgba(140,240,210,.4);color:#c8fff0}
+
+/* ---------- 横幅 ---------- */
+.banner{position:fixed;left:50%;top:34%;transform:translate(-50%,-50%);z-index:15;text-align:center;
+  pointer-events:none;animation:bannerIn .5s ease}
+.banner-main{font-size:clamp(26px,6vw,54px);font-weight:800;letter-spacing:.22em;
+  background:linear-gradient(110deg,#b7f3ff,#c7b3ff,#ff9fd6);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 26px rgba(110,200,255,.65))}
+.banner-sub{margin-top:10px;font-size:clamp(13px,2.8vw,19px);letter-spacing:.28em;color:#d5eeff;
+  text-shadow:0 0 18px rgba(90,190,255,.55)}
+@keyframes bannerIn{from{opacity:0;transform:translate(-50%,-42%) scale(.92)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+
+/* ---------- 帮助 ---------- */
+.help-glass{width:min(680px,92vw);padding:22px 26px;font-size:clamp(13px,2.6vw,15.5px);line-height:2;color:#d7ecff}
+.help-glass h3{margin:12px 0 4px;font-size:15px;letter-spacing:.22em;color:#8fe8ff;font-weight:700}
+.help-glass kbd{display:inline-block;padding:2px 10px;margin:0 3px;border-radius:8px;font-size:12px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(160,215,255,.32);letter-spacing:.08em}
+
+/* ---------- 图鉴 ---------- */
+#codexBody{max-width:1040px;width:100%;max-height:min(56vh,520px);overflow-y:auto;padding:6px 4px}
+#codexBody::-webkit-scrollbar{width:6px}
+#codexBody::-webkit-scrollbar-thumb{background:rgba(120,190,255,.35);border-radius:8px}
+.codex-card{width:min(216px,44vw);padding:14px 12px;border-radius:16px;text-align:center;
+  background:rgba(14,34,62,.6);border:1px solid rgba(140,210,255,.18);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.codex-title{font-size:14px;font-weight:700;letter-spacing:.06em}
+.codex-desc{margin-top:6px;font-size:11.5px;line-height:1.65;color:var(--dim)}
+.codex-chip{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:999px;font-size:10px;
+  letter-spacing:.12em;background:rgba(120,200,255,.18);color:#bfe8ff}
+.codex-dot{width:52px;height:52px;margin:0 auto 8px;border-radius:50%;
+  box-shadow:inset 0 -8px 16px rgba(0,0,20,.4),0 6px 18px rgba(0,20,50,.5)}
+
+@media (max-height:640px){
+  .title{font-size:clamp(28px,7vw,44px)}
+  .btn{padding:11px 20px;font-size:15px}
+  .fish-orb{width:62px;height:62px}
+  .card{padding:16px 16px 14px}
+}
+@media (max-width:520px){
+  .hud-left,.hud-right{padding:9px 12px}
+  .menu-record{padding:9px 14px}
+}
+</style>
 </head>
 <body>
 <canvas id="game"></canvas>
 
-<div id="ui">
-  <!-- ============ 主菜单 ============ -->
-  <div class="screen center" id="scr-menu">
-    <div class="title-wrap">
-      <h1 class="game-title">吞噬之潮</h1>
-      <div class="game-sub">D E V O U R &nbsp;·&nbsp; T I D E</div>
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div class="hud-top">
+    <div class="hud-left glass">
+      <div class="hud-label">SCORE</div>
+      <div class="hud-score" id="hudScore">0</div>
+      <div class="hud-combo" id="hudCombo">连击 x0</div>
+      <div class="hud-stage" id="hudStage">第 1 阶段 · 珊瑚浅海</div>
+      <div class="hud-goal" id="hudGoal">目标：吃掉 0/11</div>
     </div>
-    <div class="menu-grid">
-      <button class="btn big" data-act="solo"><span class="ico">🐟</span><b>单人远征</b><small>关卡模式 · 6 大场景 · 通关深渊</small></button>
-      <button class="btn big" data-act="coop"><span class="ico">🤝</span><b>双人合作</b><small>同屏并肩 · 共享进化 · 复活队友</small></button>
-      <button class="btn big" data-act="versus"><span class="ico">⚔️</span><b>双人竞争</b><small>抢食夺点 · 鱼尽之后 · 终局撕咬</small></button>
-      <button class="btn big" data-act="endless"><span class="ico">🌊</span><b>无尽生存</b><small>无限递增难度 · 本地纪录</small></button>
-    </div>
-    <div class="menu-row">
-      <button class="btn" data-act="customize">🎨 捏鱼工坊</button>
-      <button class="btn" data-act="settings">⚙️ 设置</button>
-      <button class="btn" data-act="howto">📖 玩法说明</button>
-    </div>
-    <div class="hint">P1：WASD 移动 · 空格 冲刺 · F 复活队友　|　P2：方向键 移动 · 回车 冲刺 · 右Shift 复活　|　Esc 暂停 · M 静音</div>
-  </div>
-
-  <!-- ============ 捏鱼工坊 ============ -->
-  <div class="screen center" id="scr-custom">
-    <h2 class="screen-title">🎨 捏鱼工坊</h2>
-    <div class="custom-wrap">
-      <div class="preview-box">
-        <canvas id="fishPreview" width="460" height="300"></canvas>
-        <div class="tab-row">
-          <button class="tab active" data-tab="0">P1 小鱼</button>
-          <button class="tab" data-tab="1">P2 小鱼</button>
-        </div>
-        <div class="preset-row">
-          <button class="btn small" data-act="savePreset">💾 保存预设</button>
-          <button class="btn small" data-act="loadPreset">📂 载入预设</button>
-          <button class="btn small" data-act="randomFish">🎲 随机生成</button>
-        </div>
-      </div>
-      <div class="control-box" id="customControls">
-        <label>名字 <input type="text" id="fcName" maxlength="10" value="小鱼"></label>
-        <label>鱼种
-          <select id="fcSpecies">
-            <option value="0">🐠 小丑鱼（高机动）</option>
-            <option value="1">🐡 河豚（高成长）</option>
-            <option value="2">🐟 旗鱼（高速度）</option>
-            <option value="3">💡 灯笼鱼（深海视野）</option>
-            <option value="4">🎐 水母（毒性体表）</option>
-            <option value="5">🦈 鲨鱼幼崽（吞噬力）</option>
-          </select>
-        </label>
-        <div class="two-col">
-          <label>主色 <input type="color" id="fcColor1" value="#ff9a4d"></label>
-          <label>副色 <input type="color" id="fcColor2" value="#ffd23f"></label>
-        </div>
-        <label>体型比例 <input type="range" id="fcHgt" min="0.22" max="0.62" step="0.01" value="0.34"><em id="fcHgtV">0.34</em></label>
-        <label>鳍形 <select id="fcFin"></select></label>
-        <label>尾形 <select id="fcTail"></select></label>
-        <label>眼型 <select id="fcEye"></select></label>
-        <label>花纹 <select id="fcPattern"></select></label>
-        <label>发光 <select id="fcGlow"></select></label>
-        <label>配饰 <select id="fcAcc"></select></label>
-      </div>
-    </div>
-    <div class="menu-row">
-      <button class="btn" data-act="customBack">← 返回主菜单</button>
-      <button class="btn primary" data-act="customSave">✔ 保存并返回</button>
+    <div class="hud-right glass">
+      <div class="hud-label">SIZE · 体型</div>
+      <div class="hud-hp" id="hudHp">体型 20</div>
+      <div class="hud-dash"><span>冲刺</span><div class="bar"><div id="dashBar"></div></div></div>
     </div>
   </div>
-
-  <!-- ============ 设置 ============ -->
-  <div class="screen center" id="scr-settings">
-    <h2 class="screen-title">⚙️ 设置</h2>
-    <div class="control-box slim">
-      <label>音量 <input type="range" id="setVolume" min="0" max="1" step="0.05" value="0.7"><em id="setVolumeV">70%</em></label>
-      <label>粒子质量
-        <select id="setQuality">
-          <option value="2">高（华丽）</option>
-          <option value="1" selected>中（均衡）</option>
-          <option value="0">低（流畅优先）</option>
-        </select>
-      </label>
-      <label class="check"><input type="checkbox" id="setShake" checked> 屏幕震动</label>
-      <label class="check"><input type="checkbox" id="setFps"> 显示帧率</label>
-      <label class="check"><input type="checkbox" id="setTips" checked> 游戏提示</label>
-    </div>
-    <div class="menu-row">
-      <button class="btn" data-act="settingsBack">← 返回</button>
-    </div>
+  <div id="bossWrap" class="hidden glass">
+    <div class="boss-name" id="bossName">深渊巨鲨</div>
+    <div class="boss-bar"><div id="bossHp"></div></div>
   </div>
+  <div id="touchHint" class="hidden">拖动移动 · 点右侧冲刺</div>
+</div>
 
-  <!-- ============ 玩法说明 ============ -->
-  <div class="screen center" id="scr-howto">
-    <h2 class="screen-title">📖 玩法说明</h2>
-    <div class="howto-box">
-      <p><b>🐟 核心规则</b>：吞食比自己小的鱼成长，躲开比自己大的鱼。被咬会损失体型，体型过小会被吞食。</p>
-      <p><b>🃏 Rogue 进化</b>：吞食攒进化点，升级时三选一。凑齐同流派卡牌激活羁绊 —— 速度流 / 剧毒流 / 巨兽流 / 灵巧流 / 诅咒流。</p>
-      <p><b>🌍 场景机制</b>：珊瑚礁 → 荧光水母（电网！）→ 沉船暗流 → 冰海浮冰白雾 → 火山喷发 → 深渊黑暗。</p>
-      <p><b>🤝 合作</b>：队友倒下后靠近按 F / 右Shift 复活（消耗自身体型）。BOSS 需要两人同时咬住弱点。</p>
-      <p><b>⚔️ 竞争</b>：互相抢食抢进化点；当场上鱼被吃完，进入<b>终局撕咬</b> —— 互相撕咬，体型小的被吞掉。</p>
-      <p><b>🎮 操作</b>：P1 = WASD + 空格冲刺；P2 = 方向键 + 回车冲刺；支持手柄。</p>
+<!-- ============ 主菜单 ============ -->
+<div id="screen-menu" class="screen">
+  <div class="title-wrap">
+    <div class="title-sub">Deep Sea · Neon Roguelike</div>
+    <h1 class="title">深海<span class="title-glow">大鱼吃小鱼</span></h1>
+    <div class="title-sub">吞噬成长 · 卡牌构筑 · 深海霓虹</div>
+  </div>
+  <div class="menu-btns">
+    <button class="btn btn-primary" id="btnStart">🎣 单人启程</button>
+    <button class="btn" id="btnCoop">🤝 双人合作（同屏）</button>
+    <button class="btn" id="btnVersus">⚔️ 双人对抗（同屏）</button>
+    <button class="btn" id="btnFish">🐠 选鱼 / 装扮</button>
+    <button class="btn" id="btnCodex">📖 深海图鉴</button>
+    <button class="btn btn-ghost" id="btnSettings">⚙ 设置（视野/震动）</button>
+    <button class="btn btn-ghost" id="btnHelp">📜 玩法说明</button>
+    <button class="btn btn-ghost" id="btnSound">🔊 音效：开</button>
+  </div>
+  <div class="menu-record glass">最高分 <b id="menuBest">0</b> · 最远阶段 <b id="menuStage">1</b> · 击败 Boss <b id="menuBoss">0</b></div>
+</div>
+
+<!-- ============ 帮助 ============ -->
+<div id="screen-help" class="screen hidden">
+  <h2 class="screen-title">玩法说明</h2>
+  <div class="help-glass glass">
+    <h3>目标</h3>
+    吃掉比自己小的鱼不断成长，<b style="color:#ffd166">被大鱼咬到会掉体型</b>（咬你的越大掉得越多），体型归零就会被吃掉。
+    每阶段完成目标即可晋级，每 3 个阶段迎来 Boss 战 —— 用<b style="color:#ffd166">冲刺撞击</b>它发光的弱点！
+    <h3>操作</h3>
+    玩家 1：<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动，<kbd>Shift</kbd> / <kbd>空格</kbd> 冲刺<br>
+    玩家 2：<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 移动，<kbd>Enter</kbd> 冲刺<br>
+    手机：拖动移动，点击右半屏冲刺（仅单人）
+    <h3>连击</h3>
+    连续吃鱼积累连击倍率，中断会清零。冲刺期间无敌，可用来逃生或撞晕对手。
+    <h3>双人规则</h3>
+    合作：体型被咬空会倒下成灵魂，队友靠近即可救起。
+    对抗：抢食争分，冲刺撞晕对手并偷取分数，比拼总分。
+    <h3>卡牌</h3>
+    每次晋级三选一：普通 / 稀有 / 史诗 / 传说，还有高风险的<b style="color:#fb7185">诅咒卡</b>。
+    同流派卡牌凑齐 2 张以上触发<b style="color:#8fe8ff">协同加成</b>。
+    <h3>地图与探索</h3>
+    每局从 16 段航路开始，分岔路由你选择：<b style="color:#ffd166">💀 小Boss</b>（精英战）、
+    <b style="color:#ffd166">👑 大Boss</b>（第 5/10/16 段）、❓奇遇（风险抉择）、🛒商人（花珍珠买卡/治疗）、
+    🎁宝藏（免费卡牌）、🌙休息（回复生命）。通关第 16 段即成为深海霸主。
+    <h3>珍珠经济</h3>
+    击杀稀有鱼、精英、Boss，完成阶段都能获得 💎 珍珠，可在商人处购买卡牌与治疗。
+    <h3>深海生态</h3>
+    11 种形态各异的鱼：獵影鲨追杀、刺豚遇敌膨胀变大、箭鸻突进、
+    翻车鱼与海马慢悠悠、灯笼鮋鱇顶着小灯笼……还有<b style="color:#ffd166">稀有鱼</b>（高分光环）
+    与<b style="color:#ffd166">精英鱼</b>（追击 + 必掉宝物）。
+    <h3>道具与吞噬特性</h3>
+    <b style="color:#8fe8ff">200+ 种热梗道具</b>（打工人之鳞、显眼包尾迹、泼天富贵光环…）分普通/稀有/史诗三档，
+    每件道具都会<b style="color:#ffd166">改变鱼的外观</b>（王冠、墨镜、披风、大金链子、火焰角…可叠加）。
+    同羁绊（疾行/进化/财富/生命/连击/冲刺/狩猎…）2 件与 4 件触发<b style="color:#8fe8ff">羁绊加成</b>；
+    特定双道具组合触发<b style="color:#8fe8ff">联动</b>（寒冰+灼热=蒸汽爆发、冲刺双件=流体力学…）。
+    击败小Boss / 大Boss 可<b style="color:#ffd166">吞噬其特性</b>：巨鲨之怒、古鲸寒息、魔魷之影、熔岩之心…永久为你所用。
+    <h3>每局都不同</h3>
+    阶段目标轮换（吞食 / 得分 / 生存 / 猎杀精英 / 连击），随机<b style="color:#8fe8ff">环境词缀</b>
+    （富饶、狂潮、洋流、永夜、星雨……），不定期触发<b style="color:#8fe8ff">随机事件</b>
+    （金潮、鱼群暴动、漂流宝藏、漩涡……）；每阶段结算还有 S/A/B/C 评分。
+  </div>
+  <button class="btn btn-primary btn-small" id="helpBack">返回主菜单</button>
+</div>
+
+<!-- ============ 选鱼 / 装扮 ============ -->
+<div id="screen-fish" class="screen hidden">
+  <h2 class="screen-title">选择你的鱼</h2>
+  <div id="fishGrid" class="fish-grid"></div>
+  <h2 class="screen-title">装扮（纯外观 · 不影响平衡）</h2>
+  <div class="cos-tabs">
+    <button class="tab active" data-tab="skin">皮肤</button>
+    <button class="tab" data-tab="fin">鱼鳍</button>
+    <button class="tab" data-tab="trail">拖尾</button>
+  </div>
+  <div id="cosGrid" class="cos-grid"></div>
+  <button class="btn btn-primary btn-small" id="btnFishBack">确定，返回</button>
+</div>
+
+<!-- ============ 设置 ============ -->
+<div id="screen-settings" class="screen hidden">
+  <h2 class="screen-title">⚙ 游戏设置</h2>
+  <div class="help-glass glass" style="text-align:center;width:min(620px,92vw)">
+    <h3>视野范围（游戏内固定，不受窗口影响）</h3>
+    <div class="row" id="zoomOpts">
+      <button class="btn btn-small" data-zoom="0.82">近 · 巨物更震撼</button>
+      <button class="btn btn-small" data-zoom="1">标准</button>
+      <button class="btn btn-small" data-zoom="1.22">远 · 看得更广</button>
     </div>
-    <div class="menu-row"><button class="btn" data-act="howtoBack">← 返回</button></div>
+    <h3>屏幕震动</h3>
+    <div class="row"><button class="btn btn-small" id="shakeToggle">开启</button></div>
+    <h3>音效</h3>
+    <div class="row"><button class="btn btn-small" id="soundToggle2">开启</button></div>
   </div>
+  <button class="btn btn-primary btn-small" id="settingsBack">保存并返回</button>
+</div>
 
-  <!-- ============ HUD ============ -->
-  <div id="hud" class="hidden">
-    <div class="hud-top">
-      <div class="player-card" id="pc0">
-        <div class="pc-name"><i class="dot p1"></i><span>P1</span></div>
-        <div class="bar"><i class="fill p1" id="pc0Size"></i></div>
-        <div class="bar thin"><i class="fill xp" id="pc0Xp"></i></div>
-        <div class="pc-meta"><span id="pc0Lv">Lv.1</span><span id="pc0Ep">0 EP</span><span id="pc0Combo"></span></div>
-        <div class="pc-cards" id="pc0Cards"></div>
-      </div>
-      <div class="obj-box">
-        <div class="obj-name" id="objName">第一关 · 初入浅滩</div>
-        <div class="bar obj"><i class="fill" id="objFill"></i></div>
-        <div class="obj-tip" id="objTip">吞食 26 条小鱼完成进化</div>
-      </div>
-      <div class="player-card" id="pc1">
-        <div class="pc-name"><i class="dot p2"></i><span>P2</span></div>
-        <div class="bar"><i class="fill p2" id="pc1Size"></i></div>
-        <div class="bar thin"><i class="fill xp" id="pc1Xp"></i></div>
-        <div class="pc-meta"><span id="pc1Lv">Lv.1</span><span id="pc1Ep">0 EP</span><span id="pc1Combo"></span></div>
-        <div class="pc-cards" id="pc1Cards"></div>
-      </div>
-    </div>
-    <div class="boss-bar hidden" id="bossBar"><span>🐋 深渊巨口鲸</span><div class="bar obj"><i class="fill boss" id="bossFill"></i></div></div>
-    <div class="fps hidden" id="fpsTag">60 FPS</div>
+<!-- ============ 图鉴 ============ -->
+<div id="screen-codex" class="screen hidden">
+  <h2 class="screen-title">📖 深海图鉴</h2>
+  <div class="cos-tabs" id="codexTabs">
+    <button class="tab active" data-ctab="fish">🐟 鱼类</button>
+    <button class="tab" data-ctab="items">🎁 道具（200）</button>
+    <button class="tab" data-ctab="boss">👑 Boss 与特性</button>
+    <button class="tab" data-ctab="misc">🌊 词缀与奇遇</button>
   </div>
+  <div class="cos-tabs hidden" id="codexFilter"></div>
+  <div id="codexBody" class="fish-grid"></div>
+  <button class="btn btn-primary btn-small" id="codexBack">返回主菜单</button>
+</div>
 
-  <!-- ============ 场景横幅 ============ -->
-  <div class="banner hidden" id="banner">
-    <h2 id="bannerTitle"></h2>
-    <p id="bannerSub"></p>
-  </div>
+<!-- ============ 卡牌三选一 ============ -->
+<div id="screen-cards" class="screen hidden">
+  <div class="card-title" id="cardTitle">选择一张强化卡牌</div>
+  <div class="card-row" id="cardRow"></div>
+  <div class="synergy-bar" id="synergyBar"></div>
+  <div class="row" id="cardExtra"></div>
+  <div class="card-hint">诅咒卡高风险高回报 · 同流派 2 张起触发协同</div>
+</div>
 
-  <!-- ============ 抽卡 ============ -->
-  <div class="screen center" id="scr-cards">
-    <h2 class="screen-title" id="cardTitle">⬆️ 选择进化</h2>
-    <div class="cards-row" id="cardRow"></div>
-    <div class="hint">点击卡片选择 · 也可按 1 / 2 / 3</div>
-  </div>
-
-  <!-- ============ 结算 ============ -->
-  <div class="screen center" id="scr-results">
-    <h2 class="screen-title" id="resTitle">🏆 胜利</h2>
-    <div class="res-body" id="resBody"></div>
-    <div class="menu-row">
-      <button class="btn primary" data-act="retry">🔄 再来一局</button>
-      <button class="btn" data-act="menu">🏠 返回主菜单</button>
-    </div>
-  </div>
-
-  <!-- ============ 暂停 ============ -->
-  <div class="screen center" id="scr-pause">
-    <h2 class="screen-title">⏸ 暂停</h2>
-    <div class="menu-col">
-      <button class="btn primary" data-act="resume">▶ 继续游戏</button>
-      <button class="btn" data-act="settings">⚙️ 设置</button>
-      <button class="btn" data-act="retry">🔄 重新开始</button>
-      <button class="btn" data-act="menu">🏠 返回主菜单</button>
-    </div>
-    <div class="hint">按 Esc 继续</div>
+<!-- ============ 结算 ============ -->
+<div id="screen-result" class="screen hidden">
+  <div class="result-title" id="resultTitle">旅程终结</div>
+  <div class="result-glass glass" id="resultBody"></div>
+  <div class="row">
+    <button class="btn btn-primary" id="btnRetry">再来一局</button>
+    <button class="btn" id="btnHome">返回主菜单</button>
   </div>
 </div>
 
-<script src="utils.js"></script>
-<script src="audio.js"></script>
-<script src="fish.js"></script>
-<script src="data.js"></script>
-<script src="game.js"></script>
-<script src="ui.js"></script>
-<script src="main.js"></script>
+<!-- ============ 横幅 ============ -->
+<div id="banner" class="banner hidden">
+  <div class="banner-main" id="bannerMain"></div>
+  <div class="banner-sub" id="bannerSub"></div>
+</div>
+
+<script>
+'use strict';
+/* ================= 画布与基础工具 ================= */
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+let W=0,H=0,AW=5200,AH=3000,DPR=1;
+const BASE_VIEW=820;
+function camScale(){
+  const z=(G.cam&&G.cam.zoom)||1;
+  const pref=(typeof SAVE!=='undefined'&&SAVE.zoomPref)||1;
+  return H*z/(BASE_VIEW*pref);
+}
+function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=window.innerWidth;H=window.innerHeight;
+  canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);}
+window.addEventListener('resize',resize);
+
+const TAU=Math.PI*2;
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+const irand=(a,b)=>Math.floor(rand(a,b+1));
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+function angLerp(a,b,t){let d=((b-a+Math.PI*3)%TAU)-Math.PI;return a+d*t;}
+function hexRgb(h){h=String(h).replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgba(hex,a){const c=hexRgb(hex);return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';}
+
+/* ================= 存档 ================= */
+const SAVE_KEY='deepBigFish_deluxe_v1';
+const DEFAULT_SAVE={best:0,bestStage:1,bossKills:0,fish:'blue',skin:'ocean',fin:'fin0',trail:'trail0',sound:true,zoomPref:1,shake:true,
+  unlocked:{fish:['blue'],skin:['ocean'],fin:['fin0'],trail:['trail0']}};
+function clone(o){return JSON.parse(JSON.stringify(o));}
+let SAVE=clone(DEFAULT_SAVE);
+try{const raw=localStorage.getItem(SAVE_KEY);if(raw){const s=JSON.parse(raw);
+  SAVE=Object.assign(clone(DEFAULT_SAVE),s);
+  SAVE.unlocked=Object.assign(clone(DEFAULT_SAVE.unlocked),s.unlocked||{});}}catch(e){}
+function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(SAVE));}catch(e){}}
+
+/* ================= 音效（Web Audio 全合成，无外部资源） ================= */
+const Audio2={ctx:null,master:null,ready:false,
+  init(){if(this.ready)return;try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    this.ctx=new AC();this.master=this.ctx.createGain();this.master.gain.value=SAVE.sound?0.55:0;
+    this.master.connect(this.ctx.destination);this.ready=true;}catch(e){}},
+  setSound(on){SAVE.sound=on;if(this.master)this.master.gain.value=on?0.55:0;persist();},
+  tone(f,dur,type,vol,slide,delay){if(!this.ready)return;const t=this.ctx.currentTime+(delay||0);
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type||'sine';
+    o.frequency.setValueAtTime(Math.max(20,f),t);
+    if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(20,f+slide),t+dur);
+    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol||0.2,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g);g.connect(this.master);o.start(t);o.stop(t+dur+0.08);},
+  noise(dur,vol,freq,q,delay){if(!this.ready)return;const t=this.ctx.currentTime+(delay||0);
+    const len=Math.max(1,Math.floor(this.ctx.sampleRate*dur));
+    const buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate);const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    const src=this.ctx.createBufferSource();src.buffer=buf;
+    const flt=this.ctx.createBiquadFilter();flt.type='bandpass';flt.frequency.value=freq||800;flt.Q.value=q||1;
+    const g=this.ctx.createGain();g.gain.setValueAtTime(vol||0.2,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(flt);flt.connect(g);g.connect(this.master);src.start(t);src.stop(t+dur+0.05);},
+  eat(combo){const base=300+Math.min(combo,15)*26;this.tone(base,0.12,'triangle',0.22,140);
+    this.tone(base*1.6,0.08,'sine',0.1,80,0.02);},
+  dash(){this.noise(0.22,0.22,900,1.2);this.tone(180,0.18,'sawtooth',0.1,240);},
+  hurt(){this.tone(160,0.28,'sawtooth',0.26,-90);this.noise(0.2,0.16,300,1);},
+  coin(){this.tone(660,0.1,'triangle',0.2,220);this.tone(990,0.14,'triangle',0.16,120,0.06);},
+  card(){[440,554,659,880].forEach((f,i)=>this.tone(f,0.32,'triangle',0.16,0,i*0.07));},
+  roar(){this.tone(70,1.1,'sawtooth',0.32,-20);this.tone(105,0.9,'square',0.12,-30,0.1);this.noise(0.9,0.2,180,0.8);},
+  clear(){[523,659,784,1047].forEach((f,i)=>this.tone(f,0.4,'sine',0.16,0,i*0.09));},
+  over(){[392,330,262,196].forEach((f,i)=>this.tone(f,0.55,'triangle',0.18,-30,i*0.22));},
+  blip(){this.tone(520,0.08,'sine',0.12,160);},
+  splash(){this.noise(0.3,0.16,1400,0.7);}
+};
+
+/* ================= 输入 ================= */
+const keys=Object.create(null);
+const touch={active:false,id:-1,ox:0,oy:0,dx:0,dy:0,dashQueued:false};
+function unlockAudio(){Audio2.init();}
+window.addEventListener('keydown',e=>{unlockAudio();const k=e.key.toLowerCase();
+  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
+  keys[k]=true;handleKey(k);});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;});
+window.addEventListener('pointerdown',unlockAudio);
+canvas.addEventListener('touchstart',e=>{unlockAudio();e.preventDefault();
+  for(const t of e.changedTouches){
+    if(!touch.active&&t.clientX<W*0.55){touch.active=true;touch.id=t.identifier;touch.ox=t.clientX;touch.oy=t.clientY;touch.dx=0;touch.dy=0;}
+    else{touch.dashQueued=true;}}
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();
+  for(const t of e.changedTouches){if(t.identifier===touch.id){
+    const dx=t.clientX-touch.ox,dy=t.clientY-touch.oy;const m=Math.hypot(dx,dy)||1;
+    const s=Math.min(1,m/70);touch.dx=dx/m*s;touch.dy=dy/m*s;}}
+},{passive:false});
+function touchEnd(e){for(const t of e.changedTouches){if(t.identifier===touch.id){touch.active=false;touch.id=-1;touch.dx=0;touch.dy=0;}}}
+canvas.addEventListener('touchend',touchEnd);
+canvas.addEventListener('touchcancel',touchEnd);
+canvas.addEventListener('click',e=>{
+  if(G.mode!=='map')return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  for(const item of layoutMap()){
+    if(item.available&&Math.hypot(mx-item.x,my-item.y)<item.r+16){
+      Audio2.blip();startNode(item.node);return;
+    }
+  }
+});
+
+/* ================= 鱼（被动各异） ================= */
+const FISH_DEFS=[
+ {id:'blue',name:'蓝潮鲀',passive:'平衡之心：受击后获得 2 秒加速',unlockScore:0,c1:'#2fa8ff',c2:'#7de8ff',accent:'#b388ff',
+  apply(p){p.flags.hitSpeed=true;}},
+ {id:'swallow',name:'疾风燕鱼',passive:'流线体：移动速度 +15%',unlockScore:6000,c1:'#2ee6c8',c2:'#9df6ff',accent:'#5cf2c8',
+  apply(p){p.stats.speed*=1.15;}},
+ {id:'angler',name:'灯笼鮟鱇',passive:'引光：拾取范围 +60%，吞噬判定 +12%',unlockBoss:1,c1:'#b45cff',c2:'#6be0ff',accent:'#ffe066',
+  apply(p){p.stats.magnet*=1.6;p.stats.eat*=1.12;}},
+ {id:'turtle',name:'岩甲河豚',passive:'坚甲：30% 概率免疫伤害，初始体型 +10%',unlockScore:15000,c1:'#f59e0b',c2:'#fcd34d',accent:'#84cc16',
+  apply(p){p.flags.armor=0.3;p.size*=1.1;}},
+ {id:'ghost',name:'幽灵鳐',passive:'暗影：冲刺冷却 -35%',unlockStage:8,c1:'#8b5cf6',c2:'#22d3ee',accent:'#f0abfc',
+  apply(p){p.stats.dashCd*=0.65;}},
+ {id:'lion',name:'狮鬃水母',passive:'连击之心：连击持续时间 +1.5 秒',unlockScore:30000,c1:'#f472b6',c2:'#fda4af',accent:'#fbbf24',
+  apply(p){p.stats.comboWin*=1.5;}}
+];
+const SKINS=[
+ {id:'ocean',name:'海洋蓝',unlockScore:0,c1:'#2563eb',c2:'#22d3ee'},
+ {id:'rose',name:'珊瑚粉',unlockScore:4000,c1:'#f472b6',c2:'#fda4af'},
+ {id:'emerald',name:'翡翠绿',unlockScore:9000,c1:'#10b981',c2:'#a7f3d0'},
+ {id:'gold',name:'鎏金',unlockScore:18000,c1:'#f59e0b',c2:'#fde68a'},
+ {id:'abyss',name:'深渊紫',unlockBoss:2,c1:'#7c3aed',c2:'#c084fc'},
+ {id:'aurora',name:'极光',unlockStage:12,c1:'#22d3ee',c2:'#f0abfc'}
+];
+const FINS=[
+ {id:'fin0',name:'流线鳍',unlockScore:0},
+ {id:'fin1',name:'霓虹蝶鳍',unlockScore:8000},
+ {id:'fin2',name:'火焰长鳍',unlockBoss:1},
+ {id:'fin3',name:'星辉羽鳍',unlockStage:10}
+];
+const TRAILS=[
+ {id:'trail0',name:'泡泡',unlockScore:0},
+ {id:'trail1',name:'星光',unlockScore:12000},
+ {id:'trail2',name:'霓虹流光',unlockStage:8},
+ {id:'trail3',name:'极光尾迹',unlockBoss:3}
+];
+function fishById(id){return FISH_DEFS.find(f=>f.id===id)||FISH_DEFS[0];}
+function skinById(id){return SKINS.find(s=>s.id===id)||SKINS[0];}
+function unlockConditionMet(item){
+  if(item.unlockScore&&SAVE.best<item.unlockScore)return false;
+  if(item.unlockBoss&&SAVE.bossKills<item.unlockBoss)return false;
+  if(item.unlockStage&&SAVE.bestStage<item.unlockStage)return false;
+  return true;
+}
+function unlockText(item){
+  if(item.unlockScore)return '最高分达到 '+item.unlockScore;
+  if(item.unlockBoss)return '累计击败 '+item.unlockBoss+' 个 Boss';
+  if(item.unlockStage)return '到达第 '+item.unlockStage+' 阶段';
+  return '';
+}
+function isUnlocked(kind,id){
+  const list=SAVE.unlocked[kind]||[];if(list.includes(id))return true;
+  const arr=kind==='fish'?FISH_DEFS:kind==='skin'?SKINS:kind==='fin'?FINS:TRAILS;
+  const item=arr.find(a=>a.id===id);
+  if(item&&unlockConditionMet(item)){list.push(id);persist();return true;}
+  return false;
+}
+/* ================= 卡牌（Rogue 三选一） ================= */
+const RARITY={
+ common:{name:'普通',color:'#7dd3fc',w:42},
+ rare:{name:'稀有',color:'#60a5fa',w:27},
+ epic:{name:'史诗',color:'#c084fc',w:15},
+ legend:{name:'传说',color:'#fbbf24',w:7},
+ curse:{name:'诅咒',color:'#fb7185',w:9}
+};
+const CARDS=[
+ {id:'teeth',name:'锐利牙齿',rarity:'common',tag:'grow',desc:'成长速度 +12%',apply:ps=>ps.forEach(p=>p.stats.growth*=1.12)},
+ {id:'stream',name:'流线鱼身',rarity:'common',tag:'speed',desc:'移动速度 +8%',apply:ps=>ps.forEach(p=>p.stats.speed*=1.08)},
+ {id:'scale',name:'厚实鳞片',rarity:'common',tag:'defense',desc:'体型 +8%',apply:ps=>ps.forEach(p=>{p.size=Math.min(300,p.size*1.08);})},
+ {id:'greed',name:'贪食本能',rarity:'common',tag:'score',desc:'分数加成 +10%',apply:ps=>ps.forEach(p=>p.stats.score*=1.1)},
+ {id:'fang',name:'尖牙利齿',rarity:'common',tag:'grow',desc:'吞噬判定范围 +10%',apply:ps=>ps.forEach(p=>p.stats.eat*=1.1)},
+ {id:'swiftfin',name:'迅捷尾鳍',rarity:'common',tag:'speed',desc:'冲刺冷却 -12%',apply:ps=>ps.forEach(p=>p.stats.dashCd*=0.88)},
+ {id:'combo',name:'连击本能',rarity:'rare',tag:'combo',desc:'连击持续时间 +1 秒',apply:ps=>ps.forEach(p=>p.stats.comboWin*=1.35)},
+ {id:'gust',name:'疾风冲刺',rarity:'rare',tag:'speed',desc:'冲刺冷却 -25%',apply:ps=>ps.forEach(p=>p.stats.dashCd*=0.75)},
+ {id:'gill',name:'磁力鱼鳃',rarity:'rare',tag:'score',desc:'拾取范围 +50%',apply:ps=>ps.forEach(p=>p.stats.magnet*=1.5)},
+ {id:'heart',name:'海洋之心',rarity:'rare',tag:'defense',desc:'每进入新阶段回复体型 5%',apply:ps=>ps.forEach(p=>p.stats.regen+=5)},
+ {id:'lure',name:'熾光引诱',rarity:'rare',tag:'grow',desc:'成长 +15%',apply:ps=>ps.forEach(p=>p.stats.growth*=1.15)},
+ {id:'maw',name:'深渊巨口',rarity:'epic',tag:'grow',desc:'成长 +25%，吞噬判定 +12%',apply:ps=>ps.forEach(p=>{p.stats.growth*=1.25;p.stats.eat*=1.12;})},
+ {id:'frenzy',name:'暴走血脉',rarity:'epic',tag:'combo',desc:'连击 ≥5 时速度 +18%',apply:ps=>ps.forEach(p=>p.flags.frenzy=true)},
+ {id:'leech',name:'血肉汲取',rarity:'epic',tag:'defense',desc:'吃鱼时 25% 概率回复 5% 体型',apply:ps=>ps.forEach(p=>p.flags.leech=(p.flags.leech||0)+0.25)},
+ {id:'venge',name:'复仇之潮',rarity:'epic',tag:'defense',desc:'受伤后 3 秒内速度 +45%',apply:ps=>ps.forEach(p=>p.flags.venge=true)},
+ {id:'tide',name:'潮汐涌动',rarity:'epic',tag:'speed',desc:'速度 +12%，冲刺冷却 -15%',apply:ps=>ps.forEach(p=>{p.stats.speed*=1.12;p.stats.dashCd*=0.85;})},
+ {id:'kraken',name:'海神之怒',rarity:'legend',tag:'score',desc:'分数 +50%，成长 +15%',apply:ps=>ps.forEach(p=>{p.stats.score*=1.5;p.stats.growth*=1.15;})},
+ {id:'rebirth',name:'涅槃之鳞',rarity:'legend',tag:'defense',desc:'死亡时满血复活一次',apply:ps=>ps.forEach(p=>p.flags.rebirth=(p.flags.rebirth||0)+1)},
+ {id:'leviathan',name:'利维坦之躯',rarity:'legend',tag:'grow',desc:'体型 +20%，成长 +30%',apply:ps=>ps.forEach(p=>{p.size*=1.2;p.stats.growth*=1.3;})},
+ {id:'storm',name:'风暴连击',rarity:'legend',tag:'combo',desc:'连击不衰减到 0（至少保留一半），分数 +20%',apply:ps=>ps.forEach(p=>{p.flags.storm=true;p.stats.score*=1.2;})},
+ {id:'cgreed',name:'诅咒 · 贪婪深渊',rarity:'curse',tag:'score',curse:true,desc:'分数 +80%，但受伤后硬直更久（无敌 1.6s→1.0s）',apply:ps=>ps.forEach(p=>{p.stats.score*=1.8;p.flags.curseGreedy=true;})},
+ {id:'chaste',name:'诅咒 · 急速之血',rarity:'curse',tag:'speed',curse:true,desc:'速度 +35%，体型 -10%',apply:ps=>ps.forEach(p=>{p.stats.speed*=1.35;p.size=Math.max(14,p.size*0.9);})},
+ {id:'cglutton',name:'诅咒 · 暴食者',rarity:'curse',tag:'grow',curse:true,desc:'成长 +60%，但敌鱼速度 +20%',apply:ps=>{ps.forEach(p=>p.stats.growth*=1.6);G.enemySpeedMul*=1.2;}},
+ {id:'cblood',name:'诅咒 · 噬血狂宴',rarity:'curse',tag:'combo',curse:true,desc:'连击奖励翻倍，但每 20 秒失去 1 点生命',apply:ps=>ps.forEach(p=>{p.flags.curseBlood=true;p.stats.comboMul*=2;})},
+ {id:'dashmaster',name:'冲刺大师',rarity:'common',tag:'dash',desc:'冲刺速度 +18%',apply:ps=>ps.forEach(p=>p.stats.dashPow*=1.18)},
+ {id:'streamline',name:'流体身形',rarity:'common',tag:'dash',desc:'冲刺冷却 -15%',apply:ps=>ps.forEach(p=>p.stats.dashCd*=0.85)},
+ {id:'pearl',name:'聚宝鱼鳃',rarity:'common',tag:'score',desc:'珍珠获取 +50%',apply:ps=>ps.forEach(p=>p.flags.pearl=(p.flags.pearl||1)*1.5)},
+ {id:'hunt1',name:'猎手本能',rarity:'rare',tag:'hunt',desc:'对 Boss 伤害 +50%',apply:ps=>ps.forEach(p=>p.flags.hunt=(p.flags.hunt||1)*1.5)},
+ {id:'dashfar',name:'远洋气流',rarity:'rare',tag:'dash',desc:'冲刺持续 +40%',apply:ps=>ps.forEach(p=>p.stats.dashDur*=1.4)},
+ {id:'trophy',name:'战利品猎人',rarity:'rare',tag:'hunt',desc:'稀有鱼以上必掉宝物',apply:ps=>ps.forEach(p=>p.flags.trophy=true)},
+ {id:'dashkill',name:'海流收割者',rarity:'epic',tag:'dash',desc:'冲刺时可直接吞噬身边小鱼',apply:ps=>ps.forEach(p=>p.flags.dashEat=true)},
+ {id:'dashheal',name:'疾影回春',rarity:'epic',tag:'dash',desc:'冲刺后 2 秒内速度 +20%',apply:ps=>ps.forEach(p=>p.flags.dashBuff=true)},
+ {id:'bounty',name:'深海悬赏',rarity:'epic',tag:'hunt',desc:'击杀精英 +10 珍珠，分数 +25%',apply:ps=>ps.forEach(p=>{p.flags.bounty=true;p.stats.score*=1.25;})},
+ {id:'apex',name:'顶级掠食者',rarity:'legend',tag:'hunt',desc:'对 Boss 伤害 +100%，击杀 Boss 回满生命',apply:ps=>ps.forEach(p=>{p.flags.hunt=(p.flags.hunt||1)*2;p.flags.apex=true;})},
+ {id:'cslow',name:'诅咒 · 沉重之躯',rarity:'curse',tag:'grow',curse:true,desc:'体型 +30%，但速度 -12%',apply:ps=>ps.forEach(p=>{p.size*=1.3;p.stats.speed*=0.88;})},
+ {id:'cmob',name:'诅咒 · 深海追猎',rarity:'curse',tag:'score',curse:true,desc:'分数 +60%，但敌鱼更快更凶',apply:ps=>{ps.forEach(p=>p.stats.score*=1.6);G.enemySpeedMul*=1.18;}}
+];
+function cardById(id){return CARDS.find(c=>c.id===id);}
+const SYNERGIES={
+ grow:{name:'吞噬进化',desc:'每张额外 +6% 成长'},
+ speed:{name:'深海疾行',desc:'每张额外 +3% 速度'},
+ defense:{name:'不朽之壳',desc:'每张额外 4% 受伤减免'},
+ combo:{name:'连击风暴',desc:'连击衰减速度 -30%'},
+ score:{name:'财富之潮',desc:'每张额外 +5% 分数'},
+ dash:{name:'疾风冲刺流',desc:'每张冲刺冷却 -6%'},
+ hunt:{name:'狩猎链',desc:'对 Boss 伤害每张 +12%'}
+};
+function tagCount(tag){let n=0;for(const id of G.deck){const c=findReward(id);if(c&&c.tag===tag)n++;}return n;}
+function synGrowth(){return 1+0.06*tagCount('grow');}
+function synSpeed(){return 1+0.03*tagCount('speed');}
+function synDefense(){return 1-0.04*tagCount('defense');}
+function synScore(){return 1+0.05*tagCount('score');}
+function synComboDecay(){return Math.max(0.35,1-0.3*Math.max(0,tagCount('combo')-1));}
+function synDashCd(){return Math.max(0.55,1-0.06*tagCount('dash'));}
+function synHunt(){return 1+0.12*tagCount('hunt');}
+function rollRarity(bossReward){
+  if(bossReward&&Math.random()<0.35)return Math.random()<0.4?'legend':'epic';
+  const entries=Object.keys(RARITY);let total=0;
+  for(const k of entries)total+=RARITY[k].w;
+  let r=Math.random()*total;
+  for(const k of entries){r-=RARITY[k].w;if(r<=0)return k;}
+  return 'common';
+}
+function pickCards(n,bossReward){
+  const all=CARDS.concat(ITEM_POOL);
+  const chosen=[];const used=new Set(G.deck);
+  let guard=0;
+  while(chosen.length<n&&guard++<500){
+    const rar=rollRarity(bossReward);
+    let pool=all.filter(c=>c.rarity===rar&&!used.has(c.id)&&!chosen.includes(c));
+    if(!pool.length)pool=all.filter(c=>!used.has(c.id)&&!chosen.includes(c));
+    if(!pool.length)break;
+    const c=pick(pool);chosen.push(c);used.add(c.id);
+  }
+  return chosen;
+}
+
+/* ================= 200+ 道具（热梗命名 · 改变外观 · 羁绊联动） ================= */
+const MEMES=['打工人','干饭人','显眼包','绝绝子','奥利给','YYDS','芭比Q','躺平人','内卷王','泰裤辣',
+ '哈基米','尊嘟假嘟','电子榨菜','多巴胺','班味浓','松弛感','偷感人','草台班子','双向奔赴','破防侠',
+ '拿捏怪','天花板','种草机','尾款人','早F晚E','嘴替君','特种兵','i人系','e人系','好搭子',
+ '公主请','命运齿轮','遥遥领先','废话文学','孔乙己','泼天富贵','精神状态','CPU大师','KTV麦霸','PPT战神'];
+const ITEM_SUFFIX=['之鳞','鱼鳍','气泡','尾迹','光环'];
+const ARCHETYPES=[
+ {key:'speed',family:'疾行',desc:'移动速度 +{v}%',vals:[6,9,12],apply:(p,v)=>p.stats.speed*=1+v/100},
+ {key:'growth',family:'进化',desc:'成长速度 +{v}%',vals:[8,12,16],apply:(p,v)=>p.stats.growth*=1+v/100},
+ {key:'score',family:'财富',desc:'分数 +{v}%',vals:[8,12,18],apply:(p,v)=>p.stats.score*=1+v/100},
+ {key:'magnet',family:'引力',desc:'拾取范围 +{v}%',vals:[20,35,50],apply:(p,v)=>p.stats.magnet*=1+v/100},
+ {key:'dashCd',family:'冲刺',desc:'冲刺冷却 -{v}%',vals:[8,12,18],apply:(p,v)=>p.stats.dashCd*=1-v/100},
+ {key:'dashPow',family:'冲刺',desc:'冲刺速度 +{v}%',vals:[10,15,22],apply:(p,v)=>p.stats.dashPow*=1+v/100},
+ {key:'hp',family:'生命',desc:'体型 +{v}%',vals:[4,7,10],apply:(p,v)=>{p.size=Math.min(300,p.size*(1+v/100));}},
+ {key:'regen',family:'治愈',desc:'进入新阶段回复体型 {v}%',vals:[5,8,12],apply:(p,v)=>p.stats.regen+=v},
+ {key:'eat',family:'进化',desc:'吞噬判定 +{v}%',vals:[8,12,18],apply:(p,v)=>p.stats.eat*=1+v/100},
+ {key:'combo',family:'连击',desc:'连击持续 +{v}%',vals:[15,25,35],apply:(p,v)=>p.stats.comboWin*=1+v/100},
+ {key:'shield',family:'生命',desc:'获得 {v} 层护盾',vals:[1,1,2],apply:(p,v)=>p.shield+=v},
+ {key:'crit',family:'连击',desc:'暴击率 +{v}%（吃鱼分数翻倍）',vals:[8,12,18],apply:(p,v)=>p.flags.crit=(p.flags.crit||0)+v/100},
+ {key:'luck',family:'幸运',desc:'宝物掉落 +{v}%',vals:[15,25,40],apply:(p,v)=>p.flags.luck=(p.flags.luck||0)+v/100},
+ {key:'pearl',family:'财富',desc:'珍珠获取 +{v}%',vals:[20,35,50],apply:(p,v)=>p.flags.pearl=(p.flags.pearl||1)*(1+v/100)},
+ {key:'bossDmg',family:'狩猎',desc:'对 Boss 伤害 +{v}%',vals:[15,25,40],apply:(p,v)=>p.flags.hunt=(p.flags.hunt||1)*(1+v/100)},
+ {key:'armor',family:'生命',desc:'受伤减免 +{v}%（概率免伤）',vals:[8,12,18],apply:(p,v)=>p.flags.armor=Math.min(0.75,(p.flags.armor||0)+v/100)},
+ {key:'thorn',family:'荆棘',desc:'受伤时撞退周围敌鱼',vals:[1],apply:p=>p.flags.thorn=true},
+ {key:'lifesteal',family:'治愈',desc:'吃鱼 {v}% 概率回血',vals:[5,8,12],apply:(p,v)=>p.flags.leech=(p.flags.leech||0)+v/100},
+ {key:'dashEat',family:'冲刺',desc:'冲刺可吞噬身边小鱼',vals:[1],apply:p=>p.flags.dashEat=true},
+ {key:'dashStun',family:'冲刺',desc:'冲刺撞飞敌鱼',vals:[1],apply:p=>p.flags.dashStun=true},
+ {key:'freeze',family:'寒冰',desc:'寒冰光环：周围敌鱼减速',vals:[1],apply:p=>p.flags.freeze=true},
+ {key:'burn',family:'灼热',desc:'被撞时灼伤反弹',vals:[1],apply:p=>p.flags.burn=true},
+ {key:'comboMul',family:'连击',desc:'连击分数 +{v}%',vals:[10,15,25],apply:(p,v)=>p.stats.comboMul*=1+v/100},
+ {key:'magnet2',family:'幸运',desc:'道具吸引 +{v}%',vals:[30,50,80],apply:(p,v)=>p.stats.magnet*=1+v/100},
+ {key:'turret',family:'机械',desc:'每 6 秒布下一座自动炮台（上限3）',vals:[1],apply:p=>{p.flags.turret=(p.flags.turret||0)+1;}},
+ {key:'trap',family:'机械',desc:'每 7 秒布下漩涡陷阱（吸住并吞噬小鱼）',vals:[1],apply:p=>{p.flags.trap=(p.flags.trap||0)+1;}},
+ {key:'poison',family:'毒素',desc:'游动时留下有毒拖尾（减速并侵蚀敌鱼）',vals:[1],apply:p=>{p.flags.poison=true;}},
+ {key:'minion',family:'召唤',desc:'召唤随从鱼为你捕猎',vals:[1,1,2],apply:(p,v)=>{p.flags.minion=(p.flags.minion||0)+v;}},
+ {key:'torpedo',family:'机械',desc:'每 5 秒发射追踪鱼雷',vals:[1],apply:p=>{p.flags.torpedo=true;}},
+ {key:'sonar',family:'科技',desc:'每 8 秒声呐脉冲震退敌鱼',vals:[1],apply:p=>{p.flags.sonar=true;}},
+ {key:'shieldGen',family:'科技',desc:'每 25 秒自动补充 1 层护盾',vals:[1],apply:p=>{p.flags.shieldGen=true;}},
+ {key:'strongFreeze',family:'寒冰',desc:'寒冰光环大幅强化',vals:[1],apply:p=>{p.flags.freeze=true;p.flags.strongFreeze=true;}}
+];
+const LOOKS=[
+ {id:'crown',name:'小王冠',color:'#ffd166'},{id:'horn',name:'恶魔角',color:'#fb7185'},
+ {id:'glasses',name:'黑墨镜',color:'#0b1220'},{id:'halo',name:'天使环',color:'#ffe9a8'},
+ {id:'cap',name:'鸭舌帽',color:'#22c1ff'},{id:'wings',name:'小翅膀',color:'#e0f2ff'},
+ {id:'flower',name:'小花花',color:'#ff8ec6'},{id:'mustache',name:'绅士胡',color:'#8b5a2b'},
+ {id:'antenna',name:'天线宝宝',color:'#7dffb2'},{id:'band',name:'奋斗头带',color:'#ff5e3a'},
+ {id:'cape',name:'英雄披风',color:'#7b5cff'},{id:'chain',name:'大金链子',color:'#ffcf4d'},
+ {id:'star',name:'星星头饰',color:'#fff2a8'},{id:'flame',name:'火焰角饰',color:'#ff8e53'},
+ {id:'ice',name:'冰晶角饰',color:'#b7f3ff'},{id:'bolt',name:'闪电纹',color:'#ffe066'},
+ {id:'mask',name:'眼罩',color:'#334155'},{id:'hat',name:'高礼帽',color:'#1f2937'},
+ {id:'shell',name:'贝壳甲',color:'#f9d5b3'},{id:'ribbon',name:'蝴蝶结',color:'#ff7ecf'}
+];
+const LOOK_BY_ID={};
+for(const l of LOOKS)LOOK_BY_ID[l.id]=l;
+function addLook(p,look){
+  if(!p.looks)p.looks=[];
+  if(look&&p.looks.indexOf(look.id)<0)p.looks.push(look.id);
+}
+function buildItemPool(){
+  const pool=[];let i=0;
+  for(const meme of MEMES){
+    for(const suf of ITEM_SUFFIX){
+      const a=ARCHETYPES[i%ARCHETYPES.length];
+      const tier=Math.floor(i/ARCHETYPES.length)%a.vals.length;
+      const v=a.vals[tier];
+      const look=LOOKS[i%LOOKS.length];
+      const rar=a.vals.length>1?(tier===0?'common':tier===1?'rare':'epic'):'rare';
+      pool.push({id:'it'+i,name:meme+suf,rarity:rar,tag:a.key,family:a.family,isItem:true,look:look,
+        desc:a.desc.replace('{v}',v)+'（外观：'+look.name+'）',
+        apply:ps=>ps.forEach(p=>{a.apply(p,v);addLook(p,look);})});
+      i++;
+    }
+  }
+  return pool;
+}
+const ITEM_POOL=buildItemPool();
+function findReward(id){return CARDS.find(c=>c.id===id)||ITEM_POOL.find(c=>c.id===id);}
+function rewardFamily(r){
+  if(!r)return '';
+  if(r.family)return r.family;
+  return ({grow:'进化',speed:'疾行',defense:'生命',combo:'连击',score:'财富',dash:'冲刺',hunt:'狩猎'})[r.tag]||'';
+}
+function famCount(fam){
+  let n=0;
+  for(const id of G.deck){const r=findReward(id);if(r&&rewardFamily(r)===fam)n++;}
+  return n;
+}
+function famMul(fam,b2,b4){const n=famCount(fam);return 1+(n>=2?b2:0)+(n>=4?b4:0);}
+function famCd(fam){const n=famCount(fam);return Math.max(0.5,1-(n>=2?0.05:0)-(n>=4?0.08:0));}
+
+/* ---- 联动（Isaac 式双道具 Combo） ---- */
+const PAIR_SYNERGIES=[
+ {need:['freeze','burn'],name:'蒸汽爆发',desc:'获得反伤 + 更强防御',run(){for(const p of G.players){p.flags.thorn=true;p.flags.armor=Math.min(0.75,(p.flags.armor||0)+0.1);}}},
+ {need:['dashEat','dashStun'],name:'流体力学',desc:'冲刺冷却 -18%',run(){for(const p of G.players)p.stats.dashCd*=0.82;}},
+ {need:['crit','comboMul'],name:'暴击风暴',desc:'暴击率 +15%',run(){for(const p of G.players)p.flags.crit=(p.flags.crit||0)+0.15;}},
+ {need:['luck','pearl'],name:'商业互吹',desc:'珍珠 +50%',run(){for(const p of G.players)p.flags.pearl=(p.flags.pearl||1)*1.5;}},
+ {need:['bossDmg','armor'],name:'猎人本能',desc:'对 Boss 伤害 +25%',run(){for(const p of G.players)p.flags.hunt=(p.flags.hunt||1)*1.25;}}
+];
+function checkPairSynergies(){
+  const has=t=>G.deck.some(id=>{const r=findReward(id);return r&&r.tag===t;});
+  for(const pair of PAIR_SYNERGIES){
+    const key='pair_'+pair.need.join('_');
+    if(G.pairFlags[key])continue;
+    if(has(pair.need[0])&&has(pair.need[1])){
+      G.pairFlags[key]=true;
+      pair.run();
+      showBanner('🔗 联动触发！',pair.name+' — '+pair.desc);
+      Audio2.card();
+    }
+  }
+}
+
+/* ================= Boss 特性（吞噬获取） ================= */
+const BOSS_TRAITS=[
+ {id:'sharkRage',name:'巨鲨之怒',desc:'冲刺速度 +20%，对 Boss +25%',apply:p=>{p.stats.dashPow*=1.2;p.flags.hunt=(p.flags.hunt||1)*1.25;}},
+ {id:'whaleFrost',name:'古鲸寒息',desc:'获得寒冰光环',apply:p=>{p.flags.freeze=true;}},
+ {id:'squidShadow',name:'魔魷之影',desc:'冲刺冷却 -15%，受伤后加速',apply:p=>{p.stats.dashCd*=0.85;p.flags.venge=true;}},
+ {id:'beastCore',name:'熔岩之心',desc:'体型 +12%，受击灼伤反弹',apply:p=>{p.size=Math.min(300,p.size*1.12);p.flags.burn=true;}},
+ {id:'miniFang',name:'鲨之毓牙',desc:'吞噬判定 +15%',apply:p=>{p.stats.eat*=1.15;}},
+ {id:'miniSpine',name:'豚之硬棘',desc:'免伤概率 +12%',apply:p=>{p.flags.armor=Math.min(0.75,(p.flags.armor||0)+0.12);}},
+ {id:'miniDash',name:'魷之突进',desc:'冲刺速度 +15%',apply:p=>{p.stats.dashPow*=1.15;}},
+ {id:'miniHeart',name:'鳗之心跳',desc:'连击持续 +25%',apply:p=>{p.stats.comboWin*=1.25;}}
+];
+function grantBossTrait(mini,defId){
+  const byBoss={shark:'sharkRage',whale:'whaleFrost',squid:'squidShadow',beast:'beastCore'};
+  const miniPool=['miniFang','miniSpine','miniDash','miniHeart'];
+  const id=mini?pick(miniPool):byBoss[defId];
+  const t=BOSS_TRAITS.find(x=>x.id===id);
+  if(!t)return;
+  for(const p of G.players){
+    if(!p.traits.some(x=>x.id===t.id)){p.traits.push(t);t.apply(p);}
+  }
+  showBanner('👑 吞噬特性！',t.name+' — '+t.desc,3.2);
+}
+
+/* ================= 道具 ================= */
+const ITEM_TYPES=[
+ {id:'speed',name:'迅捷洋流',color:'#22d3ee',dur:6,icon:'⚡'},
+ {id:'shield',name:'泡泡护盾',color:'#a78bfa',dur:0,icon:'🛡'},
+ {id:'magnet',name:'磁力漩涡',color:'#f472b6',dur:8,icon:'🧲'},
+ {id:'heart',name:'成长之泉',color:'#f87171',dur:0,icon:'❤'},
+ {id:'star',name:'星辰碎片',color:'#fbbf24',dur:0,icon:'★'}
+];
+
+/* ================= 场景（5 大海域） ================= */
+const STAGES=[
+ {name:'珊瑚浅海',top:'#0b3b66',mid:'#1466a8',bot:'#0a2c52',accent:'#7ee7ff',accent2:'#ff8ec6',fog:0,
+  mech:'温柔的新手海域，安心成长'},
+ {name:'幽暗海沟',top:'#020817',mid:'#06203c',bot:'#01060f',accent:'#2de2ff',accent2:'#7c5cff',fog:0.9,
+  mech:'视野受限，大鱼更凶猛'},
+ {name:'冰封海域',top:'#0d3350',mid:'#3a7fa8',bot:'#0c2740',accent:'#b7f3ff',accent2:'#8fd8ff',fog:0.15,
+  mech:'浮冰漂流，寒流减速'},
+ {name:'火山热泉',top:'#2a0b08',mid:'#8c2c0e',bot:'#330d06',accent:'#ffa14a',accent2:'#ff5e3a',fog:0.1,
+  mech:'热泉气泡升腾，碰触灼伤'},
+ {name:'远古遗迹',top:'#05231e',mid:'#0e5247',bot:'#04211c',accent:'#63ffd4',accent2:'#e8c95c',fog:0.2,
+  mech:'水母电流漂荡，遗迹沉眠'}
+];
+function stagePalette(){return STAGES[(G.stage-1)%STAGES.length];}
+function isBossStage(s){return s%3===0;}
+function quotaFor(s){return 8+s*3;}
+
+/* ================= 鱼类类型（不同形态与习性） ================= */
+const FISH_TYPES=[
+ {id:'round',name:'圆润鮋',w:24},
+ {id:'shark',name:'猎影鲨',w:11},
+ {id:'puffer',name:'刺豚',w:9},
+ {id:'jelly',name:'幽光水母',w:9},
+ {id:'eel',name:'电鳗',w:8},
+ {id:'squid',name:'箭鸻',w:8},
+ {id:'ray',name:'蝠蟆',w:7},
+ {id:'sword',name:'剑鱼',w:8},
+ {id:'seahorse',name:'海马',w:6},
+ {id:'lantern',name:'灯笼鮋鱇',w:6},
+ {id:'sunfish',name:'翻车鱼',w:4}
+];
+function rollFishType(){
+  if(G.stage<2&&Math.random()<0.72)return 'round';
+  let total=0;for(const t of FISH_TYPES)total+=t.w;
+  let r=Math.random()*total;
+  for(const t of FISH_TYPES){r-=t.w;if(r<=0)return t.id;}
+  return 'round';
+}
+
+/* ================= 阶段词缀（每阶段随机） ================= */
+const STAGE_MODS=[
+ {id:'rich',name:'富饶海域',desc:'食物与宝物翻倍'},
+ {id:'frenzy',name:'狂潮',desc:'敌鱼速度 +25%'},
+ {id:'current',name:'洋流涌动',desc:'海水持续漂移'},
+ {id:'giant',name:'巨物时代',desc:'敌鱼体型 +22%'},
+ {id:'bless',name:'祝福之光',desc:'每 15 秒回复 1 生命'},
+ {id:'dark',name:'永夜',desc:'视野大幅收缩'},
+ {id:'storm',name:'星雨',desc:'稀有鱼与宝物大增'}
+];
+function modById(id){return STAGE_MODS.find(m=>m.id===id);}
+function rollMods(){
+  if(G.stage<=1)return [];
+  const n=Math.random()<0.42?2:1;
+  const pool=STAGE_MODS.slice();
+  const out=[];
+  for(let i=0;i<n&&pool.length;i++)out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0].id);
+  return out;
+}
+function modsText(){
+  return G.mods.length?' · 词缀：'+G.mods.map(id=>{const m=modById(id);return m?m.name:'';}).join(' / '):'';
+}
+
+/* ================= 随机事件（流程变化） ================= */
+const EVENTS=[
+ {id:'gold',name:'✨ 金潮涌来！',sub:'稀有金鱼群出现，吞下大赚',run(){
+   for(let i=0;i<12;i++){spawnEnemy(0.35,'round',1);const e=G.enemies[G.enemies.length-1];
+     if(e){e.c1='#f59e0b';e.c2='#fde68a';e.accent='#fff2a8';e.gold=true;e.size=Math.max(8,e.size*0.78);}}}},
+ {id:'stampede',name:'⚠ 鱼群暴动！',sub:'大批猎食者涌入，小心！',run(){
+   for(let i=0;i<6;i++)spawnEnemy(1,pick(['shark','sword','shark']),2);}},
+ {id:'treasure',name:'🎁 漂流宝藏！',sub:'海神的馈赠降临',run(){
+   for(let i=0;i<5;i++)spawnItem(G.cam.x+rand(-170,170),G.cam.y+rand(-130,130));}},
+ {id:'heal',name:'💙 治愈之潮',sub:'温暖的海流让鱼儿重新长大',run(){
+   for(const p of G.players){p.size=Math.min(300,p.size*1.12);p.invuln=Math.max(p.invuln,1);addFloater(p.x,p.y-p.size-22,'+12% 体型','#8dffc8');}}},
+ {id:'whirl',name:'🌀 漩涡海域',sub:'洋流加速 15 秒',run(){G.tempCurrent=15;}},
+ {id:'feast',name:'🐟 丰饶之海',sub:'食物大量涌现',run(){for(let i=0;i<26;i++)spawnFood();}},
+ {id:'hunt',name:'🎯 猎杀时刻',sub:'精英鱼带着宝物出现',run(){
+   for(let i=0;i<3;i++)spawnEnemy(0.55,pick(['ray','sword','squid']),2);}}
+];
+function triggerRandomEvent(){
+  const ev=pick(EVENTS);
+  ev.run();
+  showBanner(ev.name,ev.sub,3);
+  Audio2.blip();
+}
+
+/* ================= 阶段目标（轮换，不只吃鱼） ================= */
+function rollObjective(stage){
+  const kind=stage<=1?'eat':pick(['eat','eat','score','survive','elite','combo']);
+  let target=0;
+  if(kind==='eat')target=11+Math.round(stage*2.2);
+  else if(kind==='score')target=1400+stage*950;
+  else if(kind==='survive')target=42+stage*3;
+  else if(kind==='elite')target=1+Math.floor(stage/5);
+  else target=Math.min(20,7+Math.floor(stage*0.7));
+  return {kind:kind,target:target,progress:0};
+}
+function objectiveText(){
+  const o=G.objective;
+  if(!o)return '';
+  const names={eat:'吞食小鱼',score:'累计得分',survive:'坚持生存',elite:'猎杀精英',combo:'达成连击',boss:'击败 Boss'};
+  const units={eat:'条',score:'分',survive:'秒',elite:'只',combo:'x',boss:'体'};
+  return '目标：'+names[o.kind]+' '+Math.min(o.progress,o.target)+'/'+o.target+' '+units[o.kind];
+}
+function objectiveComplete(){
+  const o=G.objective;
+  return !!o&&o.progress>=o.target;
+}
+function stageRank(){
+  if(G.stageDamage===0&&G.stageTime<42)return 'S';
+  if(G.stageDamage<=2)return 'A';
+  if(G.stageDamage<=6)return 'B';
+  return 'C';
+}
+
+/* ================= 全局状态 ================= */
+const G={
+  mode:'menu',modeKind:'single',paused:false,time:0,stage:1,stageTime:0,stageEaten:0,quota:11,
+  players:[],enemies:[],foods:[],items:[],hazards:[],particles:[],proj:[],boss:null,
+  deck:[],spawnT:0,hazardT:2,bannerT:0,shake:0,enemySpeedMul:1,sharedHp:6,versusT:180,
+  ambient:[],bubbles:[],decor:[],shafts:[],
+  objective:null,mods:[],eventT:42,tempCurrent:0,blessT:15,stageDamage:0,stageBestCombo:0,floaters:[],summons:[],
+  cam:{x:0,y:0,zoom:1},
+  map:null,curRow:-1,curIdx:0,node:null,availNodes:[],pearls:0,frenzyNext:false,pairFlags:{},
+  stats:{eaten:0,bestCombo:0,dmg:0}
+};
+function initAmbientScene(){
+  G.bubbles=[];G.shafts=[];G.ambient=[];
+  for(let i=0;i<150;i++)G.bubbles.push({x:rand(0,AW),y:rand(0,AH),r:rand(1.5,7),spd:rand(12,42),wob:rand(0,TAU),wobS:rand(0.6,1.8),layer:Math.random()});
+  for(let i=0;i<12;i++)G.shafts.push({x:rand(0,AW),w:rand(60,190),ang:rand(-0.22,0.22),spd:rand(2,7),alpha:rand(0.4,1)});
+  G.motes=[];
+  for(let i=0;i<110;i++)G.motes.push({x:rand(0,AW),y:rand(0,AH),r:rand(0.8,2.6),spd:rand(4,14),wob:rand(0,TAU),alpha:rand(0.25,0.7)});
+  G.ambient=[];
+  for(let i=0;i<40;i++)G.ambient.push({x:rand(0,AW),y:rand(AH*0.12,AH*0.88),vx:rand(-30,30)||14,size:rand(9,26),ang:0,phase:rand(0,TAU),c1:pick(['#2fa8ff','#2ee6c8','#b45cff','#f472b6','#f59e0b']),c2:pick(['#7de8ff','#9df6ff','#6be0ff','#fda4af','#fcd34d']),accent:'#8fe8ff'});
+}
+function makeDecor(){
+  G.decor=[];const pal=stagePalette();const idx=(G.stage-1)%STAGES.length;
+  if(idx===0){for(let i=0;i<22;i++)G.decor.push({type:'coral',x:rand(0,AW),y:AH-rand(0,AH*0.12),r:rand(40,120),h:rand(60,190),hue:Math.random()});}
+  if(idx===2){for(let i=0;i<20;i++)G.decor.push({type:'ice',x:rand(0,AW),y:rand(AH*0.2,AH),r:rand(28,90),drift:rand(-16,16),phase:rand(0,TAU)});}
+  if(idx===3){for(let i=0;i<15;i++)G.decor.push({type:'vent',x:rand(0,AW),y:AH-rand(0,AH*0.1),r:rand(30,80),phase:rand(0,TAU)});}
+  if(idx===4){for(let i=0;i<17;i++)G.decor.push({type:'pillar',x:rand(0,AW),y:AH-rand(0,AH*0.15),w:rand(26,70),h:rand(120,320),phase:rand(0,TAU)});}
+  if(pal.fog>0){for(let i=0;i<9;i++)G.decor.push({type:'mist',x:rand(0,AW),y:rand(0,AH),r:rand(180,420),phase:rand(0,TAU)});}
+}
+/* ================= DOM 引用 ================= */
+const $=id=>document.getElementById(id);
+const hudEl=$('hud'),hudScore=$('hudScore'),hudCombo=$('hudCombo'),hudStage=$('hudStage'),hudGoal=$('hudGoal'),
+ hudHp=$('hudHp'),dashBar=$('dashBar'),bossWrap=$('bossWrap'),bossName=$('bossName'),bossHpBar=$('bossHp'),
+ bannerEl=$('banner'),bannerMain=$('bannerMain'),bannerSub=$('bannerSub'),touchHint=$('touchHint');
+let T=0;
+function showBanner(main,sub,dur){
+  bannerMain.textContent=main;bannerSub.textContent=sub||'';
+  bannerEl.classList.remove('hidden');
+  bannerEl.style.animation='none';void bannerEl.offsetWidth;bannerEl.style.animation='';
+  G.bannerT=dur||2.4;
+}
+function comboMult(p){return (1+Math.min(p.combo,30)*0.1)*(p.stats.comboMul||1);}
+
+/* ================= 玩家 ================= */
+function makePlayer(id){
+  const p={id:id,x:AW*(id===0?0.3:0.7),y:AH*0.56,vx:0,vy:0,ang:id===0?0:Math.PI,size:20,
+    shield:0,alive:true,isGhost:false,respawnT:0,invuln:2,dashT:0,dashCd:0,
+    buffT:0,slowT:0,stunT:0,combo:0,comboT:0,eaten:0,score:0,curseT:0,
+    stats:{growth:1,speed:1,magnet:1,dashCd:1,dashPow:1,dashDur:1,score:1,comboWin:1,eat:1,regen:0,comboMul:1},
+    flags:{},itemBuffs:{speed:0,magnet:0},traits:[],looks:[],phase:rand(0,TAU),
+    summonT:{turret:2,trap:3,torpedo:3,sonar:4,shield:12}};
+  if(id===0){p.fish=SAVE.fish;p.skin=SAVE.skin;p.fin=SAVE.fin;p.trail=SAVE.trail;}
+  else{
+    const others=FISH_DEFS.filter(f=>f.id!==SAVE.fish&&isUnlocked('fish',f.id));
+    p.fish=(others.length?pick(others):fishById(SAVE.fish)).id;
+    const skins=SKINS.filter(s=>isUnlocked('skin',s.id)&&s.id!==SAVE.skin);
+    p.skin=skins.length?pick(skins).id:SAVE.skin;
+    p.fin=SAVE.fin;p.trail=SAVE.trail;
+  }
+  const def=fishById(p.fish),skin=skinById(p.skin);
+  p.c1=skin.c1;p.c2=skin.c2;p.accent=def.accent;
+  def.apply(p);
+  return p;
+}
+function respawnReset(p){
+  p.alive=true;p.isGhost=false;p.size=Math.max(20,p.size*0.62);p.invuln=2.6;p.stunT=0;p.slowT=0;
+  p.x=AW*rand(0.25,0.75);p.y=AH*rand(0.3,0.8);p.vx=0;p.vy=0;
+}
+function boundPlayer(p){
+  const m=p.size;
+  if(p.x<m){p.x=m;p.vx=Math.abs(p.vx)*0.5;}
+  if(p.x>AW-m){p.x=AW-m;p.vx=-Math.abs(p.vx)*0.5;}
+  if(p.y<m){p.y=m;p.vy=Math.abs(p.vy)*0.5;}
+  if(p.y>AH-m){p.y=AH-m;p.vy=-Math.abs(p.vy)*0.5;}
+}
+function tryDash(p){
+  if(!p.alive||p.stunT>0||p.dashCd>0)return;
+  const moving=Math.hypot(p.vx,p.vy)>40;
+  p.dashAng=moving?Math.atan2(p.vy,p.vx):p.ang;
+  p.dashT=0.42*(p.stats.dashDur||1);
+  p.dashCd=1.55*p.stats.dashCd*synDashCd()*famCd('冲刺');
+  p.invuln=Math.max(p.invuln,p.dashT+0.12);
+  if(p.flags.dashBuff)p.dashBuffT=2;
+  Audio2.dash();
+  addBurst(p.x,p.y,p.accent,12,180);
+}
+function updatePlayer(p,dt){
+  if(!p.alive){
+    p.respawnT-=dt;
+    if(p.respawnT<=0){
+      if(G.modeKind==='coop'){endGame('dead');}
+      else if(G.modeKind==='versus'){respawnReset(p);}
+    }
+    return;
+  }
+  if(p.invuln>0)p.invuln-=dt;
+  if(p.stunT>0){
+    p.stunT-=dt;p.vx*=1-dt*3;p.vy*=1-dt*3;p.x+=p.vx*dt;p.y+=p.vy*dt;boundPlayer(p);return;
+  }
+  if(p.dashT>0)p.dashT-=dt;
+  if(p.dashCd>0)p.dashCd-=dt;
+  if(p.buffT>0)p.buffT-=dt;
+  if(p.dashBuffT>0)p.dashBuffT-=dt;
+  if(p.slowT>0)p.slowT-=dt;
+  if(p.itemBuffs.speed>0)p.itemBuffs.speed-=dt;
+  if(p.itemBuffs.magnet>0)p.itemBuffs.magnet-=dt;
+  if(p.flags.curseBlood){p.curseT+=dt;if(p.curseT>=20){p.curseT=0;
+    if(G.modeKind==='coop'){p.size*=0.9;if(p.size<=11){showBanner('噬血反噬！','体型被诅咒吞噬');onDeath(p);}}
+    else{p.size*=0.9;if(p.size<=11){showBanner('噬血反噬！','体型被诅咒吞噬');onDeath(p);}}}}
+  let ax=0,ay=0;
+  if(p.id===0){
+    ax=(keys['d']?1:0)-(keys['a']?1:0);ay=(keys['s']?1:0)-(keys['w']?1:0);
+    if(touch.active){ax=touch.dx;ay=touch.dy;}
+    if(keys['shift']||keys[' ']||touch.dashQueued){tryDash(p);touch.dashQueued=false;}
+  }else{
+    ax=(keys['arrowright']?1:0)-(keys['arrowleft']?1:0);ay=(keys['arrowdown']?1:0)-(keys['arrowup']?1:0);
+    if(keys['enter']||keys['/'])tryDash(p);
+  }
+  const m=Math.hypot(ax,ay);
+  if(m>1){ax/=m;ay/=m;}
+  const frenzy=(p.flags.frenzy&&p.combo>=5)?1.18:1;
+  const hitSpd=p.buffT>0?1.45:1;
+  const itemSpd=p.itemBuffs.speed>0?1.32:1;
+  const dashBuff=p.dashBuffT>0?1.2:1;
+  const sizePenalty=1/(1+p.size*0.0034);
+  const slow=p.slowT>0?0.58:1;
+  const sp=242*p.stats.speed*synSpeed()*famMul('疾行',0.05,0.08)*frenzy*hitSpd*itemSpd*dashBuff*sizePenalty*slow;
+  if(p.dashT>0){
+    const ds=680*p.stats.dashPow*synSpeed();
+    p.vx=Math.cos(p.dashAng)*ds;
+    p.vy=Math.sin(p.dashAng)*ds;
+  }else{
+    p.vx=lerp(p.vx,ax*sp,Math.min(1,dt*8));
+    p.vy=lerp(p.vy,ay*sp,Math.min(1,dt*8));
+  }
+  if(G.mods.includes('current')||G.tempCurrent>0){
+    p.x+=Math.cos(T*0.42+1.2)*54*dt;
+    p.y+=Math.sin(T*0.31)*32*dt;
+  }
+  p.x+=p.vx*dt;p.y+=p.vy*dt;
+  boundPlayer(p);
+  const spd=Math.hypot(p.vx,p.vy);
+  if(spd>14)p.ang=angLerp(p.ang,Math.atan2(p.vy,p.vx),Math.min(1,dt*8));
+  if(spd>26&&Math.random()<dt*26)addTrailParticle(p);
+  if(p.summonT){
+    if(p.flags.turret){
+      p.summonT.turret-=dt;
+      if(p.summonT.turret<=0){
+        p.summonT.turret=6;
+        const cap=Math.min(3,1+Math.floor((p.flags.turret||1)/2));
+        let cur=0;for(const s of G.summons)if(s.type==='turret'&&s.owner===p)cur++;
+        if(cur<cap)spawnSummon('turret',p.x+rand(-90,90),p.y+rand(-90,90),p);
+      }
+    }
+    if(p.flags.trap){p.summonT.trap-=dt;if(p.summonT.trap<=0){p.summonT.trap=7;spawnSummon('trap',p.x-Math.cos(p.ang)*p.size*1.6,p.y-Math.sin(p.ang)*p.size*1.6,p);}}
+    if(p.flags.torpedo){p.summonT.torpedo-=dt;if(p.summonT.torpedo<=0){p.summonT.torpedo=5;fireTorpedo(p);}}
+    if(p.flags.sonar){p.summonT.sonar-=dt;if(p.summonT.sonar<=0){p.summonT.sonar=8;sonarPulse(p);}}
+    if(p.flags.shieldGen){p.summonT.shield-=dt;if(p.summonT.shield<=0){p.summonT.shield=25;p.shield++;addFloater(p.x,p.y-p.size-24,'+护盾','#a78bfa');}}
+    if(p.flags.poison&&spd>40&&Math.random()<dt*13)spawnSummon('poison',p.x-Math.cos(p.ang)*p.size*1.1,p.y-Math.sin(p.ang)*p.size*1.1,p);
+  }
+  if(p.comboT>0){
+    p.comboT-=dt*synComboDecay();
+    if(p.comboT<=0){
+      if(p.flags.storm){p.combo=Math.floor(p.combo/2);p.comboT=1.2;}
+      else p.combo=0;
+    }
+  }
+}
+function downPlayer(p){
+  p.alive=false;p.isGhost=true;p.respawnT=8;
+  showBanner('队友倒下！','靠近灵魂进行救援');Audio2.hurt();
+}
+function onDeath(p){
+  if(p.flags.rebirth>0){
+    p.flags.rebirth--;p.size=Math.max(28,p.size);p.invuln=2.2;addBurst(p.x,p.y,'#ffd166',26,280);
+    showBanner('涅槃重生！','满血复活');Audio2.clear();return;
+  }
+  if(G.modeKind==='single'){endGame('dead');return;}
+  if(G.modeKind==='coop'){downPlayer(p);return;}
+  p.alive=false;p.isGhost=true;p.respawnT=5;p.score=Math.round(p.score*0.8);
+  showBanner('被击败！','5 秒后重返战场 · 分数 -20%');Audio2.over();
+}
+function hitPlayer(p,srcX,srcY,srcSize){
+  if(!p.alive||p.invuln>0||p.dashT>0)return;
+  if(p.shield>0){p.shield--;p.invuln=1.1;addBurst(p.x,p.y,'#a78bfa',14,190);Audio2.blip();
+    showBanner('护盾抵挡！','');return;}
+  if(p.flags.armor&&Math.random()<p.flags.armor){
+    p.invuln=0.7;addBurst(p.x,p.y,'#9dffce',8,150);Audio2.blip();return;
+  }
+  G.stats.dmg++;
+  G.stageDamage++;
+  const greedy=!!p.flags.curseGreedy;
+  p.invuln=greedy?1.0:1.6;
+  const kb=greedy?430:265;
+  if(srcX!==undefined){const dx=p.x-srcX,dy=p.y-srcY;const mm=Math.hypot(dx,dy)||1;p.vx=dx/mm*kb;p.vy=dy/mm*kb;}
+  else{p.vx*=-1.5;p.vy*=-1.5;}
+  p.slowT=Math.max(p.slowT,greedy?1.2:0.6);
+  G.shake=1;Audio2.hurt();
+  addBurst(p.x,p.y,'#ff8fa3',12,210);
+  if(p.flags.thorn||p.flags.burn){
+    for(const e of G.enemies){
+      const d=Math.hypot(e.x-p.x,e.y-p.y);
+      if(d<240){const m2=d||1;e.vx+=(e.x-p.x)/m2*460;e.vy+=(e.y-p.y)/m2*460;}
+    }
+    addBurst(p.x,p.y,p.flags.burn?'#ff8e53':'#9dffce',16,280);
+  }
+  if(p.flags.hitSpeed)p.buffT=2;
+  if(p.flags.venge)p.buffT=3;
+  // 被咬掉体型：咬你的鱼越大，掉得越多
+  const biteRatio=0.12+Math.min(0.12,(srcSize||26)/Math.max(40,p.size)*0.14);
+  const lost=Math.max(2,p.size*biteRatio);
+  p.size=Math.max(10,p.size-lost);
+  addFloater(p.x,p.y-p.size-26,'-'+Math.round(lost)+' 体型','#ff8fa3');
+  if(p.size<=11){
+    showBanner('被吃掉了！','体型被咬得所剩无几');
+    onDeath(p);
+  }
+  updateHudDOM();
+}
+function checkRevives(){
+  if(G.modeKind!=='coop')return;
+  const alive=G.players.filter(p=>p.alive);
+  if(alive.length===0)return;
+  for(const g of G.players){
+    if(g.alive||!g.isGhost)continue;
+    let rescued=false;
+    for(const t of alive){if(Math.hypot(t.x-g.x,t.y-g.y)<115){rescued=true;break;}}
+    if(rescued){
+      respawnReset(g);
+      showBanner('救援成功！','队友重返战场');Audio2.card();
+    }
+  }
+}
+
+/* ================= 粒子 / 道具 / 刷怪 ================= */
+function addParticle(x,y,vx,vy,life,color,size){G.particles.push({x:x,y:y,vx:vx,vy:vy,life:life,max:life,color:color,size:size});}
+function addFloater(x,y,text,color){G.floaters.push({x:x,y:y,text:text,color:color||'#ffffff',life:1.15,max:1.15});}
+function addBurst(x,y,color,n,spd){
+  for(let i=0;i<n;i++){const a=rand(0,TAU),s=rand(spd*0.22,spd);
+    addParticle(x,y,Math.cos(a)*s,Math.sin(a)*s,rand(0.35,0.95),color,rand(2,6.5));}
+}
+function addTrailParticle(p){
+  const x=p.x-Math.cos(p.ang)*p.size*1.1,y=p.y-Math.sin(p.ang)*p.size*1.1;
+  if(p.trail==='trail1')addParticle(x,y,rand(-24,24),rand(-24,24),rand(0.4,0.85),'#ffffff',rand(1.4,3.2));
+  else if(p.trail==='trail2')addParticle(x,y,rand(-18,18),rand(-18,18),rand(0.4,0.9),pick(['#4be3ff','#7b5cff','#ff7ecf']),rand(2,4.4));
+  else if(p.trail==='trail3')addParticle(x,y,rand(-16,16),rand(-16,16),rand(0.5,1.1),pick(['#22d3ee','#a78bfa','#f0abfc','#7de8ff']),rand(2.2,5));
+  else addParticle(x,y,rand(-12,12),rand(20,60),rand(0.5,1),'#bfe9ff',rand(2,4.2));
+}
+function spawnFood(){
+  const v=viewRect();
+  G.foods.push({x:rand(v.x-40,v.x+v.w+40),y:rand(v.y-40,v.y+v.h+40),vx:rand(-16,16),vy:rand(-16,16),size:rand(3,6.5),phase:rand(0,TAU),hue:pick(['#7de8ff','#bfe9ff','#ffd9a8','#c9b8ff'])});
+}
+function spawnItem(x,y){
+  const t=pick(ITEM_TYPES);
+  G.items.push({type:t.id,x:x,y:y,vx:rand(-20,20),vy:rand(-20,20),r:17,t:rand(0,TAU),def:t});
+}
+function spawnEnemy(aggro,forceType,forceTier){
+  const ref=G.players.length?Math.max(G.players[0].size,18):20;
+  let size;const roll=Math.random();
+  if(roll<0.5)size=ref*rand(0.32,0.8);
+  else if(roll<0.78)size=ref*rand(0.85,1.12);
+  else size=ref*rand(1.25,1.9);
+  const type=forceType||rollFishType();
+  if(type==='shark')size*=1.3;
+  else if(type==='sunfish')size*=1.45;
+  else if(type==='sword')size*=1.12;
+  else if(type==='seahorse')size*=0.62;
+  else if(type==='jelly')size*=0.92;
+  else if(type==='puffer')size*=1.06;
+  if(G.mods.includes('giant'))size*=1.22;
+  let tier=0;
+  if(forceTier!==undefined)tier=forceTier;
+  else{
+    const rareChance=(G.mods.includes('storm')?0.15:0.06)+G.stage*0.005;
+    const eliteChance=0.03+G.stage*0.008+(G.mods.includes('storm')?0.045:0);
+    const r=Math.random();
+    if(r<rareChance)tier=1;
+    else if(r<rareChance+eliteChance)tier=2;
+  }
+  if(tier===1)size*=1.12;
+  if(tier===2)size*=1.32;
+  size=clamp(size,8,155);
+  const v=viewRect();
+  const edge=irand(0,3);
+  let x,y;
+  if(edge===0){x=rand(v.x,v.x+v.w);y=v.y-56;}
+  else if(edge===1){x=v.x+v.w+56;y=rand(v.y,v.y+v.h);}
+  else if(edge===2){x=rand(v.x,v.x+v.w);y=v.y+v.h+56;}
+  else{x=v.x-56;y=rand(v.y,v.y+v.h);}
+  x=clamp(x,-60,AW+60);y=clamp(y,-60,AH+60);
+  const pal=pick(ENEMY_PALETTES);
+  let behavior='wander';
+  if(type==='shark'||type==='sword')behavior='chase';
+  else if(type==='squid'||type==='ray'||type==='lantern')behavior='flee';
+  else if(size<ref*0.8)behavior='flee';
+  else if(Math.random()<0.3+aggro*0.55)behavior='chase';
+  if(tier===2)behavior='chase';
+  let speedMul=1;
+  if(type==='shark')speedMul=1.32;
+  else if(type==='sword')speedMul=1.5;
+  else if(type==='squid')speedMul=1.22;
+  else if(type==='sunfish')speedMul=0.58;
+  else if(type==='seahorse')speedMul=0.52;
+  else if(type==='jelly')speedMul=0.46;
+  else if(type==='puffer')speedMul=0.8;
+  if(tier===2)speedMul*=1.16;
+  if(G.mods.includes('frenzy'))speedMul*=1.25;
+  const spawnSpeedScale=1+G.stage*0.065;
+  const speed=rand(52,108)*spawnSpeedScale*(1+aggro*0.42)*G.enemySpeedMul*speedMul*(size>ref?0.82:1.06);
+  G.enemies.push({x:x,y:y,vx:0,vy:0,size:size,ang:Math.atan2(H/2-y,W/2-x),speed:speed,
+    behavior:behavior,wanderAng:rand(0,TAU),wanderT:rand(0.5,2.2),phase:rand(0,TAU),
+    type:type,tier:tier,inflate:0,dartT:rand(1.4,3.6),
+    c1:pal[0],c2:pal[1],accent:pal[2],drop:Math.random()<((G.mods.includes('storm')||G.mods.includes('rich'))?0.17:0.085)});
+}
+const ENEMY_PALETTES=[
+ ['#22d3ee','#67e8f9','#a5f3fc'],['#f472b6','#fda4af','#fecdd3'],['#fbbf24','#fde68a','#fef3c7'],
+ ['#34d399','#a7f3d0','#d1fae5'],['#818cf8','#c7d2fe','#e0e7ff'],['#fb7185','#fda4af','#ffe4e6'],
+ ['#2dd4bf','#99f6e4','#ccfbf1'],['#c084fc','#ddd6fe','#ede9fe']
+];
+function spawnHazard(type){
+  const v=viewRect();
+  if(type==='ice'){
+    const dir=Math.random()<0.5?1:-1;
+    G.hazards.push({type:'ice',x:dir>0?v.x-120:v.x+v.w+120,y:rand(v.y+v.h*0.18,v.y+v.h*0.9),vx:rand(22,52)*dir,r:rand(30,74),phase:rand(0,TAU),rot:rand(-0.4,0.4)});
+  }else if(type==='lava'){
+    G.hazards.push({type:'lava',x:rand(v.x+20,v.x+v.w-20),y:v.y+v.h+40,vy:-rand(46,96),r:rand(11,23),phase:rand(0,TAU)});
+  }else{
+    G.hazards.push({type:'jelly',x:rand(v.x+20,v.x+v.w-20),y:v.y-50,vy:rand(24,48),r:rand(22,40),phase:rand(0,TAU)});
+  }
+}
+function updateEnemies(dt){
+  const prey=G.players.filter(p=>p.alive);
+  for(const e of G.enemies){
+    let tx,ty;
+    const target=prey.length?prey.reduce((a,b)=>Math.hypot(a.x-e.x,a.y-e.y)<Math.hypot(b.x-e.x,b.y-e.y)?a:b):null;
+    if(target&&e.behavior==='flee'){
+      const dx=e.x-target.x,dy=e.y-target.y,d=Math.hypot(dx,dy)||1;
+      if(d<300){tx=dx/d*e.speed*1.25;ty=dy/d*e.speed*1.25;}
+      else{e.wanderT-=dt;if(e.wanderT<=0){e.wanderAng=rand(0,TAU);e.wanderT=rand(1.2,3);}tx=Math.cos(e.wanderAng)*e.speed*0.55;ty=Math.sin(e.wanderAng)*e.speed*0.55;}
+    }else if(target&&e.behavior==='chase'&&e.size>target.size*1.05){
+      const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1;
+      tx=dx/d*e.speed;ty=dy/d*e.speed;
+    }else{
+      e.wanderT-=dt;if(e.wanderT<=0){e.wanderAng=rand(0,TAU);e.wanderT=rand(1,3);}
+      tx=Math.cos(e.wanderAng)*e.speed*0.62;ty=Math.sin(e.wanderAng)*e.speed*0.62;
+    }
+    let damp=1;
+    for(const q of prey){if(q.flags&&q.flags.freeze&&Math.hypot(q.x-e.x,q.y-e.y)<340){damp=q.flags.strongFreeze?0.5:0.72;break;}}
+    e.vx=lerp(e.vx,tx*damp,Math.min(1,dt*1.6));
+    e.vy=lerp(e.vy,ty*damp,Math.min(1,dt*1.6));
+    if(e.type==='puffer'){
+      const near=target&&Math.hypot(target.x-e.x,target.y-e.y)<e.size*7;
+      e.inflate=lerp(e.inflate,near?1:0,Math.min(1,dt*2.2));
+    }
+    if(e.type==='squid'){e.dartT-=dt;if(e.dartT<=0){e.vx*=2.15;e.vy*=2.15;e.dartT=rand(2.2,4.4);}}
+    if(e.type==='seahorse')e.vy+=Math.sin(T*1.4+e.phase)*24*dt;
+    if(G.mods.includes('current')||G.tempCurrent>0){e.x+=Math.cos(T*0.42+1.2)*44*dt;e.y+=Math.sin(T*0.31)*26*dt;}
+    e.x+=e.vx*dt;e.y+=e.vy*dt;
+    if(e.x<-90)e.x=AW+90;if(e.x>AW+90)e.x=-90;
+    if(e.y<-90)e.y=AH+90;if(e.y>AH+90)e.y=-90;
+    const spd=Math.hypot(e.vx,e.vy);
+    if(spd>10)e.ang=angLerp(e.ang,Math.atan2(e.vy,e.vx),Math.min(1,dt*5));
+  }
+}
+function updateFoods(dt){
+  for(const f of G.foods){
+    for(const p of G.players){
+      if(!p.alive)continue;
+      const dx=p.x-f.x,dy=p.y-f.y,d=Math.hypot(dx,dy)||1;
+      const magnetR=(80+p.size*1.7)*p.stats.magnet*(p.itemBuffs.magnet>0?2.1:1);
+      if(d<magnetR){f.x+=dx/d*240*dt;f.y+=dy/d*240*dt;}
+    }
+    f.x+=f.vx*dt;f.y+=f.vy*dt;
+    if(f.x<-20)f.x=AW+20;if(f.x>AW+20)f.x=-20;
+    if(f.y<-20)f.y=AH+20;if(f.y>AH+20)f.y=-20;
+  }
+}
+function updateItems(dt){
+  for(const it of G.items){
+    it.t+=dt*2;
+    it.x+=it.vx*dt;it.y+=it.vy*dt;
+    it.vx*=1-dt*0.6;it.vy*=1-dt*0.6;
+    for(const p of G.players){
+      if(!p.alive)continue;
+      const dx=p.x-it.x,dy=p.y-it.y,d=Math.hypot(dx,dy)||1;
+      const magnetR=(110+p.size*1.4)*p.stats.magnet*(p.itemBuffs.magnet>0?2:1);
+      if(d<magnetR){it.x+=dx/d*170*dt;it.y+=dy/d*170*dt;}
+    }
+  }
+}
+function updateHazards(dt){
+  for(let i=G.hazards.length-1;i>=0;i--){
+    const h=G.hazards[i];
+    h.phase+=dt*2;
+    if(h.type==='ice'){h.x+=h.vx*dt;h.y+=Math.sin(h.phase)*10*dt;if(h.x<-160||h.x>W+160)G.hazards.splice(i,1);}
+    else if(h.type==='lava'){h.y+=h.vy*dt;h.x+=Math.sin(h.phase)*24*dt;if(h.y<-70)G.hazards.splice(i,1);}
+    else{h.y+=h.vy*dt;h.x+=Math.sin(h.phase*0.8)*22*dt;if(h.y>H+90)G.hazards.splice(i,1);}
+  }
+}
+function updateProjectiles(dt){
+  for(let i=G.proj.length-1;i>=0;i--){
+    const pr=G.proj[i];
+    pr.x+=pr.vx*dt;pr.y+=pr.vy*dt;pr.life-=dt;
+    if(pr.life<=0||pr.x<-60||pr.x>AW+60||pr.y<-60||pr.y>AH+60)G.proj.splice(i,1);
+  }
+}
+function updateParticles(dt){
+  for(let i=G.particles.length-1;i>=0;i--){
+    const q=G.particles[i];
+    q.life-=dt;
+    if(q.life<=0){G.particles.splice(i,1);continue;}
+    q.x+=q.vx*dt;q.y+=q.vy*dt;
+    q.vx*=1-dt*1.6;q.vy*=1-dt*1.6;
+  }
+  for(let i=G.floaters.length-1;i>=0;i--){
+    const f=G.floaters[i];
+    f.life-=dt;f.y-=dt*46;
+    if(f.life<=0)G.floaters.splice(i,1);
+  }
+}
+function updateAmbient(dt){
+  for(const b of G.bubbles){
+    b.y-=b.spd*dt*(0.5+b.layer);b.wob+=b.wobS*dt;b.x+=Math.sin(b.wob)*18*dt;
+    if(b.y<-16){b.y=AH+16;b.x=rand(0,AW);}
+    if(b.x<-24)b.x=AW+24;if(b.x>AW+24)b.x=-24;
+  }
+  for(const s of G.shafts){s.x+=s.spd*dt;if(s.x>AW+240)s.x=-240;}
+  for(const a of G.ambient){
+    a.x+=a.vx*dt;a.phase+=dt;
+    if(a.vx>0&&a.x>AW+90){a.x=-90;a.y=rand(AH*0.12,AH*0.88);}
+    if(a.vx<0&&a.x<-90){a.x=AW+90;a.y=rand(AH*0.12,AH*0.88);}
+    a.ang=angLerp(a.ang,Math.atan2(Math.sin(a.phase*0.6)*0.22,a.vx>0?1:-1),dt*2);
+  }
+  for(const m of (G.motes||[])){
+    m.y-=m.spd*dt;m.wob+=dt*0.8;m.x+=Math.sin(m.wob)*8*dt;
+    if(m.y<-10){m.y=AH+10;m.x=rand(0,AW);}
+  }
+  for(const d of G.decor){
+    if(d.type==='ice'){d.x+=d.drift*dt;if(d.x>AW+140)d.x=-140;if(d.x<-140)d.x=AW+140;}
+    if(d.type==='mist')d.x+=Math.sin(d.phase+T*0.12)*14*dt;
+  }
+}
+function spawnTick(dt){
+  G.spawnT-=dt;
+  const aggro=clamp((G.stageTime-25)/40,0,1)*0.78+G.stage*0.085+(G.modeKind!=='single'?0.12:0);
+  const maxE=12+G.stage*2+(G.modeKind==='versus'?6:0);
+  if(G.spawnT<=0&&G.enemies.length<maxE){spawnEnemy(aggro);G.spawnT=Math.max(0.28,1.15-aggro*0.72);}
+  const rich=G.mods.includes('rich')||G.mods.includes('storm');
+  if(G.foods.length<(rich?64:36)&&Math.random()<dt*7*(rich?2:1))spawnFood();
+  G.hazardT-=dt;
+  if(G.hazardT<=0){
+    const idx=(G.stage-1)%STAGES.length;
+    if(idx===2&&G.hazards.filter(h=>h.type==='ice').length<4)spawnHazard('ice');
+    if(idx===3&&G.hazards.filter(h=>h.type==='lava').length<6)spawnHazard('lava');
+    if(idx===4&&G.hazards.filter(h=>h.type==='jelly').length<5)spawnHazard('jelly');
+    G.hazardT=rand(1.6,3.2);
+  }
+}
+
+/* ================= 吃鱼 / 碰撞 ================= */
+function eatEnemy(p,e,i){
+  G.enemies.splice(i,1);
+  const tierMul=e.tier===2?5:e.tier===1?2.4:1;
+  let gain=Math.round((12+e.size*7)*tierMul*comboMult(p)*p.stats.score*synScore()*famMul('财富',0.05,0.08));
+  if(p.flags.crit&&Math.random()<p.flags.crit){gain=Math.round(gain*2);addBurst(e.x,e.y,'#ffd166',12,240);}
+  if(e.gold)gain+=Math.round(180*comboMult(p));
+  p.score+=gain;
+  p.combo++;p.comboT=2.5*p.stats.comboWin*famMul('连击',0.12,0.2);
+  G.stats.bestCombo=Math.max(G.stats.bestCombo,p.combo);
+  G.stageBestCombo=Math.max(G.stageBestCombo,p.combo);
+  p.eaten++;G.stageEaten++;G.stats.eaten++;
+  const o=G.objective;
+  if(o){
+    if(o.kind==='eat')o.progress++;
+    if(o.kind==='elite'&&e.tier>=2)o.progress++;
+  }
+  p.size=Math.min(300,p.size+e.size*0.125*tierMul*0.62*p.stats.growth*synGrowth()*famMul('进化',0.06,0.1));
+  addBurst(e.x,e.y,e.accent,e.tier>0?18:8+Math.min(14,e.size*0.28),e.tier>0?260:190);
+  Audio2.eat(p.combo);
+  if(p.flags.leech&&Math.random()<p.flags.leech){p.size=Math.min(300,p.size*1.05);addBurst(p.x,p.y,'#8dffc8',10,160);addFloater(p.x,p.y-p.size-20,'+体型','#8dffc8');}
+  const dropChance=(G.mods.includes('rich')||G.mods.includes('storm'))?0.19:0.085;
+  const luckMul=(1+(p.flags.luck||0)*2)*famMul('幸运',0.25,0.5);
+  if(e.drop||e.tier===2||(p.flags.trophy&&e.tier>=1)||(e.tier===1&&Math.random()<0.35)||Math.random()<dropChance*luckMul*0.22)spawnItem(e.x,e.y);
+  if(e.tier>=1)G.pearls=Math.round(G.pearls+(e.tier===2?2:1)*(p.flags.pearl||1));
+}
+function applyItem(p,it){
+  Audio2.coin();
+  addBurst(it.x,it.y,it.def.color,14,210);
+  if(it.type==='speed')p.itemBuffs.speed=6;
+  else if(it.type==='shield')p.shield++;
+  else if(it.type==='magnet')p.itemBuffs.magnet=8;
+  else if(it.type==='heart'){
+    p.size=Math.min(300,p.size*1.12);
+    addFloater(p.x,p.y-p.size-22,'+12% 体型','#8dffc8');
+  }
+  else if(it.type==='star')p.score+=Math.round(420*p.stats.score*synScore());
+  showBanner(it.def.icon+' '+it.def.name,'');
+}
+function collisions(){
+  for(const p of G.players){
+    if(!p.alive)continue;
+    for(let i=G.enemies.length-1;i>=0;i--){
+      const e=G.enemies[i];
+      const dx=e.x-p.x,dy=e.y-p.y;
+      const eR=e.size*(e.type==='puffer'?1+e.inflate*0.38:1);
+      const rr=p.size*0.82+eR*0.8;
+      if(dx*dx+dy*dy<rr*rr){
+        if(p.dashT>0&&p.flags.dashStun){const m2=Math.hypot(dx,dy)||1;e.vx+=dx/m2*540;e.vy+=dy/m2*540;}
+        const edible=eR<=p.size*0.92*p.stats.eat;
+        const dashEdible=p.dashT>0&&p.flags.dashEat&&eR<=p.size*1.18*p.stats.eat;
+        if(edible||dashEdible){
+          if(dashEdible&&!edible)p.score+=Math.round(30*p.stats.score);
+          eatEnemy(p,e,i);
+        }
+        else hitPlayer(p,e.x,e.y);
+      }
+    }
+    for(let i=G.foods.length-1;i>=0;i--){
+      const f=G.foods[i];
+      const dx=f.x-p.x,dy=f.y-p.y;
+      const rr=p.size*0.8+f.size+12;
+      if(dx*dx+dy*dy<rr*rr){
+        G.foods.splice(i,1);
+        p.score+=Math.round(9*comboMult(p)*p.stats.score*synScore());
+        p.size=Math.min(300,p.size+0.18*p.stats.growth);
+        addBurst(f.x,f.y,f.hue,3,90);
+      }
+    }
+    for(let i=G.items.length-1;i>=0;i--){
+      const it=G.items[i];
+      const dx=it.x-p.x,dy=it.y-p.y;
+      const rr=p.size*0.8+it.r+14;
+      if(dx*dx+dy*dy<rr*rr){G.items.splice(i,1);applyItem(p,it);}
+    }
+    for(const h of G.hazards){
+      const dx=h.x-p.x,dy=h.y-p.y;
+      const rr=p.size*0.75+h.r*0.85;
+      if(dx*dx+dy*dy<rr*rr){
+        if(h.type==='ice'){
+          const m=Math.hypot(dx,dy)||1;p.vx+=dx/m*220;p.vy+=dy/m*220;p.slowT=Math.max(p.slowT,1.3);
+        }else if(h.type==='lava'){hitPlayer(p,h.x,h.y);}
+        else{hitPlayer(p,h.x,h.y);p.stunT=Math.max(p.stunT,0.7);}
+      }
+    }
+    if(G.boss){
+      const b=G.boss;
+      const dx=b.x-p.x,dy=b.y-p.y;
+      const rr=b.size*0.86+p.size*0.8;
+      if(dx*dx+dy*dy<rr*rr){
+        if(p.dashT>0){
+          b.hp-=11*(p.flags.hunt||1)*synHunt()*famMul('狩猎',0.12,0.2);b.flash=0.22;p.vx*=-1.1;p.vy*=-1.1;p.dashT=0;
+          G.shake=0.65;Audio2.hurt();addBurst((b.x+p.x)/2,(b.y+p.y)/2,'#ffd166',16,250);
+          if(b.hp<=0){killBoss();return;}
+        }else hitPlayer(p,b.x,b.y);
+      }
+    }
+    for(let i=G.proj.length-1;i>=0;i--){
+      const pr=G.proj[i];
+      const dx=pr.x-p.x,dy=pr.y-p.y;
+      const rr=pr.r+p.size*0.7;
+      if(dx*dx+dy*dy<rr*rr){
+        G.proj.splice(i,1);
+        p.slowT=2;hitPlayer(p,pr.x,pr.y);
+      }
+    }
+    if(G.modeKind==='versus'&&G.players.length>1){
+      const other=G.players[p.id===0?1:0];
+      if(other&&other.alive){
+        const dx=other.x-p.x,dy=other.y-p.y;
+        const rr=p.size*0.85+other.size*0.85;
+        if(dx*dx+dy*dy<rr*rr&&p.dashT>0&&other.stunT<=0&&other.invuln<=0){
+          other.stunT=1.35;other.invuln=0.6;
+          const steal=Math.round(other.score*0.05);
+          other.score-=steal;p.score+=steal;
+          addBurst(other.x,other.y,'#ffd166',18,250);
+          Audio2.hurt();G.shake=0.85;
+          showBanner('撞晕对手！','偷取了 '+steal+' 分');
+        }
+      }
+    }
+    if(G.mode!=='playing')return;
+  }
+}
+
+/* ================= Boss ================= */
+const BOSS_DEFS=[
+ {id:'shark',name:'深渊巨鲨',c1:'#7c2d3f',c2:'#c05a56',sizeMul:1,hpMul:1,speedMul:1.12},
+ {id:'whale',name:'冰霜古鲸',c1:'#27356e',c2:'#4e5fb8',sizeMul:1.32,hpMul:1.35,speedMul:0.72},
+ {id:'squid',name:'幽灵魔鸻',c1:'#3b1d5e',c2:'#8b5cf6',sizeMul:0.92,hpMul:0.9,speedMul:1.25},
+ {id:'beast',name:'熔岩巨兽',c1:'#7c2d0e',c2:'#ff7a2f',sizeMul:1.18,hpMul:1.2,speedMul:0.85}
+];
+function startBoss(mini){
+  if(G.boss)return;
+  const tier=Math.floor((G.stage-1)/4);
+  const def=BOSS_DEFS[tier%BOSS_DEFS.length];
+  const hp=Math.round((150+tier*95)*def.hpMul*(mini?0.45:1));
+  G.boss={name:(mini?'精英·':'')+def.name,def:def,tier:tier,mini:!!mini,
+    x:AW/2,y:-190,size:(72+tier*9)*def.sizeMul*(mini?0.76:1),hp:hp,maxHp:hp,
+    state:'enter',timer:1.7,vx:0,vy:0,ang:Math.PI/2,flash:0};
+  Audio2.roar();
+  showBanner(mini?'💀 '+G.boss.name+' 出现！':'⚠ '+G.boss.name+' 出现！',
+    def.id==='squid'?'它会瞬移，盯紧闪光位置！':'冲刺撞击它发光的弱点',3.2);
+  bossName.textContent=G.boss.name;
+  bossWrap.classList.remove('hidden');
+}
+function killBoss(){
+  const b=G.boss;
+  addBurst(b.x,b.y,'#ffd166',44,360);
+  addBurst(b.x,b.y,'#ff8e53',32,280);
+  addBurst(b.x,b.y,'#7de8ff',26,220);
+  G.shake=1.5;
+  const mini=b.mini;
+  const defId=b.def?b.def.id:'shark';
+  G.boss=null;
+  bossWrap.classList.add('hidden');
+  SAVE.bossKills++;persist();
+  G.pearls+=Math.round((mini?15:30)*(G.players[0].flags.pearl||1));
+  for(const p of G.players){
+    if(p.flags.apex)p.size=Math.min(300,p.size*1.25);
+    if(p.flags.bounty&&mini)G.pearls+=10;
+  }
+  if(G.objective&&G.objective.kind==='boss')G.objective.progress=1;
+  Audio2.clear();Audio2.roar();
+  showBanner(mini?'小Boss 已击败！':'大Boss 已击败！','选择你的战利品',3);
+  grantBossTrait(mini,defId);
+  stageComplete(true);
+}
+function updateBoss(dt){
+  const b=G.boss;if(!b)return;
+  if(b.flash>0)b.flash-=dt;
+  const target=G.players.find(p=>p.alive)||G.players[0];
+  if(!target)return;
+  switch(b.state){
+    case 'enter':
+      b.y=lerp(b.y,clamp(G.cam.y-H*0.12,b.size,AH-b.size),Math.min(1,dt*1.5));
+      b.ang=lerp(b.ang,Math.PI/2,Math.min(1,dt*2));
+      b.timer-=dt;
+      if(b.timer<=0){b.state='idle';b.timer=rand(2.2,3.6);}
+      break;
+    case 'idle':{
+      const dx=target.x-b.x,dy=target.y-b.y,d=Math.hypot(dx,dy)||1;
+      const spd=(48+b.tier*13)*G.enemySpeedMul*(b.def?b.def.speedMul:1);
+      if(d>44){b.vx=lerp(b.vx,dx/d*spd,Math.min(1,dt*1.1));b.vy=lerp(b.vy,dy/d*spd,Math.min(1,dt*1.1));}
+      b.x+=b.vx*dt;b.y+=b.vy*dt;
+      b.ang=angLerp(b.ang,Math.atan2(b.vy,b.vx),Math.min(1,dt*3));
+      b.timer-=dt;
+      if(b.timer<=0){
+        const r=Math.random();
+        const did=b.def?b.def.id:'shark';
+        if(b.mini){
+          if(r<0.58){b.state='charge';b.timer=0.75;b.flash=0.75;}
+          else{b.state='summon';b.timer=0.85;}
+        }
+        else if(did==='squid'&&r<0.34){b.state='teleport';b.timer=0.55;b.flash=0.55;}
+        else if(did==='beast'&&r<0.44){b.state='rain';b.timer=0.9;b.flash=0.6;}
+        else if(r<0.44){b.state='charge';b.timer=0.75;b.flash=0.75;}
+        else if(r<0.74||b.tier<1){b.state='summon';b.timer=0.85;}
+        else{b.state='burst';b.timer=0.7;b.flash=0.5;}
+      }
+      break;}
+    case 'charge':
+      b.timer-=dt;
+      if(b.timer<=0){
+        const dx=target.x-b.x,dy=target.y-b.y,d=Math.hypot(dx,dy)||1;
+        b.vx=dx/d*(430+b.tier*60)*(b.def?b.def.speedMul:1);b.vy=dy/d*(430+b.tier*60)*(b.def?b.def.speedMul:1);
+        b.state='charging';b.timer=0.9;Audio2.dash();
+      }
+      break;
+    case 'charging':
+      b.x+=b.vx*dt;b.y+=b.vy*dt;
+      b.vx*=1-dt*0.55;b.vy*=1-dt*0.55;
+      b.ang=angLerp(b.ang,Math.atan2(b.vy,b.vx),Math.min(1,dt*6));
+      b.timer-=dt;
+      if(b.timer<=0){b.state='idle';b.timer=rand(1.6,2.8);}
+      break;
+    case 'summon':
+      b.timer-=dt;
+      if(b.timer<=0){
+        for(let i=0;i<3+b.tier;i++)spawnEnemy(0.8);
+        Audio2.roar();b.state='idle';b.timer=rand(2.4,3.6);
+      }
+      break;
+    case 'teleport':
+      b.timer-=dt;
+      if(b.timer<=0){
+        addBurst(b.x,b.y,'#c084fc',20,240);
+        const tv=viewRect();
+        b.x=clamp(rand(tv.x+tv.w*0.15,tv.x+tv.w*0.85),b.size,AW-b.size);
+        b.y=clamp(rand(tv.y+tv.h*0.14,tv.y+tv.h*0.72),b.size,AH-b.size);
+        addBurst(b.x,b.y,'#e9d5ff',24,280);
+        Audio2.splash();b.state='idle';b.timer=rand(1.8,3);
+      }
+      break;
+    case 'rain':
+      b.timer-=dt;
+      if(b.timer<=0){
+        for(let i=0;i<8;i++)spawnHazard('lava');
+        Audio2.roar();b.state='idle';b.timer=rand(2.2,3.4);
+      }
+      break;
+    case 'burst':
+      b.timer-=dt;
+      if(b.timer<=0){
+        const n=8+b.tier*3;
+        for(let i=0;i<n;i++){const a=i/n*TAU;
+          G.proj.push({x:b.x,y:b.y,vx:Math.cos(a)*(150+b.tier*32),vy:Math.sin(a)*(150+b.tier*32),r:11,life:5.5});}
+        Audio2.splash();b.state='idle';b.timer=rand(2.2,3.4);
+      }
+      break;
+  }
+  b.x=clamp(b.x,b.size,AW-b.size);
+  b.y=clamp(b.y,b.size,AH-b.size);
+}
+
+/* ================= 流程 ================= */
+function startGame(kind){
+  Audio2.init();Audio2.blip();
+  G.modeKind=kind;G.paused=false;
+  G.time=0;G.stage=1;
+  G.players=[];
+  const n=kind==='single'?1:2;
+  for(let i=0;i<n;i++)G.players.push(makePlayer(i));
+  G.enemies=[];G.foods=[];G.items=[];G.hazards=[];G.particles=[];G.proj=[];G.boss=null;G.deck=[];
+  G.pearls=0;G.frenzyNext=false;G.enemySpeedMul=1;G.sharedHp=6;G.versusT=300;
+  G.stats={eaten:0,bestCombo:0,dmg:0};
+  G.map=generateMap();G.curRow=-1;G.curIdx=0;G.node=null;
+  G.availNodes=[G.map[0][0]];
+  G.cam.x=G.players[0].x;G.cam.y=G.players[0].y;G.cam.zoom=1;
+  startNode(G.map[0][0]);
+}
+function stageComplete(boss){
+  if(G.mode!=='playing')return;
+  Audio2.clear();
+  G.mode='cards';
+  const rank=stageRank();
+  G.pearls=Math.round(G.pearls+(boss?12:5)*(G.players[0].flags.pearl||1));
+  buildCardScreen(pickCards(3,boss),boss?'Boss 战利品 · 三选一':'阶段评分 '+rank+' · 三选一');
+  showScreen('screen-cards');
+}
+function applyCardAndAdvance(card){
+  card.apply(G.players);
+  G.deck.push(card.id);
+  Audio2.card();
+  checkPairSynergies();
+  goToMap();
+}
+function advanceStage(){
+  G.stage++;
+  if(G.stage>SAVE.bestStage){SAVE.bestStage=G.stage;persist();}
+  G.stageTime=0;G.stageEaten=0;G.quota=quotaFor(G.stage);
+  G.objective=rollObjective(G.stage);G.mods=rollMods();
+  G.stageDamage=0;G.stageBestCombo=0;G.eventT=rand(28,44);G.blessT=15;G.tempCurrent=0;
+  G.enemies=[];G.hazards=[];G.proj=[];G.items=[];G.boss=null;
+  bossWrap.classList.add('hidden');
+  for(const p of G.players){
+    p.size=Math.min(300,p.size*(1+p.stats.regen/100));
+    p.invuln=Math.max(p.invuln,1.2);
+  }
+  makeDecor();
+  G.mode='playing';
+  showScreen('');
+  const pal=stagePalette();
+  showBanner('第 '+G.stage+' 阶段 · '+pal.name,pal.mech+modsText(),3.4);
+  updateHudDOM();
+}
+function endGame(reason){
+  if(G.mode==='result')return;
+  G.mode='result';
+  Audio2.over();
+  hudEl.classList.add('hidden');
+  bossWrap.classList.add('hidden');
+  let best=0;
+  for(const p of G.players)best=Math.max(best,p.score);
+  const total=G.modeKind==='coop'?G.players.reduce((s,p)=>s+p.score,0):best;
+  const newBest=total>SAVE.best;
+  if(newBest)SAVE.best=Math.round(total);
+  if(G.stage>SAVE.bestStage)SAVE.bestStage=G.stage;
+  persist();
+  const unlocks=collectUnlocks();
+  buildResultScreen(reason,total,newBest,unlocks);
+  showScreen('screen-result');
+}
+function collectUnlocks(){
+  const found=[];
+  const groups=[['fish',FISH_DEFS],['skin',SKINS],['fin',FINS],['trail',TRAILS]];
+  for(const g of groups){
+    for(const item of g[1]){
+      if(SAVE.unlocked[g[0]].includes(item.id))continue;
+      if(unlockConditionMet(item)){SAVE.unlocked[g[0]].push(item.id);found.push(item.name);}
+    }
+  }
+  if(found.length)persist();
+  return found;
+}
+
+/* ================= 镜头（跟随 + 随体型缩放） ================= */
+function viewRect(){
+  const s=camScale();
+  const vw=W/s,vh=H/s;
+  const cx=(G.cam?G.cam.x:AW/2),cy=(G.cam?G.cam.y:AH/2);
+  return {x:cx-vw/2,y:cy-vh/2,w:vw,h:vh};
+}
+function updateCamera(dt){
+  const alive=G.players.filter(p=>p.alive);
+  const list=alive.length?alive:G.players;
+  if(!list.length)return;
+  let tx=0,ty=0,big=22;
+  for(const p of list){tx+=p.x;ty+=p.y;big=Math.max(big,p.size);}
+  tx/=list.length;ty/=list.length;
+  const targetZoom=clamp(28/Math.max(22,big),0.28,1);
+  G.cam.zoom=lerp(G.cam.zoom,targetZoom,Math.min(1,dt*2));
+  G.cam.x=lerp(G.cam.x,tx,Math.min(1,dt*2.8));
+  G.cam.y=lerp(G.cam.y,ty,Math.min(1,dt*2.8));
+  const s=camScale();
+  const vw=W/s,vh=H/s;
+  G.cam.x=vw>=AW?AW/2:clamp(G.cam.x,vw/2,AW-vw/2);
+  G.cam.y=vh>=AH?AH/2:clamp(G.cam.y,vh/2,AH-vh/2);
+}
+
+/* ================= 主循环 ================= */
+function update(dt){
+  T+=dt;
+  updateAmbient(dt);
+  if(G.bannerT>0){G.bannerT-=dt;if(G.bannerT<=0)bannerEl.classList.add('hidden');}
+  if(G.mode!=='playing')return;
+  if(G.paused)return;
+  G.time+=dt;G.stageTime+=dt;
+  if(G.shake>0)G.shake=Math.max(0,G.shake-dt*2.4);
+  for(const p of G.players)updatePlayer(p,dt);
+  checkRevives();
+  updateCamera(dt);
+  updateEnemies(dt);
+  updateFoods(dt);
+  updateItems(dt);
+  updateHazards(dt);
+  updateBoss(dt);
+  updateProjectiles(dt);
+  updateParticles(dt);
+  updateSummons(dt);
+  collisions();
+  if(G.mode!=='playing')return;
+  spawnTick(dt);
+  if(G.modeKind==='versus'){
+    G.versusT-=dt;
+    if(G.versusT<=0){endGame('time');return;}
+  }
+  const o=G.objective;
+  if(o){
+    if(o.kind==='score'){let s=0;for(const q of G.players)s+=q.score;o.progress=Math.floor(s);}
+    else if(o.kind==='survive')o.progress=Math.floor(G.stageTime);
+    else if(o.kind==='combo')o.progress=Math.max(o.progress,G.stageBestCombo);
+  }
+  if(G.tempCurrent>0)G.tempCurrent-=dt;
+  if(G.mods.includes('bless')){
+    G.blessT-=dt;
+    if(G.blessT<=0){
+      G.blessT=15;
+      for(const q of G.players)q.size=Math.min(300,q.size*1.05);
+      showBanner('祝福之光','体型得到滋补');
+    }
+  }
+  G.eventT-=dt;
+  if(G.eventT<=0){G.eventT=rand(34,56);triggerRandomEvent();}
+  if(!G.boss&&objectiveComplete()){
+    stageComplete(false);
+    return;
+  }
+  updateHudDOM();
+}
+function updateHudDOM(){
+  const p=G.players[0];
+  if(!p)return;
+  const objTxt=objectiveText()+modsText();
+  if(G.modeKind==='versus'){
+    hudScore.textContent='P1 '+Math.round(G.players[0].score)+'  ·  P2 '+(G.players[1]?Math.round(G.players[1].score):0);
+    hudGoal.textContent='对抗剩余 '+Math.ceil(G.versusT)+' 秒 · '+objTxt;
+    hudHp.textContent='P1 体型 '+Math.round(p.size)+'   P2 体型 '+Math.round(G.players[1]?G.players[1].size:0);
+  }else if(G.modeKind==='coop'){
+    let s=0;for(const q of G.players)s+=q.score;
+    hudScore.textContent=String(Math.round(s));
+    hudGoal.textContent=objTxt;
+    hudHp.textContent='P1 体型 '+Math.round(p.size)+' · P2 体型 '+Math.round(G.players[1]?G.players[1].size:0);
+  }else{
+    hudScore.textContent=String(Math.round(p.score));
+    hudGoal.textContent=G.boss?'冲刺撞击 Boss 弱点！':objTxt;
+    hudHp.textContent='体型 '+Math.round(p.size)+(p.shield>0?' 🛡'+p.shield:'');
+  }
+  const top=G.players.reduce((a,b)=>a.combo>=b.combo?a:b);
+  hudCombo.textContent=top.combo>0?('连击 x'+top.combo+'  +'+Math.round((comboMult(top)-1)*100)+'%'):'连击 x0';
+  const nodeTag=G.node&&G.node.type==='boss'?' · BOSS':(G.node&&G.node.type==='elite'?' · 小BOSS':'');
+  hudStage.textContent='第 '+G.stage+' 阶段 · '+stagePalette().name+nodeTag+' · 💎 '+G.pearls;
+  const cdMax=Math.max(0.1,1.55*p.stats.dashCd*synDashCd());
+  dashBar.style.width=(p.dashCd>0?clamp(100-(p.dashCd/cdMax*100),0,100):100)+'%';
+  if(G.boss)bossHpBar.style.width=clamp(G.boss.hp/G.boss.maxHp*100,0,100)+'%';
+}
+/* ================= 渲染（深海霓虹） ================= */
+function render(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+  const menuMode=(G.mode==='menu'||G.mode==='help'||G.mode==='fish');
+  const pal=menuMode?STAGES[0]:stagePalette();
+  if(G.mode==='map'){drawMapScreen();return;}
+  if(menuMode){G.cam.x=AW/2;G.cam.y=AH/2;G.cam.zoom=0.62;}
+  ctx.save();
+  if(G.shake>0&&G.mode==='playing'&&SAVE.shake!==false){
+    ctx.translate(rand(-1,1)*G.shake*11,rand(-1,1)*G.shake*11);
+  }
+  // ---- 世界坐标：镜头跟随 + 游戏内固定视野 ----
+  ctx.save();
+  ctx.translate(W/2,H/2);
+  ctx.scale(camScale(),camScale());
+  ctx.translate(-G.cam.x,-G.cam.y);
+  drawBackground(pal);
+  drawDecor(pal);
+  drawShafts(pal);
+  drawBubbles(pal);
+  drawMotes();
+  if(menuMode){
+    for(const a of G.ambient){
+      drawSoftFish(a.x,a.y,a.size,a.ang,a.c1,a.c2,a.accent,{t:T,phase:a.phase,bend:Math.sin(T*1.1+a.phase)*0.3});
+    }
+  }else{
+    drawFoods();
+    drawHazards();
+    drawItems();
+    drawSummons();
+    for(const e of G.enemies)drawEnemyFish(e);
+    for(const p of G.players)drawPlayerFish(p);
+    drawBoss();
+    drawProjectiles();
+    drawParticles();
+    drawFloaters();
+    drawFog(pal);
+    if(G.mode==='playing'&&G.boss&&G.boss.state==='charge'){
+      ctx.save();
+      ctx.textAlign='center';
+      ctx.font='bold '+Math.round(Math.min(20,W*0.032)/camScale())+'px sans-serif';
+      ctx.fillStyle=rgba('#ffd166',0.55+Math.sin(T*10)*0.3);
+      ctx.fillText('⚠ 闪避！',G.boss.x,G.boss.y-G.boss.size-24);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+  // ---- 屏幕坐标：暗角 ----
+  drawVignette(pal);
+  ctx.restore();
+}
+function drawRidge(v,baseY,amp,color,factor){
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  const off=(G.cam?G.cam.x:0)*factor;
+  ctx.moveTo(v.x-140,v.y+v.h+140);
+  for(let x=v.x-140;x<=v.x+v.w+140;x+=42){
+    const y=baseY+Math.sin((x+off)*0.0021)*amp+Math.sin((x+off)*0.00092+2.1)*amp*0.62;
+    ctx.lineTo(x,y);
+  }
+  ctx.lineTo(v.x+v.w+140,v.y+v.h+140);
+  ctx.closePath();
+  ctx.fill();
+}
+function drawBackground(pal){
+  const v=viewRect();
+  const g=ctx.createLinearGradient(0,v.y,0,v.y+v.h);
+  g.addColorStop(0,pal.top);g.addColorStop(0.38,pal.mid);g.addColorStop(0.72,pal.bot);g.addColorStop(1,pal.bot);
+  ctx.fillStyle=g;ctx.fillRect(v.x-140,v.y-140,v.w+280,v.h+280);
+  // 远景山脊（双层视差）
+  drawRidge(v,v.y+v.h*0.62,v.h*0.09,rgba('#041426',0.5),0.22);
+  drawRidge(v,v.y+v.h*0.78,v.h*0.12,rgba('#020c18',0.72),0.45);
+  // 极光 / 柔和光斑
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  const gx=v.x+v.w*0.72,gy=v.y+v.h*0.18;
+  const glow=ctx.createRadialGradient(gx,gy,10,gx,gy,Math.max(v.w,v.h)*0.62);
+  glow.addColorStop(0,rgba(pal.accent,0.13));glow.addColorStop(1,rgba(pal.accent,0));
+  ctx.fillStyle=glow;ctx.fillRect(v.x-140,v.y-140,v.w+280,v.h+280);
+  const g2x=v.x+v.w*0.2,g2y=v.y+v.h*0.85;
+  const glow2=ctx.createRadialGradient(g2x,g2y,10,g2x,g2y,Math.max(v.w,v.h)*0.5);
+  glow2.addColorStop(0,rgba(pal.accent2,0.11));glow2.addColorStop(1,rgba(pal.accent2,0));
+  ctx.fillStyle=glow2;ctx.fillRect(v.x-140,v.y-140,v.w+280,v.h+280);
+  // 极光带（缓慢摆动的软光带）
+  for(let k=0;k<2;k++){
+    const sway=Math.sin(T*0.22+k*1.7)*v.w*0.08;
+    const aur=ctx.createLinearGradient(v.x+sway,v.y,v.x+sway+v.w*0.4,v.y+v.h*0.5);
+    aur.addColorStop(0,rgba(k?pal.accent2:pal.accent,0));
+    aur.addColorStop(0.5,rgba(k?pal.accent2:pal.accent,0.075));
+    aur.addColorStop(1,rgba(k?pal.accent2:pal.accent,0));
+    ctx.fillStyle=aur;
+    ctx.fillRect(v.x-140,v.y-140,v.w+280,v.h+280);
+  }
+  // 水光网纹（双向正弦，缓慢流动）
+  ctx.strokeStyle=rgba(pal.accent,0.075);ctx.lineWidth=1.6;
+  for(let i=0;i<6;i++){
+    ctx.beginPath();
+    const yBase=v.y+v.h*(0.05+i*0.075);
+    let started=false;
+    for(let x=v.x;x<=v.x+v.w;x+=26){
+      const y=yBase+Math.sin(x*0.011+T*0.75+i*1.6)*(8+i*3)+Math.sin(x*0.004-T*0.4)*10;
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.strokeStyle=rgba(pal.accent2,0.05);ctx.lineWidth=1.3;
+  for(let i=0;i<8;i++){
+    ctx.beginPath();
+    const xBase=v.x+v.w*(0.04+i*0.13);
+    let started=false;
+    for(let y=v.y;y<=v.y+v.h;y+=30){
+      const x=xBase+Math.sin(y*0.013+T*0.55+i*1.2)*(10+i*2);
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawDecor(pal){
+  for(const d of G.decor){
+    if(d.type==='coral'){
+      ctx.save();
+      ctx.strokeStyle=rgba(pal.accent2,0.2);ctx.lineWidth=Math.max(6,d.r*0.16);ctx.lineCap='round';
+      for(let i=0;i<5;i++){
+        const a=(i/5-0.5)*1.25;
+        ctx.beginPath();ctx.moveTo(d.x,d.y);
+        ctx.quadraticCurveTo(d.x+Math.sin(a)*d.r*0.8,d.y-d.h*0.55,d.x+Math.sin(a)*d.r*1.3,d.y-d.h*(0.65+0.25*Math.sin(T*0.6+d.phase+i)));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }else if(d.type==='ice'){
+      ctx.save();
+      ctx.translate(d.x,d.y);ctx.rotate(Math.sin(T*0.3+d.phase)*0.12+d.rot);
+      const g=ctx.createLinearGradient(0,-d.r,0,d.r);
+      g.addColorStop(0,rgba('#eaf9ff',0.5));g.addColorStop(1,rgba('#8fd8ff',0.16));
+      ctx.fillStyle=g;ctx.shadowColor=rgba('#b7f3ff',0.5);ctx.shadowBlur=26;
+      ctx.beginPath();
+      for(let i=0;i<6;i++){
+        const a=i/6*TAU;
+        const r=d.r*(0.72+0.3*Math.sin(i*2.1+d.phase));
+        const px=Math.cos(a)*r,py=Math.sin(a)*r*0.62;
+        if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.closePath();ctx.fill();
+      ctx.restore();
+    }else if(d.type==='vent'){
+      ctx.save();
+      const g=ctx.createRadialGradient(d.x,d.y-d.r*0.4,4,d.x,d.y-d.r*0.4,d.r*1.6);
+      g.addColorStop(0,rgba('#ffb45c',0.34));g.addColorStop(1,rgba('#ff5e3a',0));
+      ctx.fillStyle=g;ctx.fillRect(d.x-d.r*1.8,d.y-d.r*2.2,d.r*3.6,d.r*2.8);
+      ctx.fillStyle=rgba('#3d0f06',0.85);
+      ctx.beginPath();ctx.ellipse(d.x,d.y,d.r,d.r*0.42,0,0,TAU);ctx.fill();
+      ctx.restore();
+    }else if(d.type==='pillar'){
+      ctx.save();
+      const g=ctx.createLinearGradient(d.x-d.w/2,0,d.x+d.w/2,0);
+      g.addColorStop(0,rgba(pal.accent2,0.1));g.addColorStop(0.5,rgba(pal.accent,0.18));g.addColorStop(1,rgba(pal.accent2,0.08));
+      ctx.fillStyle=g;
+      const wob=Math.sin(T*0.4+d.phase)*3;
+      ctx.beginPath();
+      ctx.moveTo(d.x-d.w/2,d.y);
+      ctx.lineTo(d.x-d.w/2+wob,d.y-d.h);
+      ctx.lineTo(d.x+d.w/2+wob,d.y-d.h);
+      ctx.lineTo(d.x+d.w/2,d.y);
+      ctx.closePath();ctx.fill();
+      ctx.strokeStyle=rgba(pal.accent,0.22);ctx.lineWidth=2;
+      for(let i=1;i<5;i++){
+        const yy=d.y-d.h*(i/5);
+        ctx.beginPath();ctx.moveTo(d.x-d.w/2+2,yy);ctx.lineTo(d.x+d.w/2-2,yy+4);ctx.stroke();
+      }
+      ctx.restore();
+    }else if(d.type==='mist'){
+      const g=ctx.createRadialGradient(d.x,d.y,10,d.x,d.y,d.r);
+      g.addColorStop(0,rgba(pal.accent,0.055));g.addColorStop(1,rgba(pal.accent,0));
+      ctx.fillStyle=g;ctx.fillRect(d.x-d.r,d.y-d.r,d.r*2,d.r*2);
+    }
+  }
+}
+function drawShafts(pal){
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(const s of G.shafts){
+    ctx.save();
+    ctx.translate(s.x,0);ctx.rotate(s.ang);
+    const g=ctx.createLinearGradient(0,0,0,H*1.1);
+    g.addColorStop(0,rgba(pal.accent,0.15*s.alpha));
+    g.addColorStop(0.55,rgba(pal.accent,0.05*s.alpha));
+    g.addColorStop(1,rgba(pal.accent,0));
+    ctx.fillStyle=g;
+    ctx.fillRect(-s.w/2,-40,s.w,H*1.15);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function drawBubbles(pal){
+  ctx.save();
+  for(const b of G.bubbles){
+    const alpha=0.12+b.layer*0.22;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,TAU);
+    ctx.fillStyle=rgba(pal.accent,alpha*0.5);
+    ctx.fill();
+    ctx.strokeStyle=rgba('#ffffff',alpha*0.85);
+    ctx.lineWidth=Math.max(0.6,b.r*0.22);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawMotes(){
+  if(!G.motes)return;
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(const m of G.motes){
+    const a=m.alpha*(0.6+0.4*Math.sin(T*1.4+m.wob));
+    ctx.beginPath();
+    ctx.arc(m.x,m.y,m.r,0,TAU);
+    ctx.fillStyle=rgba('#bfe9ff',a*0.5);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+/* ================= 功能道具实体（炮台/陷阱/毒拖尾/随从/鱼雷/声呐） ================= */
+function summonEat(op,e){
+  const idx=G.enemies.indexOf(e);
+  if(idx>=0)eatEnemy(op,e,idx);
+}
+function spawnSummon(type,x,y,owner){
+  if(G.summons.length>150)return null;
+  const s={type:type,x:x,y:y,vx:0,vy:0,t:0,life:12,owner:owner,rot:rand(0,TAU),phase:rand(0,TAU)};
+  if(type==='minion'){s.life=1e9;s.speed=rand(190,250);}
+  else if(type==='poison'){s.life=3.6;s.vx=rand(-30,30);s.vy=rand(-30,30);s.r=rand(12,22);}
+  else if(type==='shot'){s.life=1.6;s.r=7;}
+  else if(type==='ring'){s.life=0.7;}
+  else if(type==='torpedo'){s.life=4.5;}
+  G.summons.push(s);
+  return s;
+}
+function fireTorpedo(p){
+  const target=G.enemies.reduce((a,e)=>!a||e.size>a.size?e:a,null);
+  const s=spawnSummon('torpedo',p.x,p.y,p);
+  if(s&&target){const d=Math.hypot(target.x-s.x,target.y-s.y)||1;s.vx=(target.x-s.x)/d*520;s.vy=(target.y-s.y)/d*520;}
+}
+function sonarPulse(p){
+  spawnSummon('ring',p.x,p.y,p);
+  for(const e of G.enemies){
+    const d=Math.hypot(e.x-p.x,e.y-p.y);
+    if(d<430){const m=d||1;e.vx+=(e.x-p.x)/m*560;e.vy+=(e.y-p.y)/m*560;}
+  }
+  Audio2.splash();
+}
+function updateSummons(dt){
+  for(let i=G.summons.length-1;i>=0;i--){
+    const s=G.summons[i];
+    s.t+=dt;s.life-=dt;
+    if(s.life<=0){G.summons.splice(i,1);continue;}
+    const op=s.owner&&s.owner.alive?s.owner:G.players[0];
+    if(s.type==='turret'){
+      s.rot+=dt*1.2;
+      s.shotT=(s.shotT||0)-dt;
+      if(s.shotT<=0){
+        s.shotT=1.3;
+        let best=null,bd=620;
+        for(const e of G.enemies){const d=Math.hypot(e.x-s.x,e.y-s.y);if(d<bd){bd=d;best=e;}}
+        if(best){
+          const shot=spawnSummon('shot',s.x,s.y,op);
+          if(shot){shot.vx=(best.x-s.x)/bd*520;shot.vy=(best.y-s.y)/bd*520;}
+        }
+      }
+    }else if(s.type==='shot'){
+      s.x+=s.vx*dt;s.y+=s.vy*dt;
+      for(const e of G.enemies){
+        const d=Math.hypot(e.x-s.x,e.y-s.y);
+        if(d<e.size*0.85+s.r){
+          if(e.size<=op.size*1.12)summonEat(op,e);
+          else{const m=d||1;e.vx+=(e.x-s.x)/m*380;e.vy+=(e.y-s.y)/m*380;}
+          s.life=0;break;
+        }
+      }
+    }else if(s.type==='trap'){
+      for(const e of G.enemies){
+        const dx=e.x-s.x,dy=e.y-s.y,d=Math.hypot(dx,dy)||1;
+        if(d<160){
+          e.vx-=dx/d*1200*dt;e.vy-=dy/d*1200*dt;
+          if(d<64&&e.size<=op.size*1.05)summonEat(op,e);
+        }
+      }
+    }else if(s.type==='poison'){
+      s.x+=s.vx*dt;s.y+=s.vy*dt;
+      for(const e of G.enemies){
+        const d=Math.hypot(e.x-s.x,e.y-s.y);
+        if(d<(s.r||16)+e.size*0.6){e.vx*=0.94;e.vy*=0.94;}
+      }
+    }else if(s.type==='minion'){
+      const px=op.x+Math.cos(s.phase+s.t*1.2)*op.size*1.8;
+      const py=op.y+Math.sin(s.phase+s.t*1.2)*op.size*1.8;
+      let best=null,bd=460;
+      for(const e of G.enemies){
+        if(e.size>op.size*0.95)continue;
+        const d=Math.hypot(e.x-s.x,e.y-s.y);
+        if(d<bd){bd=d;best=e;}
+      }
+      const tx=best?best.x:px,ty=best?best.y:py;
+      const d=Math.hypot(tx-s.x,ty-s.y)||1;
+      const sp=best?s.speed*1.55:s.speed;
+      s.vx=lerp(s.vx,(tx-s.x)/d*sp,Math.min(1,dt*3));
+      s.vy=lerp(s.vy,(ty-s.y)/d*sp,Math.min(1,dt*3));
+      s.x+=s.vx*dt;s.y+=s.vy*dt;
+      if(best&&bd<best.size*0.8+14)summonEat(op,best);
+    }else if(s.type==='torpedo'){
+      let best=null,bd=1e9;
+      for(const e of G.enemies){const d=Math.hypot(e.x-s.x,e.y-s.y);if(d<bd){bd=d;best=e;}}
+      if(best){
+        s.vx=lerp(s.vx,(best.x-s.x)/bd*520,Math.min(1,dt*2.2));
+        s.vy=lerp(s.vy,(best.y-s.y)/bd*520,Math.min(1,dt*2.2));
+      }
+      s.x+=s.vx*dt;s.y+=s.vy*dt;
+      for(const e of G.enemies){
+        const d=Math.hypot(e.x-s.x,e.y-s.y);
+        if(d<e.size*0.85+16){
+          if(e.size<=op.size*1.35)summonEat(op,e);
+          else{const m=d||1;e.vx+=(e.x-s.x)/m*520;e.vy+=(e.y-s.y)/m*520;}
+          addBurst(s.x,s.y,'#ffb45c',16,260);
+          s.life=0;break;
+        }
+      }
+    }
+    if(s.x<-220||s.x>AW+220||s.y<-220||s.y>AH+220){if(s.type!=='turret'&&s.type!=='minion')G.summons.splice(i,1);}
+  }
+  for(const p of G.players){
+    if(!p.flags.minion)continue;
+    let cur=0;
+    for(const s of G.summons)if(s.type==='minion'&&s.owner===p)cur++;
+    if(cur<Math.min(4,p.flags.minion))spawnSummon('minion',p.x+rand(-40,40),p.y+rand(-40,40),p);
+  }
+}
+function drawSummons(){
+  for(const s of G.summons){
+    if(s.type==='turret'){
+      ctx.save();ctx.translate(s.x,s.y);
+      const g=ctx.createRadialGradient(0,0,2,0,0,48);
+      g.addColorStop(0,rgba('#7de8ff',0.42));g.addColorStop(1,rgba('#7de8ff',0));
+      ctx.fillStyle=g;ctx.fillRect(-48,-48,96,96);
+      ctx.fillStyle=rgba('#2a4a66',0.95);
+      ctx.beginPath();ctx.arc(0,0,17,Math.PI,TAU);ctx.fill();
+      ctx.fillStyle=rgba('#7de8ff',0.9);
+      ctx.beginPath();ctx.arc(0,-2,9,0,TAU);ctx.fill();
+      ctx.rotate(s.rot);
+      ctx.fillStyle='#bfe9ff';ctx.fillRect(0,-3.4,22,6.8);
+      ctx.restore();
+    }else if(s.type==='trap'){
+      ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.t*1.6);
+      for(let k=0;k<3;k++){
+        ctx.beginPath();
+        ctx.arc(0,0,26+k*16,s.t*1.4+k,s.t*1.4+k+3.6);
+        ctx.strokeStyle=rgba('#8b5cf6',0.55-k*0.12);ctx.lineWidth=4-k;
+        ctx.stroke();
+      }
+      const g=ctx.createRadialGradient(0,0,2,0,0,42);
+      g.addColorStop(0,rgba('#8b5cf6',0.5));g.addColorStop(1,rgba('#8b5cf6',0));
+      ctx.fillStyle=g;ctx.fillRect(-42,-42,84,84);
+      ctx.restore();
+    }else if(s.type==='poison'){
+      const a=clamp(s.life/3.6,0,1);
+      const r=s.r||16;
+      const g=ctx.createRadialGradient(s.x,s.y,1,s.x,s.y,r*1.9);
+      g.addColorStop(0,rgba('#7dffb2',0.5*a));g.addColorStop(1,rgba('#7dffb2',0));
+      ctx.fillStyle=g;ctx.fillRect(s.x-r*2,s.y-r*2,r*4,r*4);
+      ctx.beginPath();ctx.arc(s.x,s.y,r*0.6,0,TAU);
+      ctx.fillStyle=rgba('#7dffb2',0.5*a);ctx.fill();
+    }else if(s.type==='minion'){
+      const ang=Math.atan2(s.vy,s.vx||1);
+      drawSoftFish(s.x,s.y,11,ang,'#7de8ff','#bfe9ff','#8fe8ff',{phase:s.phase,bend:Math.sin(s.t*3+s.phase)*0.5});
+    }else if(s.type==='shot'){
+      const g=ctx.createRadialGradient(s.x,s.y,1,s.x,s.y,18);
+      g.addColorStop(0,rgba('#ffe9a8',0.9));g.addColorStop(1,rgba('#ffe9a8',0));
+      ctx.fillStyle=g;ctx.fillRect(s.x-18,s.y-18,36,36);
+    }else if(s.type==='ring'){
+      const a=clamp(s.life/0.7,0,1);
+      ctx.beginPath();ctx.arc(s.x,s.y,10+(1-a)*420,0,TAU);
+      ctx.strokeStyle=rgba('#7de8ff',a*0.65);ctx.lineWidth=8*a+2;
+      ctx.stroke();
+    }else if(s.type==='torpedo'){
+      const ang=Math.atan2(s.vy,s.vx||1);
+      ctx.save();ctx.translate(s.x,s.y);ctx.rotate(ang);
+      const g=ctx.createLinearGradient(-30,0,14,0);
+      g.addColorStop(0,rgba('#ff8e53',0));g.addColorStop(1,rgba('#ffd166',0.9));
+      ctx.fillStyle=g;ctx.fillRect(-30,-4,42,8);
+      ctx.beginPath();ctx.ellipse(4,0,13,5,0,0,TAU);ctx.fillStyle='#ffd166';ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+function drawFoods(){
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(const f of G.foods){
+    const pulse=0.75+Math.sin(T*4+f.phase)*0.25;
+    const g=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.size*3.2);
+    g.addColorStop(0,rgba(f.hue,0.85*pulse));g.addColorStop(1,rgba(f.hue,0));
+    ctx.fillStyle=g;ctx.fillRect(f.x-f.size*3.2,f.y-f.size*3.2,f.size*6.4,f.size*6.4);
+    ctx.beginPath();ctx.arc(f.x,f.y,f.size*pulse,0,TAU);ctx.fillStyle=rgba(f.hue,0.9);ctx.fill();
+  }
+  ctx.restore();
+}
+function drawItems(){
+  ctx.save();
+  for(const it of G.items){
+    const bob=Math.sin(it.t*1.6)*5;
+    const y=it.y+bob;
+    ctx.save();
+    ctx.translate(it.x,y);
+    const g=ctx.createRadialGradient(0,0,2,0,0,it.r*2.4);
+    g.addColorStop(0,rgba(it.def.color,0.75));g.addColorStop(1,rgba(it.def.color,0));
+    ctx.fillStyle=g;ctx.fillRect(-it.r*2.4,-it.r*2.4,it.r*4.8,it.r*4.8);
+    ctx.beginPath();ctx.arc(0,0,it.r,0,TAU);
+    const g2=ctx.createLinearGradient(0,-it.r,0,it.r);
+    g2.addColorStop(0,rgba(it.def.color,0.95));g2.addColorStop(1,rgba(it.def.color,0.45));
+    ctx.fillStyle=g2;ctx.fill();
+    ctx.strokeStyle=rgba('#ffffff',0.75);ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#04121f';
+    ctx.font='bold '+Math.round(it.r*1.1)+'px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(it.def.icon,0,1);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+function drawHazards(){
+  ctx.save();
+  for(const h of G.hazards){
+    if(h.type==='ice'){
+      ctx.save();ctx.translate(h.x,h.y);ctx.rotate(Math.sin(h.phase*0.5)*0.12+h.rot);
+      const g=ctx.createLinearGradient(0,-h.r,0,h.r);
+      g.addColorStop(0,rgba('#dff6ff',0.55));g.addColorStop(1,rgba('#8fd8ff',0.14));
+      ctx.fillStyle=g;ctx.shadowColor=rgba('#b7f3ff',0.7);ctx.shadowBlur=24;
+      ctx.beginPath();
+      for(let i=0;i<7;i++){
+        const a=i/7*TAU;
+        const r=h.r*(0.72+0.26*Math.sin(i*2.3+h.phase));
+        const px=Math.cos(a)*r,py=Math.sin(a)*r*0.6;
+        if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.closePath();ctx.fill();
+      ctx.restore();
+    }else if(h.type==='lava'){
+      const pulse=0.8+Math.sin(h.phase*3)*0.2;
+      const g=ctx.createRadialGradient(h.x,h.y,1,h.x,h.y,h.r*3.2);
+      g.addColorStop(0,rgba('#ffd166',0.9));g.addColorStop(0.35,rgba('#ff7a2f',0.55));g.addColorStop(1,rgba('#ff5e3a',0));
+      ctx.fillStyle=g;ctx.fillRect(h.x-h.r*3.2,h.y-h.r*3.2,h.r*6.4,h.r*6.4);
+      ctx.beginPath();ctx.arc(h.x,h.y,h.r*pulse,0,TAU);
+      ctx.fillStyle=rgba('#ffb45c',0.92);ctx.fill();
+    }else{
+      const pulse=0.85+Math.sin(h.phase*2.2)*0.15;
+      ctx.save();ctx.translate(h.x,h.y);
+      const g=ctx.createRadialGradient(0,0,2,0,0,h.r*2.6);
+      g.addColorStop(0,rgba('#8be9ff',0.6));g.addColorStop(1,rgba('#8be9ff',0));
+      ctx.fillStyle=g;ctx.fillRect(-h.r*2.6,-h.r*2.6,h.r*5.2,h.r*5.2);
+      ctx.beginPath();ctx.ellipse(0,0,h.r*pulse,h.r*0.82*pulse,0,Math.PI,TAU);
+      const g2=ctx.createLinearGradient(0,-h.r,0,0);
+      g2.addColorStop(0,rgba('#c8f4ff',0.85));g2.addColorStop(1,rgba('#4bc9ff',0.4));
+      ctx.fillStyle=g2;ctx.fill();
+      ctx.strokeStyle=rgba('#8be9ff',0.8);ctx.lineWidth=2;ctx.stroke();
+      for(let i=0;i<5;i++){
+        const tx=(i/4-0.5)*h.r*1.1;
+        ctx.beginPath();ctx.moveTo(tx,0);
+        ctx.quadraticCurveTo(tx+Math.sin(h.phase*1.8+i)*8,h.r*0.9,tx+Math.sin(h.phase*1.8+i)*14,h.r*1.6);
+        ctx.strokeStyle=rgba('#8be9ff',0.55);ctx.lineWidth=2.4;ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+function drawFishShape(x,y,size,ang,c1,c2,accent,opts){
+  opts=opts||{};
+  const t=opts.t!==undefined?opts.t:T;
+  const sway=Math.sin(t*5+(opts.phase||0));
+  const alpha=opts.alpha!==undefined?opts.alpha:1;
+  const s=size;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(ang);
+  ctx.globalAlpha=alpha;
+  ctx.shadowColor=rgba(accent,0.8);
+  ctx.shadowBlur=Math.min(70,s*0.9);
+  // 尾鳍
+  const tg=ctx.createLinearGradient(-s*1.75,0,-s*0.55,0);
+  tg.addColorStop(0,rgba(accent,0.8));tg.addColorStop(1,rgba(c2,0.96));
+  ctx.fillStyle=tg;
+  ctx.beginPath();
+  ctx.moveTo(-s*0.68,0);
+  ctx.quadraticCurveTo(-s*1.3,-s*0.62+sway*s*0.16,-s*1.7,-s*0.5+sway*s*0.22);
+  ctx.quadraticCurveTo(-s*1.12,sway*s*0.05,-s*1.64,s*0.52+sway*s*0.22);
+  ctx.quadraticCurveTo(-s*1.28,s*0.62+sway*s*0.16,-s*0.68,0);
+  ctx.closePath();ctx.fill();
+  // 背鳍
+  const dg=ctx.createLinearGradient(0,-s*1.1,0,0);
+  dg.addColorStop(0,rgba(accent,0.9));dg.addColorStop(1,rgba(c2,0.35));
+  ctx.fillStyle=dg;
+  ctx.beginPath();
+  ctx.moveTo(s*0.34,-s*0.5);
+  ctx.quadraticCurveTo(-s*0.1,-s*1.18+sway*s*0.12,-s*0.66,-s*0.44);
+  ctx.quadraticCurveTo(-s*0.16,-s*0.62,s*0.34,-s*0.5);
+  ctx.closePath();ctx.fill();
+  // 侧鳍
+  ctx.fillStyle=rgba(accent,0.5);
+  ctx.beginPath();
+  ctx.moveTo(s*0.16,s*0.16);
+  ctx.quadraticCurveTo(-s*0.18,s*0.86+sway*s*0.14,-s*0.62,s*0.5);
+  ctx.quadraticCurveTo(-s*0.1,s*0.38,s*0.16,s*0.16);
+  ctx.closePath();ctx.fill();
+  // 装饰鱼鳍
+  if(opts.fin==='fin1'){
+    ctx.fillStyle=rgba(accent,0.55);
+    ctx.beginPath();
+    ctx.moveTo(s*0.1,-s*0.4);
+    ctx.quadraticCurveTo(s*0.5,-s*1.5,-s*0.5,-s*1.1);
+    ctx.quadraticCurveTo(-s*0.1,-s*0.62,s*0.1,-s*0.4);
+    ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(s*0.05,s*0.36);
+    ctx.quadraticCurveTo(s*0.4,s*1.42,-s*0.55,s*1.05);
+    ctx.quadraticCurveTo(-s*0.12,s*0.6,s*0.05,s*0.36);
+    ctx.closePath();ctx.fill();
+  }else if(opts.fin==='fin2'){
+    const fg=ctx.createLinearGradient(-s*2,0,0,0);
+    fg.addColorStop(0,rgba('#ff8e53',0));fg.addColorStop(1,rgba('#ffb45c',0.75));
+    ctx.fillStyle=fg;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.moveTo(-s*0.5,-s*0.22+i*s*0.2);
+      ctx.quadraticCurveTo(-s*1.6,-s*0.5+i*s*0.42+sway*s*0.2,-s*2.35,-s*0.16+i*s*0.44+sway*s*0.3);
+      ctx.quadraticCurveTo(-s*1.5,-s*0.12+i*s*0.34+sway*s*0.16,-s*0.5,s*0.02+i*s*0.2);
+      ctx.closePath();ctx.fill();
+    }
+  }else if(opts.fin==='fin3'){
+    ctx.fillStyle=rgba('#ffffff',0.6);
+    for(let i=0;i<6;i++){
+      const a=-1.9+i*0.34;
+      const rr=s*1.12;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a)*rr*0.72-s*0.1,Math.sin(a)*rr*0.72-s*0.12,s*0.09,0,TAU);
+      ctx.fill();
+    }
+    ctx.fillStyle=rgba(accent,0.45);
+    ctx.beginPath();
+    ctx.moveTo(s*0.1,-s*0.44);
+    ctx.quadraticCurveTo(-s*0.2,-s*1.32,-s*0.78,-s*0.4);
+    ctx.closePath();ctx.fill();
+  }
+  // 身体
+  const bg=ctx.createLinearGradient(0,-s*0.9,0,s*0.9);
+  bg.addColorStop(0,c1);bg.addColorStop(0.5,c2);bg.addColorStop(1,rgba(c1,0.92));
+  ctx.fillStyle=bg;
+  ctx.beginPath();
+  ctx.moveTo(s*1.14,0);
+  ctx.bezierCurveTo(s*0.92,-s*0.7,-s*0.5,-s*0.78,-s*0.94,-s*0.1);
+  ctx.bezierCurveTo(-s*1.02,s*0.34,-s*0.36,s*0.78,s*0.6,s*0.62);
+  ctx.bezierCurveTo(s*0.92,s*0.52,s*1.12,s*0.24,s*1.14,0);
+  ctx.closePath();ctx.fill();
+  ctx.strokeStyle=rgba(accent,0.5);ctx.lineWidth=Math.max(1,size*0.05);
+  ctx.stroke();
+  // 条纹
+  ctx.globalAlpha=alpha*0.2;
+  ctx.fillStyle=accent;
+  for(let i=0;i<3;i++){
+    ctx.beginPath();
+    ctx.ellipse(s*(0.38-i*0.4),0,s*0.08,s*0.6,-0.16,0,TAU);
+    ctx.fill();
+  }
+  // 腹部高光
+  ctx.globalAlpha=alpha*0.3;
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(s*0.12,s*0.3,s*0.58,s*0.2,0,0,TAU);
+  ctx.fill();
+  const spec=ctx.createLinearGradient(0,-s*0.95,0,-s*0.05);
+  spec.addColorStop(0,rgba('#ffffff',0.42));spec.addColorStop(1,rgba('#ffffff',0));
+  ctx.fillStyle=spec;
+  ctx.beginPath();
+  ctx.ellipse(s*0.18,-s*0.38,s*0.62,s*0.18,-0.22,0,TAU);
+  ctx.fill();
+  ctx.globalAlpha=alpha;
+  // 眼睛
+  ctx.shadowBlur=0;
+  const ex=s*0.56,ey=-s*0.17,er=Math.max(1.6,s*0.175);
+  ctx.beginPath();ctx.arc(ex,ey,er,0,TAU);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.beginPath();ctx.arc(ex+er*0.28,ey,er*0.56,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+  ctx.beginPath();ctx.arc(ex+er*0.5,ey-er*0.32,er*0.2,0,TAU);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.restore();
+}
+/* ---------- 多形态鱼身（鲨/豚/水母/鳗/鸻/蟆/剑/海马/鮋鱇/翻车鱼/鯨） ---------- */
+function bodyShark(s,c1,c2,accent,sway){
+  const bg=ctx.createLinearGradient(0,-s*0.9,0,s*0.9);
+  bg.addColorStop(0,c1);bg.addColorStop(0.6,c2);bg.addColorStop(1,'#dfeefc');
+  ctx.fillStyle=bg;
+  ctx.beginPath();
+  ctx.moveTo(s*1.5,0);
+  ctx.bezierCurveTo(s*0.95,-s*0.72,-s*0.6,-s*0.62,-s*1.0,-s*0.06);
+  ctx.bezierCurveTo(-s*0.6,s*0.52,s*0.8,s*0.58,s*1.5,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.fillStyle=rgba(c1,0.95);
+  ctx.beginPath();
+  ctx.moveTo(s*0.36,-s*0.42);
+  ctx.quadraticCurveTo(-s*0.02,-s*1.3+sway*s*0.12,-s*0.62,-s*0.36);
+  ctx.quadraticCurveTo(-s*0.16,-s*0.5,s*0.36,-s*0.42);
+  ctx.closePath();ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-s*0.92,0);
+  ctx.quadraticCurveTo(-s*1.5,-s*0.88+sway*s*0.2,-s*1.88,-s*0.72+sway*s*0.24);
+  ctx.quadraticCurveTo(-s*1.28,-s*0.06,-s*1.82,s*0.5+sway*s*0.24);
+  ctx.quadraticCurveTo(-s*1.42,s*0.64+sway*s*0.2,-s*0.92,0);
+  ctx.closePath();ctx.fill();
+  ctx.strokeStyle=rgba('#ffffff',0.45);ctx.lineWidth=Math.max(1,s*0.05);
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(s*0.44-i*s*0.15,-s*0.22);ctx.lineTo(s*0.34-i*s*0.15,s*0.26);ctx.stroke();}
+  ctx.beginPath();ctx.arc(s*0.92,-s*0.16,s*0.1,0,TAU);ctx.fillStyle='#ffe9a8';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.94,-s*0.16,s*0.05,0,TAU);ctx.fillStyle='#2a0a0a';ctx.fill();
+}
+function bodyPuffer(s,c1,c2,accent,sway,inflate){
+  inflate=inflate||0;
+  const sp=s*(0.3+inflate*0.24);
+  ctx.fillStyle=rgba(accent,0.9);
+  for(let i=0;i<14;i++){
+    const a=i/14*TAU+sway*0.08;
+    const r0=s*0.78,r1=s*0.78+sp;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a-0.12)*r0,Math.sin(a-0.12)*r0);
+    ctx.lineTo(Math.cos(a)*r1,Math.sin(a)*r1);
+    ctx.lineTo(Math.cos(a+0.12)*r0,Math.sin(a+0.12)*r0);
+    ctx.closePath();ctx.fill();
+  }
+  const bg=ctx.createRadialGradient(s*0.24,-s*0.28,s*0.12,0,0,s*1.05);
+  bg.addColorStop(0,c2);bg.addColorStop(1,c1);
+  ctx.fillStyle=bg;
+  ctx.beginPath();ctx.arc(0,0,s*0.92,0,TAU);ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.fillStyle=rgba('#ffffff',0.3);
+  ctx.beginPath();ctx.ellipse(0,s*0.36,s*0.6,s*0.32,0,0,TAU);ctx.fill();
+  ctx.fillStyle=rgba(accent,0.6);
+  ctx.beginPath();ctx.moveTo(-s*0.2,s*0.62);ctx.quadraticCurveTo(-s*0.62,s*1.08+sway*s*0.12,-s*1.02,s*0.72);ctx.quadraticCurveTo(-s*0.5,s*0.66,-s*0.2,s*0.62);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.42,-s*0.3,s*0.2,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.47,-s*0.3,s*0.11,0,TAU);ctx.fillStyle='#12202e';ctx.fill();
+}
+function bodyJelly(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(0,-s*1.1,0,s*0.2);
+  g.addColorStop(0,rgba('#dff6ff',0.92));g.addColorStop(1,rgba(accent,0.42));
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(0,-s*0.18,s*0.92,s*0.78,0,Math.PI,TAU);ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.strokeStyle=rgba('#ffffff',0.7);ctx.lineWidth=Math.max(1,s*0.06);
+  ctx.beginPath();ctx.ellipse(0,-s*0.18,s*0.92,s*0.78,0,Math.PI,TAU);ctx.stroke();
+  for(let i=0;i<6;i++){
+    const tx=(i/5-0.5)*s*1.32;
+    ctx.beginPath();ctx.moveTo(tx,s*0.28);
+    ctx.quadraticCurveTo(tx+Math.sin(T*3+i)*s*0.22,s*1.0,tx+Math.sin(T*3+i)*s*0.4,s*1.62);
+    ctx.strokeStyle=rgba(accent,0.72);ctx.lineWidth=Math.max(1.2,s*0.11);ctx.stroke();
+  }
+  ctx.fillStyle=rgba('#ffffff',0.85);
+  for(let i=0;i<4;i++){ctx.beginPath();ctx.arc((i-1.5)*s*0.3,-s*0.36+Math.sin(i*2)*s*0.12,s*0.09,0,TAU);ctx.fill();}
+}
+function bodyEel(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(-s*2,0,s,0);
+  g.addColorStop(0,c1);g.addColorStop(0.62,c2);g.addColorStop(1,rgba(accent,0.92));
+  ctx.strokeStyle=g;ctx.lineWidth=s*0.56;ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(s*1.0,0);
+  for(let i=1;i<=8;i++){
+    const t=i/8;
+    ctx.lineTo(s*1.0-t*s*3.2,Math.sin(t*5.2+sway*1.6)*s*0.42);
+  }
+  ctx.stroke();
+  ctx.fillStyle=c2;
+  ctx.beginPath();ctx.ellipse(s*1.02,0,s*0.5,s*0.34,0,0,TAU);ctx.fill();
+  ctx.strokeStyle=rgba('#9df6ff',0.75);ctx.lineWidth=Math.max(1,s*0.07);
+  for(let i=0;i<3;i++){
+    const px=s*(0.1-i*0.72),py=Math.sin((1-i*0.24)*5.2+sway*1.6)*s*0.42;
+    ctx.beginPath();ctx.moveTo(px,py-s*0.36);
+    ctx.lineTo(px+s*0.16,py-s*0.12);
+    ctx.lineTo(px-s*0.1,py+s*0.08);
+    ctx.lineTo(px+s*0.12,py+s*0.34);
+    ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(s*1.22,-s*0.12,s*0.11,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*1.25,-s*0.12,s*0.06,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function bodySquid(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(0,-s*1.2,0,s*0.4);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(s*1.15,0);
+  ctx.quadraticCurveTo(s*0.2,-s*0.92,-s*1.28,-s*0.62+sway*s*0.1);
+  ctx.quadraticCurveTo(-s*0.1,-s*0.1,-s*1.28,s*0.62+sway*s*0.1);
+  ctx.quadraticCurveTo(s*0.2,s*0.92,s*1.15,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.fillStyle=rgba(accent,0.5);
+  ctx.beginPath();ctx.moveTo(-s*0.6,-s*0.5);ctx.quadraticCurveTo(-s*1.7,-s*1.1,-s*1.86,-s*0.2);ctx.quadraticCurveTo(-s*1.2,-s*0.42,-s*0.6,-s*0.5);ctx.closePath();ctx.fill();
+  ctx.strokeStyle=rgba(c2,0.85);ctx.lineWidth=Math.max(1.4,s*0.12);ctx.lineCap='round';
+  for(let i=0;i<5;i++){
+    const ty=(i/4-0.5)*s*0.52;
+    ctx.beginPath();ctx.moveTo(s*0.88,ty);
+    ctx.quadraticCurveTo(s*1.5,ty+Math.sin(T*3+i)*s*0.28,s*2.0,ty+Math.sin(T*3+i*1.4)*s*0.52);
+    ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(s*0.58,-s*0.2,s*0.17,0,TAU);ctx.fillStyle='#ffe9a8';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.62,-s*0.2,s*0.085,0,TAU);ctx.fillStyle='#170b26';ctx.fill();
+}
+function bodyRay(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(0,-s*0.6,0,s*0.6);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(s*1.1,0);
+  ctx.quadraticCurveTo(s*0.2,-s*1.22+sway*s*0.12,-s*1.15,-s*0.86+sway*s*0.16);
+  ctx.quadraticCurveTo(-s*0.42,0,-s*1.15,s*0.86+sway*s*0.16);
+  ctx.quadraticCurveTo(s*0.2,s*1.22+sway*s*0.12,s*1.1,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.strokeStyle=rgba(accent,0.85);ctx.lineWidth=Math.max(1.4,s*0.1);
+  ctx.beginPath();ctx.moveTo(-s*0.6,0);ctx.quadraticCurveTo(-s*1.5,s*0.24,-s*2.2,s*0.06+sway*s*0.3);ctx.stroke();
+  ctx.fillStyle=rgba('#ffffff',0.22);
+  ctx.beginPath();ctx.ellipse(s*0.1,s*0.24,s*0.66,s*0.3,0,0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.62,-s*0.28,s*0.1,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.65,-s*0.28,s*0.055,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function bodySword(s,c1,c2,accent,sway){
+  ctx.fillStyle=rgba(accent,0.95);
+  ctx.beginPath();ctx.moveTo(s*1.0,-s*0.1);ctx.lineTo(s*2.05,-s*0.02+sway*s*0.04);ctx.lineTo(s*1.0,s*0.12);ctx.closePath();ctx.fill();
+  const g=ctx.createLinearGradient(0,-s*0.8,0,s*0.8);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(s*1.12,0);
+  ctx.bezierCurveTo(s*0.7,-s*0.66,-s*0.5,-s*0.6,-s*1.0,-s*0.05);
+  ctx.bezierCurveTo(-s*0.5,s*0.6,s*0.7,s*0.66,s*1.12,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.fillStyle=rgba(c1,0.92);
+  ctx.beginPath();
+  ctx.moveTo(-s*0.9,0);
+  ctx.quadraticCurveTo(-s*1.5,-s*1.0+sway*s*0.18,-s*1.78,-s*0.82+sway*s*0.22);
+  ctx.quadraticCurveTo(-s*1.24,0,-s*1.78,s*0.82+sway*s*0.22);
+  ctx.quadraticCurveTo(-s*1.5,s*1.0+sway*s*0.18,-s*0.9,0);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=rgba(accent,0.7);
+  ctx.beginPath();ctx.moveTo(s*0.3,-s*0.42);ctx.quadraticCurveTo(-s*0.1,-s*1.12,-s*0.55,-s*0.36);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.72,-s*0.14,s*0.11,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.75,-s*0.14,s*0.06,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function bodySeahorse(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(0,-s*1.2,0,s*1.2);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.strokeStyle=g;ctx.lineWidth=s*0.52;ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(s*0.6,-s*1.0);
+  ctx.quadraticCurveTo(s*1.15,-s*0.62,s*0.86,-s*0.1);
+  ctx.quadraticCurveTo(s*0.5,s*0.62,s*0.02,s*0.86);
+  ctx.quadraticCurveTo(-s*0.5,s*1.06,-s*0.34,s*1.42+sway*s*0.12);
+  ctx.stroke();
+  ctx.lineWidth=s*0.24;
+  ctx.beginPath();ctx.moveTo(s*0.62,-s*1.02);ctx.lineTo(s*1.28,-s*1.16);ctx.stroke();
+  ctx.fillStyle=rgba(accent,0.72);
+  for(let i=0;i<4;i++){
+    const a=-1.9+i*0.32;
+    ctx.beginPath();ctx.arc(Math.cos(a)*s*0.62+s*0.42,Math.sin(a)*s*0.62-s*0.72,s*0.13,0,TAU);ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.moveTo(s*0.2,-s*0.28);
+  ctx.quadraticCurveTo(-s*0.66,-s*0.12+sway*s*0.14,-s*0.34,s*0.62);
+  ctx.quadraticCurveTo(s*0.16,s*0.2,s*0.2,-s*0.28);
+  ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.68,-s*0.92,s*0.13,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.71,-s*0.92,s*0.07,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function bodyLantern(s,c1,c2,accent,sway){
+  const g=ctx.createRadialGradient(s*0.2,-s*0.3,s*0.1,0,0,s*1.1);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(s*1.05,0);
+  ctx.bezierCurveTo(s*0.9,-s*0.8,-s*0.6,-s*0.86,-s*1.0,-s*0.1);
+  ctx.bezierCurveTo(-s*1.05,s*0.55,-s*0.2,s*0.9,s*0.66,s*0.62);
+  ctx.bezierCurveTo(s*0.95,s*0.5,s*1.05,s*0.26,s*1.05,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.strokeStyle=rgba('#12202e',0.85);ctx.lineWidth=Math.max(1.4,s*0.08);
+  ctx.beginPath();ctx.moveTo(s*1.02,s*0.06);ctx.quadraticCurveTo(s*0.5,s*0.42,-s*0.2,s*0.26);ctx.stroke();
+  ctx.strokeStyle=rgba(accent,0.85);ctx.lineWidth=Math.max(1.2,s*0.07);
+  ctx.beginPath();ctx.moveTo(s*0.28,-s*0.72);
+  ctx.quadraticCurveTo(s*0.55,-s*1.42+sway*s*0.12,s*0.92,-s*1.5);
+  ctx.stroke();
+  const lg=ctx.createRadialGradient(s*0.96,-s*1.5,1,s*0.96,-s*1.5,s*0.5);
+  lg.addColorStop(0,rgba('#fff6c8',0.98));lg.addColorStop(1,rgba(accent,0));
+  ctx.fillStyle=lg;
+  ctx.beginPath();ctx.arc(s*0.96,-s*1.5,s*0.46,0,TAU);ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.96,-s*1.5,s*0.14,0,TAU);ctx.fillStyle='#fffbe6';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.56,-s*0.22,s*0.14,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.6,-s*0.22,s*0.075,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function bodySunfish(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(0,-s,0,s);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.fillStyle=g;
+  ctx.beginPath();ctx.ellipse(0,0,s*1.0,s*0.88,0,0,TAU);ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.fillStyle=rgba(accent,0.75);
+  ctx.beginPath();ctx.moveTo(-s*0.1,-s*0.72);ctx.quadraticCurveTo(-s*0.2,-s*1.62+sway*s*0.12,-s*1.12,-s*1.12);ctx.quadraticCurveTo(-s*0.62,-s*0.78,-s*0.1,-s*0.72);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(-s*0.1,s*0.72);ctx.quadraticCurveTo(-s*0.2,s*1.62+sway*s*0.12,-s*1.12,s*1.12);ctx.quadraticCurveTo(-s*0.62,s*0.78,-s*0.1,s*0.72);ctx.closePath();ctx.fill();
+  ctx.fillStyle=rgba(accent,0.4);
+  for(let i=0;i<6;i++){ctx.beginPath();ctx.arc((i%3-1)*s*0.4,(((i/3)|0)-0.5)*s*0.6,s*0.12,0,TAU);ctx.fill();}
+  ctx.beginPath();ctx.arc(s*0.5,-s*0.18,s*0.13,0,TAU);ctx.fillStyle='#fff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.54,-s*0.18,s*0.07,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function bodyWhale(s,c1,c2,accent,sway){
+  const g=ctx.createLinearGradient(0,-s,0,s);
+  g.addColorStop(0,c2);g.addColorStop(1,c1);
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.moveTo(s*1.32,0);
+  ctx.bezierCurveTo(s*1.0,-s*0.86,-s*0.72,-s*0.9,-s*1.16,-s*0.12);
+  ctx.bezierCurveTo(-s*1.2,s*0.5,-s*0.3,s*0.94,s*0.8,s*0.72);
+  ctx.bezierCurveTo(s*1.14,s*0.58,s*1.32,s*0.26,s*1.32,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.fillStyle=rgba(c1,0.95);
+  ctx.beginPath();
+  ctx.moveTo(-s*1.06,-s*0.1);
+  ctx.quadraticCurveTo(-s*1.7,-s*1.12+sway*s*0.16,-s*2.16,-s*0.9+sway*s*0.2);
+  ctx.quadraticCurveTo(-s*1.56,-s*0.1,-s*2.16,s*0.82+sway*s*0.2);
+  ctx.quadraticCurveTo(-s*1.7,s*1.02+sway*s*0.16,-s*1.06,s*0.1);
+  ctx.closePath();ctx.fill();
+  ctx.strokeStyle=rgba('#ffffff',0.32);ctx.lineWidth=Math.max(1.4,s*0.05);
+  for(let i=0;i<5;i++){
+    ctx.beginPath();ctx.moveTo(s*0.9-i*s*0.34,s*0.34);ctx.quadraticCurveTo(s*0.7-i*s*0.34,s*0.58,s*0.3-i*s*0.34,s*0.6);ctx.stroke();
+  }
+  ctx.beginPath();ctx.arc(s*0.86,-s*0.2,s*0.11,0,TAU);ctx.fillStyle='#dff2ff';ctx.fill();
+  ctx.beginPath();ctx.arc(s*0.89,-s*0.2,s*0.06,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+}
+function drawTierRing(e){
+  const r=e.size*1.52;
+  ctx.save();
+  ctx.translate(e.x,e.y);
+  const col=e.tier===2?'#ffd166':'#7de8ff';
+  ctx.strokeStyle=rgba(col,0.5+Math.sin(T*5+e.phase)*0.22);
+  ctx.lineWidth=e.tier===2?3.2:2;
+  ctx.setLineDash(e.tier===2?[12,7]:[6,8]);
+  ctx.lineDashOffset=-T*24;
+  ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();
+  ctx.setLineDash([]);
+  if(e.tier===2){
+    const g=ctx.createRadialGradient(0,0,r*0.4,0,0,r*1.7);
+    g.addColorStop(0,rgba('#ffd166',0.16));g.addColorStop(1,rgba('#ffd166',0));
+    ctx.fillStyle=g;ctx.fillRect(-r*1.7,-r*1.7,r*3.4,r*3.4);
+  }
+  ctx.restore();
+}
+function drawFloaters(){
+  if(!G.floaters.length)return;
+  ctx.save();
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  for(const f of G.floaters){
+    const a=clamp(f.life/f.max,0,1);
+    ctx.globalAlpha=Math.min(1,a*1.6);
+    ctx.font='bold '+Math.round(14/Math.max(0.12,camScale()))+'px sans-serif';
+    ctx.fillStyle=f.color;
+    ctx.shadowColor=f.color;ctx.shadowBlur=14;
+    ctx.fillText(f.text,f.x,f.y);
+  }
+  ctx.restore();
+}
+/* ---- 炫技画法：三层丝带鱼鳍 + 裁剪贴图鳞片（借鉴锦鲤分层绘制技法） ---- */
+function bodyTexture(s,c1,c2,accent){
+  ctx.save();
+  ctx.clip();
+  const top=ctx.createRadialGradient(s*0.12,-s*0.52,s*0.06,s*0.12,-s*0.52,s*1.15);
+  top.addColorStop(0,rgba('#ffffff',0.34));top.addColorStop(1,rgba('#ffffff',0));
+  ctx.fillStyle=top;ctx.fillRect(-s*1.35,-s*1.2,s*2.8,s*2.4);
+  const belly=ctx.createRadialGradient(0,s*0.58,s*0.05,0,s*0.58,s*0.95);
+  belly.addColorStop(0,rgba(accent,0.3));belly.addColorStop(1,rgba(accent,0));
+  ctx.fillStyle=belly;ctx.fillRect(-s*1.35,-s*1.2,s*2.8,s*2.4);
+  ctx.strokeStyle=rgba('#ffffff',0.13);ctx.lineWidth=Math.max(0.8,s*0.032);
+  for(let row=0;row<4;row++){
+    for(let col=0;col<7;col++){
+      const sx=-s*0.82+col*s*0.28+(row%2)*s*0.14;
+      const sy=-s*0.5+row*s*0.32;
+      ctx.beginPath();ctx.arc(sx,sy,s*0.15,Math.PI*0.12,Math.PI*0.88);ctx.stroke();
+    }
+  }
+  ctx.restore();
+  ctx.strokeStyle=rgba(accent,0.55);ctx.lineWidth=Math.max(1,s*0.05);
+  ctx.stroke();
+}
+function drawModernFish(x,y,size,ang,c1,c2,accent,opts){
+  opts=opts||{};
+  const t=opts.t!==undefined?opts.t:T;
+  const sway=Math.sin(t*5+(opts.phase||0));
+  const sway2=Math.sin(t*3.1+(opts.phase||0)*1.4);
+  const alpha=opts.alpha!==undefined?opts.alpha:1;
+  const s=size;
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(ang);
+  ctx.globalAlpha=alpha;
+  ctx.shadowColor=rgba(accent,0.85);
+  ctx.shadowBlur=Math.min(70,s*0.9);
+  for(let layer=0;layer<3;layer++){
+    const la=[0.5,0.32,0.2][layer];
+    const off=layer*s*0.15;
+    const wave=sway*(0.5+layer*0.35)+sway2*0.22*layer;
+    const g=ctx.createLinearGradient(-s*1.9,0,-s*0.5,0);
+    g.addColorStop(0,rgba(accent,0));g.addColorStop(0.55,rgba(accent,la*0.95));g.addColorStop(1,rgba(c2,la));
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(-s*0.62,-off*0.4);
+    ctx.quadraticCurveTo(-s*1.25,-s*0.62+wave*s*0.28-off,-s*1.92,-s*0.42+wave*s*0.42-off);
+    ctx.quadraticCurveTo(-s*1.22,wave*s*0.06,-s*1.88,s*0.46+wave*s*0.42+off);
+    ctx.quadraticCurveTo(-s*1.24,s*0.62+wave*s*0.28+off,-s*0.62,off*0.4);
+    ctx.closePath();ctx.fill();
+  }
+  const dg=ctx.createLinearGradient(0,-s*1.25,0,0);
+  dg.addColorStop(0,rgba(accent,0.9));dg.addColorStop(1,rgba(c2,0.3));
+  ctx.fillStyle=dg;
+  ctx.beginPath();
+  ctx.moveTo(s*0.36,-s*0.48);
+  ctx.quadraticCurveTo(-s*0.12,-s*1.22+sway2*s*0.14,-s*0.72,-s*0.42);
+  ctx.quadraticCurveTo(-s*0.18,-s*0.62,s*0.36,-s*0.48);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=rgba(accent,0.42);
+  ctx.beginPath();
+  ctx.moveTo(s*0.14,s*0.16);
+  ctx.quadraticCurveTo(-s*0.2,s*0.86-sway2*s*0.14,-s*0.66,s*0.5-sway2*s*0.2);
+  ctx.quadraticCurveTo(-s*0.1,s*0.36,s*0.14,s*0.16);
+  ctx.closePath();ctx.fill();
+  if(opts.fin==='fin1'){
+    ctx.fillStyle=rgba(accent,0.55);
+    ctx.beginPath();
+    ctx.moveTo(s*0.1,-s*0.4);
+    ctx.quadraticCurveTo(s*0.5,-s*1.5,-s*0.5,-s*1.1);
+    ctx.quadraticCurveTo(-s*0.1,-s*0.62,s*0.1,-s*0.4);
+    ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(s*0.05,s*0.36);
+    ctx.quadraticCurveTo(s*0.4,s*1.42,-s*0.55,s*1.05);
+    ctx.quadraticCurveTo(-s*0.12,s*0.6,s*0.05,s*0.36);
+    ctx.closePath();ctx.fill();
+  }else if(opts.fin==='fin2'){
+    const fg=ctx.createLinearGradient(-s*2,0,0,0);
+    fg.addColorStop(0,rgba('#ff8e53',0));fg.addColorStop(1,rgba('#ffb45c',0.75));
+    ctx.fillStyle=fg;
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.moveTo(-s*0.5,-s*0.22+i*s*0.2);
+      ctx.quadraticCurveTo(-s*1.6,-s*0.5+i*s*0.42+sway*s*0.2,-s*2.35,-s*0.16+i*s*0.44+sway*s*0.3);
+      ctx.quadraticCurveTo(-s*1.5,-s*0.12+i*s*0.34+sway*s*0.16,-s*0.5,s*0.02+i*s*0.2);
+      ctx.closePath();ctx.fill();
+    }
+  }else if(opts.fin==='fin3'){
+    ctx.fillStyle=rgba('#ffffff',0.6);
+    for(let i=0;i<6;i++){
+      const a=-1.9+i*0.34;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a)*s*0.8-s*0.1,Math.sin(a)*s*0.8-s*0.12,s*0.09,0,TAU);
+      ctx.fill();
+    }
+  }
+  const bg=ctx.createLinearGradient(0,-s*0.95,0,s*0.95);
+  bg.addColorStop(0,c1);bg.addColorStop(0.48,c2);bg.addColorStop(1,rgba(c1,0.9));
+  ctx.fillStyle=bg;
+  ctx.beginPath();
+  ctx.moveTo(s*1.16,0);
+  ctx.bezierCurveTo(s*0.92,-s*0.72,-s*0.52,-s*0.8,-s*0.96,-s*0.1);
+  ctx.bezierCurveTo(-s*1.04,s*0.36,-s*0.36,s*0.8,s*0.6,s*0.64);
+  ctx.bezierCurveTo(s*0.94,s*0.52,s*1.14,s*0.24,s*1.16,0);
+  ctx.closePath();ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.shadowBlur=0;
+  const ex=s*0.56,ey=-s*0.17,er=Math.max(1.6,s*0.175);
+  ctx.beginPath();ctx.arc(ex,ey,er,0,TAU);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.beginPath();ctx.arc(ex+er*0.28,ey,er*0.56,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+  ctx.beginPath();ctx.arc(ex+er*0.5,ey-er*0.32,er*0.2,0,TAU);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.restore();
+}
+/* ---- 柔性鱼：脊椎弯曲 + 体宽剖面 + 尾鳍随脊椎摆动 ---- */
+function drawSoftFish(x,y,size,ang,c1,c2,accent,opts){
+  opts=opts||{};
+  const t=opts.t!==undefined?opts.t:T;
+  const phase=opts.phase||0;
+  const bend=clamp(opts.bend||0,-1.5,1.5);
+  const alpha=opts.alpha!==undefined?opts.alpha:1;
+  const s=size;
+  const wave=Math.sin(t*5.2+phase);
+  const wave2=Math.sin(t*3.1+phase*1.4);
+  ctx.save();
+  ctx.translate(x,y);ctx.rotate(ang);ctx.globalAlpha=alpha;
+  ctx.shadowColor=rgba(accent,0.85);
+  ctx.shadowBlur=Math.min(70,s*0.9);
+  const spineY=u=>bend*Math.sin((u+1)*0.5*Math.PI*0.9)*s*0.5+wave*Math.pow(Math.max(0,-u),1.6)*s*0.34;
+  const prof=u=>Math.sin(Math.pow((u+1)/2,0.72)*Math.PI)*0.74+0.05;
+  const ty0=spineY(-0.92);
+  for(let layer=0;layer<3;layer++){
+    const la=[0.5,0.32,0.2][layer];
+    const off=layer*s*0.15;
+    const w2=wave*(0.5+layer*0.35)+wave2*0.22*layer;
+    const g=ctx.createLinearGradient(-s*1.9,0,-s*0.5,0);
+    g.addColorStop(0,rgba(accent,0));g.addColorStop(0.55,rgba(accent,la*0.95));g.addColorStop(1,rgba(c2,la));
+    ctx.fillStyle=g;
+    ctx.beginPath();
+    ctx.moveTo(-s*0.55,ty0-off*0.4);
+    ctx.quadraticCurveTo(-s*1.22,ty0-s*0.62+w2*s*0.28-off,-s*1.9,ty0-s*0.42+w2*s*0.42-off);
+    ctx.quadraticCurveTo(-s*1.2,ty0+w2*s*0.06,-s*1.86,ty0+s*0.46+w2*s*0.42+off);
+    ctx.quadraticCurveTo(-s*1.22,ty0+s*0.62+w2*s*0.28+off,-s*0.55,ty0+off*0.4);
+    ctx.closePath();ctx.fill();
+  }
+  const dy=spineY(-0.05),py=spineY(0.18);
+  const dg=ctx.createLinearGradient(0,-s*1.25,0,0);
+  dg.addColorStop(0,rgba(accent,0.9));dg.addColorStop(1,rgba(c2,0.3));
+  ctx.fillStyle=dg;
+  ctx.beginPath();
+  ctx.moveTo(s*0.36,dy-s*0.48);
+  ctx.quadraticCurveTo(-s*0.12,dy-s*1.22+wave2*s*0.14,-s*0.72,dy-s*0.42);
+  ctx.quadraticCurveTo(-s*0.18,dy-s*0.62,s*0.36,dy-s*0.48);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=rgba(accent,0.42);
+  ctx.beginPath();
+  ctx.moveTo(s*0.14,py+s*0.16);
+  ctx.quadraticCurveTo(-s*0.2,py+s*0.86-wave2*s*0.14,-s*0.66,py+s*0.5-wave2*s*0.2);
+  ctx.quadraticCurveTo(-s*0.1,py+s*0.36,s*0.14,py+s*0.16);
+  ctx.closePath();ctx.fill();
+  const N=20;
+  ctx.beginPath();
+  for(let i=0;i<=N;i++){
+    const u=-1+i/N*2;
+    const px=u*s*1.16,yy=spineY(u);
+    const w=prof(u)*s;
+    if(i===0)ctx.moveTo(px,yy-w);else ctx.lineTo(px,yy-w);
+  }
+  for(let i=N;i>=0;i--){
+    const u=-1+i/N*2;
+    const px=u*s*1.16,yy=spineY(u);
+    ctx.lineTo(px,yy+prof(u)*s);
+  }
+  ctx.closePath();
+  const bg=ctx.createLinearGradient(0,-s*0.95,0,s*0.95);
+  bg.addColorStop(0,c1);bg.addColorStop(0.48,c2);bg.addColorStop(1,rgba(c1,0.9));
+  ctx.fillStyle=bg;ctx.fill();
+  bodyTexture(s,c1,c2,accent);
+  ctx.shadowBlur=0;
+  const hy=spineY(0.86);
+  const ex=s*0.56,ey=hy-s*0.17,er=Math.max(1.6,s*0.175);
+  ctx.beginPath();ctx.arc(ex,ey,er,0,TAU);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.beginPath();ctx.arc(ex+er*0.28,ey,er*0.56,0,TAU);ctx.fillStyle='#0b1220';ctx.fill();
+  ctx.beginPath();ctx.arc(ex+er*0.5,ey-er*0.32,er*0.2,0,TAU);ctx.fillStyle='#ffffff';ctx.fill();
+  ctx.restore();
+}
+function drawStar(x,y,r,c){
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+    const a=-Math.PI/2+i*Math.PI/5;
+    const rr=i%2===0?r:r*0.42;
+    const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;
+    if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+  }
+  ctx.closePath();ctx.fillStyle=c;ctx.fill();
+}
+function drawAttachment(id,s,color){
+  const c=color||'#ffd166';
+  switch(id){
+    case 'crown':
+      ctx.fillStyle=rgba(c,0.95);
+      ctx.beginPath();
+      ctx.moveTo(s*0.18,-s*0.62);ctx.lineTo(s*0.3,-s*1.14);ctx.lineTo(s*0.44,-s*0.74);
+      ctx.lineTo(s*0.6,-s*1.18);ctx.lineTo(s*0.72,-s*0.62);
+      ctx.closePath();ctx.fill();
+      break;
+    case 'horn':
+      ctx.fillStyle=rgba(c,0.9);
+      for(const dir of [-1,1]){
+        ctx.beginPath();
+        ctx.moveTo(s*0.34,dir*s*0.4);
+        ctx.quadraticCurveTo(s*0.1,dir*s*1.12,-s*0.3,dir*s*1.26);
+        ctx.quadraticCurveTo(s*0.02,dir*s*0.86,s*0.16,dir*s*0.36);
+        ctx.closePath();ctx.fill();
+      }
+      break;
+    case 'glasses':
+      ctx.fillStyle=rgba(c,0.92);
+      ctx.fillRect(s*0.36,-s*0.36,s*0.48,s*0.24);
+      ctx.fillRect(s*0.36,s*0.12,s*0.48,s*0.24);
+      ctx.fillRect(s*0.52,-s*0.1,s*0.12,s*0.2);
+      break;
+    case 'halo':
+      ctx.strokeStyle=rgba(c,0.9);ctx.lineWidth=Math.max(1.4,s*0.09);
+      ctx.beginPath();ctx.ellipse(s*0.3,-s*1.04,s*0.34,s*0.12,0,0,TAU);ctx.stroke();
+      break;
+    case 'cap':
+      ctx.fillStyle=rgba(c,0.92);
+      ctx.beginPath();ctx.arc(s*0.36,-s*0.5,s*0.36,Math.PI,TAU);ctx.fill();
+      ctx.fillRect(s*0.36,-s*0.64,s*0.62,s*0.12);
+      break;
+    case 'wings':
+      ctx.fillStyle=rgba(c,0.55);
+      for(const dir of [-1,1]){
+        ctx.beginPath();
+        ctx.moveTo(-s*0.1,dir*s*0.42);
+        ctx.quadraticCurveTo(-s*0.9,dir*s*1.26,-s*1.5,dir*s*0.88);
+        ctx.quadraticCurveTo(-s*0.8,dir*s*0.5,-s*0.1,dir*s*0.42);
+        ctx.closePath();ctx.fill();
+      }
+      break;
+    case 'flower':
+      ctx.fillStyle=rgba(c,0.95);
+      for(let i=0;i<5;i++){
+        const a=i/5*TAU;
+        ctx.beginPath();ctx.arc(s*0.34+Math.cos(a)*s*0.18,-s*0.72+Math.sin(a)*s*0.18,s*0.13,0,TAU);ctx.fill();
+      }
+      ctx.beginPath();ctx.arc(s*0.34,-s*0.72,s*0.1,0,TAU);ctx.fillStyle='#fff2b0';ctx.fill();
+      break;
+    case 'mustache':
+      ctx.fillStyle=rgba(c,0.9);
+      ctx.beginPath();
+      ctx.moveTo(s*0.98,s*0.04);
+      ctx.quadraticCurveTo(s*0.6,s*0.38,s*0.26,s*0.14);
+      ctx.quadraticCurveTo(s*0.62,s*0.08,s*0.98,s*0.04);
+      ctx.fill();
+      break;
+    case 'antenna':
+      ctx.strokeStyle=rgba(c,0.9);ctx.lineWidth=Math.max(1.2,s*0.06);
+      ctx.beginPath();ctx.moveTo(s*0.34,-s*0.58);ctx.quadraticCurveTo(s*0.5,-s*1.2,s*0.76,-s*1.36);ctx.stroke();
+      ctx.beginPath();ctx.arc(s*0.78,-s*1.38,s*0.14,0,TAU);ctx.fillStyle=c;ctx.fill();
+      break;
+    case 'band':
+      ctx.fillStyle=rgba(c,0.9);
+      ctx.fillRect(s*0.18,-s*0.64,s*0.16,s*1.2);
+      break;
+    case 'cape':
+      ctx.fillStyle=rgba(c,0.5);
+      ctx.beginPath();
+      ctx.moveTo(-s*0.4,-s*0.5);
+      ctx.quadraticCurveTo(-s*1.6,-s*0.2,-s*1.72,s*0.62);
+      ctx.quadraticCurveTo(-s*1.0,s*0.26,-s*0.4,s*0.5);
+      ctx.closePath();ctx.fill();
+      break;
+    case 'chain':
+      ctx.strokeStyle=rgba(c,0.95);ctx.lineWidth=Math.max(1.6,s*0.1);
+      ctx.beginPath();ctx.arc(s*0.42,s*0.36,s*0.3,0.15,Math.PI-0.4);ctx.stroke();
+      break;
+    case 'star':
+      drawStar(s*0.34,-s*1.06,s*0.26,c);
+      break;
+    case 'flame':
+      ctx.fillStyle=rgba(c,0.85);
+      for(let i=0;i<3;i++){
+        const fx=s*(0.1-i*0.5);
+        ctx.beginPath();
+        ctx.moveTo(fx,-s*0.5);
+        ctx.quadraticCurveTo(fx+s*0.2,-s*1.12,fx-s*0.12,-s*1.3);
+        ctx.quadraticCurveTo(fx-s*0.3,-s*0.96,fx,-s*0.5);
+        ctx.fill();
+      }
+      break;
+    case 'ice':
+      ctx.fillStyle=rgba(c,0.85);
+      for(let i=0;i<3;i++){
+        const fx=s*(0.24-i*0.36),fy=-s*0.66;
+        ctx.beginPath();
+        ctx.moveTo(fx,fy-s*0.6);ctx.lineTo(fx+s*0.14,fy);ctx.lineTo(fx,fy+s*0.16);ctx.lineTo(fx-s*0.14,fy);
+        ctx.closePath();ctx.fill();
+      }
+      break;
+    case 'bolt':
+      ctx.fillStyle=rgba(c,0.95);
+      ctx.beginPath();
+      ctx.moveTo(s*0.5,-s*1.22);ctx.lineTo(s*0.16,-s*0.64);ctx.lineTo(s*0.42,-s*0.64);
+      ctx.lineTo(s*0.2,-s*0.12);ctx.lineTo(s*0.72,-s*0.8);ctx.lineTo(s*0.44,-s*0.8);
+      ctx.closePath();ctx.fill();
+      break;
+    case 'mask':
+      ctx.fillStyle=rgba(c,0.85);
+      ctx.beginPath();ctx.ellipse(s*0.52,-s*0.16,s*0.4,s*0.26,0,0,TAU);ctx.fill();
+      break;
+    case 'hat':
+      ctx.fillStyle=rgba(c,0.95);
+      ctx.fillRect(s*0.16,-s*1.18,s*0.56,s*0.62);
+      ctx.fillRect(s*0.02,-s*0.62,s*0.9,s*0.12);
+      break;
+    case 'shell':
+      ctx.fillStyle=rgba(c,0.8);
+      ctx.beginPath();ctx.arc(-s*0.1,-s*0.1,s*0.66,Math.PI*0.8,Math.PI*2.1);ctx.fill();
+      break;
+    case 'ribbon':
+      ctx.fillStyle=rgba(c,0.92);
+      for(const dir of [-1,1]){
+        ctx.beginPath();
+        ctx.moveTo(s*0.34,-s*0.64);
+        ctx.lineTo(s*0.34+dir*s*0.42,-s*0.98);
+        ctx.lineTo(s*0.34+dir*s*0.36,-s*0.42);
+        ctx.closePath();ctx.fill();
+      }
+      break;
+  }
+}
+function drawEnemyFish(e){
+  const puffed=e.type==='puffer'?1+e.inflate*0.26:1;
+  const s=e.size*puffed;
+  if(e.type==='round'||!e.type){
+    drawSoftFish(e.x,e.y,s,e.ang,e.c1,e.c2,e.accent,{phase:e.phase,bend:Math.sin(T*1.6+e.phase)*0.32});
+    if(e.tier>0)drawTierRing(e);
+    return;
+  }
+  const sway=Math.sin(T*5+e.phase);
+  ctx.save();
+  ctx.translate(e.x,e.y);
+  ctx.rotate(e.ang);
+  ctx.shadowColor=rgba(e.accent,0.8);
+  ctx.shadowBlur=Math.min(70,s*0.9);
+  switch(e.type){
+    case 'shark':bodyShark(s,e.c1,e.c2,e.accent,sway);break;
+    case 'puffer':bodyPuffer(s,e.c1,e.c2,e.accent,sway,e.inflate);break;
+    case 'jelly':bodyJelly(s,e.c1,e.c2,e.accent,sway);break;
+    case 'eel':bodyEel(s,e.c1,e.c2,e.accent,sway);break;
+    case 'squid':bodySquid(s,e.c1,e.c2,e.accent,sway);break;
+    case 'ray':bodyRay(s,e.c1,e.c2,e.accent,sway);break;
+    case 'sword':bodySword(s,e.c1,e.c2,e.accent,sway);break;
+    case 'seahorse':bodySeahorse(s,e.c1,e.c2,e.accent,sway);break;
+    case 'lantern':bodyLantern(s,e.c1,e.c2,e.accent,sway);break;
+    case 'sunfish':bodySunfish(s,e.c1,e.c2,e.accent,sway);break;
+    default:bodyShark(s,e.c1,e.c2,e.accent,sway);
+  }
+  ctx.restore();
+  if(e.tier>0)drawTierRing(e);
+}
+function drawPlayerFish(p){
+  if(!p.alive){
+    drawSoftFish(p.x,p.y,p.size,p.ang,'#7de8ff','#bfe9ff','#8fe8ff',{phase:p.phase,alpha:0.34,bend:Math.sin(T*2+p.phase)*0.4});
+    ctx.save();
+    ctx.textAlign='center';ctx.font='bold 13px sans-serif';
+    ctx.fillStyle=rgba('#ffffff',0.85);
+    ctx.fillText(p.isGhost?'灵魂 · '+(Math.ceil(p.respawnT))+'s':'重生 '+Math.ceil(p.respawnT)+'s',p.x,p.y-p.size-14);
+    ctx.restore();
+    return;
+  }
+  const blink=p.invuln>0&&Math.sin(T*22)>0.15;
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  const aura=ctx.createRadialGradient(p.x,p.y,p.size*0.4,p.x,p.y,p.size*2.9);
+  aura.addColorStop(0,rgba(p.accent,0.17));aura.addColorStop(1,rgba(p.accent,0));
+  ctx.fillStyle=aura;ctx.fillRect(p.x-p.size*2.9,p.y-p.size*2.9,p.size*5.8,p.size*5.8);
+  ctx.restore();
+  const spdN=Math.hypot(p.vx,p.vy);
+  const slip=spdN>20?Math.sin(Math.atan2(p.vy,p.vx)-p.ang):0;
+  drawSoftFish(p.x,p.y,p.size,p.ang,p.c1,p.c2,p.accent,{phase:p.phase,alpha:blink?0.5:1,fin:p.fin,bend:clamp(slip*1.5,-1.5,1.5)});
+  if(p.looks&&p.looks.length){
+    ctx.save();
+    ctx.translate(p.x,p.y);ctx.rotate(p.ang);
+    let cnt=0;
+    for(const lid of p.looks){
+      if(cnt++>=6)break;
+      const look=LOOK_BY_ID[lid];
+      if(look)drawAttachment(lid,p.size,look.color);
+    }
+    ctx.restore();
+  }
+  if(p.shield>0){
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size*1.5,0,TAU);
+    ctx.strokeStyle=rgba('#a78bfa',0.55);ctx.lineWidth=2.5;
+    ctx.shadowColor=rgba('#a78bfa',0.8);ctx.shadowBlur=18;
+    ctx.stroke();
+    ctx.restore();
+  }
+  if(p.dashT>0){
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    const g=ctx.createRadialGradient(p.x,p.y,p.size*0.3,p.x,p.y,p.size*2.6);
+    g.addColorStop(0,rgba(p.accent,0.4));g.addColorStop(1,rgba(p.accent,0));
+    ctx.fillStyle=g;ctx.fillRect(p.x-p.size*2.6,p.y-p.size*2.6,p.size*5.2,p.size*5.2);
+    ctx.restore();
+  }
+  if(G.players.length>1){
+    ctx.save();
+    ctx.textAlign='center';ctx.font='bold 12px sans-serif';
+    ctx.fillStyle=rgba('#ffffff',0.8);
+    ctx.fillText('P'+(p.id+1),p.x,p.y-p.size-12);
+    ctx.restore();
+  }
+}
+function drawBoss(){
+  const b=G.boss;
+  if(!b)return;
+  ctx.save();
+  if(b.state==='charge'){
+    const pulse=0.4+Math.sin(T*16)*0.25;
+    const g=ctx.createRadialGradient(b.x,b.y,b.size*0.4,b.x,b.y,b.size*2.6);
+    g.addColorStop(0,rgba('#ff5e3a',pulse));g.addColorStop(1,rgba('#ff5e3a',0));
+    ctx.fillStyle=g;ctx.fillRect(b.x-b.size*2.6,b.y-b.size*2.6,b.size*5.2,b.size*5.2);
+  }
+  const sway=Math.sin(T*4+b.tier);
+  const did=b.def?b.def.id:'shark';
+  const c1=b.def?b.def.c1:'#7c2d3f';
+  const c2=b.def?b.def.c2:'#c05a56';
+  ctx.save();
+  ctx.translate(b.x,b.y);ctx.rotate(b.ang);
+  ctx.shadowColor=rgba('#ffd166',0.7);
+  ctx.shadowBlur=Math.min(110,b.size*0.95);
+  if(did==='whale')bodyWhale(b.size,c1,c2,'#b7f3ff',sway);
+  else if(did==='squid')bodySquid(b.size,c1,c2,'#c084fc',sway);
+  else if(did==='beast')bodyPuffer(b.size,c1,c2,'#ffb45c',sway,1);
+  else bodyShark(b.size,c1,c2,'#ffd166',sway);
+  ctx.shadowBlur=0;
+  ctx.restore();
+  // 发光弱点
+  const wx=b.x+Math.cos(b.ang)*b.size*0.62;
+  const wy=b.y+Math.sin(b.ang)*b.size*0.62;
+  const pulse=0.65+Math.sin(T*6)*0.35;
+  const wg=ctx.createRadialGradient(wx,wy,1,wx,wy,b.size*0.8);
+  wg.addColorStop(0,rgba('#ffe28a',0.95*pulse));wg.addColorStop(1,rgba('#ffb45c',0));
+  ctx.fillStyle=wg;ctx.fillRect(wx-b.size*0.8,wy-b.size*0.8,b.size*1.6,b.size*1.6);
+  ctx.beginPath();ctx.arc(wx,wy,b.size*0.16,0,TAU);
+  ctx.fillStyle=rgba('#fff6d8',0.95);ctx.fill();
+  if(b.flash>0){
+    ctx.globalAlpha=Math.min(0.6,b.flash);
+    ctx.beginPath();ctx.arc(b.x,b.y,b.size*1.25,0,TAU);
+    ctx.fillStyle='#ffffff';ctx.fill();
+    ctx.globalAlpha=1;
+  }
+  ctx.restore();
+}
+function drawProjectiles(){
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(const pr of G.proj){
+    const g=ctx.createRadialGradient(pr.x,pr.y,1,pr.x,pr.y,pr.r*3);
+    g.addColorStop(0,rgba('#8be9ff',0.85));g.addColorStop(1,rgba('#8be9ff',0));
+    ctx.fillStyle=g;ctx.fillRect(pr.x-pr.r*3,pr.y-pr.r*3,pr.r*6,pr.r*6);
+    ctx.beginPath();ctx.arc(pr.x,pr.y,pr.r,0,TAU);
+    ctx.fillStyle=rgba('#c8f4ff',0.9);ctx.fill();
+  }
+  ctx.restore();
+}
+function drawParticles(){
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(const q of G.particles){
+    const a=clamp(q.life/q.max,0,1);
+    ctx.beginPath();
+    ctx.arc(q.x,q.y,q.size*(0.4+a*0.8),0,TAU);
+    ctx.fillStyle=rgba(q.color.startsWith('#')?q.color:'#ffffff',a*0.8);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function drawFog(pal){
+  const f=Math.max(pal.fog,G.mods.includes('dark')?0.6:0);
+  if(f<=0)return;
+  const target=G.players.find(p=>p.alive)||G.players[0];
+  if(!target)return;
+  const r=Math.max(W,H)/Math.max(0.05,camScale())*(0.34+0.1*(1-f));
+  const g=ctx.createRadialGradient(target.x,target.y,r*0.22,target.x,target.y,r);
+  g.addColorStop(0,rgba('#01060f',0));
+  g.addColorStop(0.55,rgba('#01060f',f*0.42));
+  g.addColorStop(1,rgba('#01060f',Math.min(0.92,f*0.95)));
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+let grainPattern=null,grainTried=false;
+function getGrain(){
+  if(grainPattern||grainTried)return grainPattern;
+  grainTried=true;
+  try{
+    const c=document.createElement('canvas');c.width=96;c.height=96;
+    const g2=c.getContext('2d');
+    const img=g2.createImageData(96,96);
+    for(let i=0;i<img.data.length;i+=4){
+      const n=Math.random()*255|0;
+      img.data[i]=n;img.data[i+1]=n;img.data[i+2]=n;img.data[i+3]=20;
+    }
+    g2.putImageData(img,0,0);
+    grainPattern=ctx.createPattern(c,'repeat');
+  }catch(e){grainPattern=null;}
+  return grainPattern;
+}
+function drawVignette(pal){
+  const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.34,W/2,H/2,Math.max(W,H)*0.78);
+  g.addColorStop(0,rgba('#000814',0));
+  g.addColorStop(1,rgba('#000814',0.5));
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
+/* ================= 地图分支与节点（探索） ================= */
+const NODE_META={
+ battle:{icon:'⚔️',name:'战斗'},
+ elite:{icon:'💀',name:'小Boss'},
+ boss:{icon:'👑',name:'大Boss'},
+ event:{icon:'❓',name:'奇遇'},
+ shop:{icon:'🛒',name:'商人'},
+ treasure:{icon:'🎁',name:'宝藏'},
+ rest:{icon:'🌙',name:'休息'}
+};
+function rollNodeType(){
+  const r=Math.random();
+  if(r<0.3)return 'battle';
+  if(r<0.5)return 'event';
+  if(r<0.62)return 'elite';
+  if(r<0.76)return 'shop';
+  if(r<0.89)return 'treasure';
+  return 'rest';
+}
+function generateMap(){
+  const rows=16;const map=[];
+  for(let r=0;r<rows;r++){
+    let count=2+Math.floor(Math.random()*2);
+    let force=null;
+    if(r===0){count=1;force='battle';}
+    if(r===5||r===10||r===rows-1){count=1;force='boss';}
+    if(r===2||r===7||r===12){count=Math.random()<0.5?1:2;force='elite';}
+    const nodes=[];
+    for(let i=0;i<count;i++)nodes.push({row:r,idx:i,type:force||rollNodeType(),edges:[],done:false});
+    map.push(nodes);
+  }
+  for(let r=0;r<rows-1;r++){
+    const cur=map[r],next=map[r+1];
+    for(const n of cur){
+      const set=new Set();
+      set.add(Math.min(n.idx,next.length-1));
+      if(Math.random()<0.55)set.add(clamp(n.idx+(Math.random()<0.5?1:-1),0,next.length-1));
+      n.edges=[...set];
+    }
+    for(const m of next){
+      if(!cur.some(n=>n.edges.includes(m.idx)))cur[Math.min(m.idx,cur.length-1)].edges.push(m.idx);
+    }
+  }
+  return map;
+}
+function layoutMap(){
+  const out=[];const map=G.map||[];
+  const cur=G.curRow<0?0:G.curRow;
+  const r0=clamp(cur-2,0,Math.max(0,map.length-8));
+  const span=8;
+  for(let r=r0;r<Math.min(map.length,r0+span);r++){
+    const nodes=map[r];
+    const x=W*(0.09+((r-r0)/(span-1))*0.82);
+    for(let i=0;i<nodes.length;i++){
+      const n=nodes[i];
+      const y=H*(nodes.length===1?0.5:0.22+i*(0.56/(nodes.length-1)));
+      const avail=(G.availNodes||[]).indexOf(n)>=0;
+      out.push({node:n,x:x,y:y,r:26,available:avail,done:n.done,row:r});
+    }
+  }
+  return out;
+}
+function drawMapScreen(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#061426');g.addColorStop(0.5,'#0b2947');g.addColorStop(1,'#040d1c');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.globalCompositeOperation='lighter';
+  for(let i=0;i<40;i++){
+    const x=(Math.sin(i*12.9898+T*0.05)*0.5+0.5)*W;
+    const y=(Math.sin(i*78.233+T*0.03)*0.5+0.5)*H;
+    ctx.beginPath();ctx.arc(x,y,1.2+Math.sin(i+T)*0.7,0,TAU);
+    ctx.fillStyle=rgba('#7de8ff',0.16);ctx.fill();
+  }
+  ctx.restore();
+  const layout=layoutMap();
+  const look={};
+  for(const item of layout)look[item.row+':'+item.node.idx]=item;
+  ctx.lineWidth=2.4;
+  for(const item of layout){
+    for(const eIdx of item.node.edges){
+      const target=look[(item.row+1)+':'+eIdx];
+      if(!target)continue;
+      const active=item.available||item.done;
+      ctx.strokeStyle=rgba(active?'#4be3ff':'#3a5f88',active?0.5:0.28);
+      ctx.beginPath();ctx.moveTo(item.x,item.y);
+      ctx.quadraticCurveTo((item.x+target.x)/2,(item.y+target.y)/2-26,target.x,target.y);
+      ctx.stroke();
+    }
+  }
+  for(const item of layout){
+    const n=item.node;
+    const meta=NODE_META[n.type]||NODE_META.battle;
+    const isCur=n.done&&G.curRow===n.row&&G.curIdx===n.idx;
+    ctx.save();
+    ctx.translate(item.x,item.y);
+    let ring='#3a5f88',fill='rgba(18,42,72,0.9)';
+    if(item.available){ring='#ffd166';fill='rgba(70,52,18,0.92)';}
+    if(item.done){ring='#4be3c8';fill='rgba(16,52,52,0.9)';}
+    const pulse=item.available?1+Math.sin(T*4)*0.07:1;
+    ctx.beginPath();ctx.arc(0,0,item.r*pulse,0,TAU);
+    ctx.fillStyle=fill;ctx.fill();
+    ctx.lineWidth=3;ctx.strokeStyle=rgba(ring,item.available?0.95:0.6);
+    if(item.available){ctx.shadowColor=rgba('#ffd166',0.8);ctx.shadowBlur=22;}
+    ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.font=Math.round(item.r*0.86)+'px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(meta.icon,0,1);
+    ctx.font='bold 12px sans-serif';
+    ctx.fillStyle=rgba('#cfe9ff',0.9);
+    ctx.fillText(meta.name,0,item.r+18);
+    if(isCur){
+      ctx.font='bold 13px sans-serif';
+      ctx.fillStyle='#7de8ff';
+      ctx.fillText('▼ 你在这里',0,-item.r-14);
+    }
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.font='bold '+Math.round(Math.min(30,W*0.04))+'px sans-serif';
+  ctx.fillStyle=rgba('#b7f3ff',0.92);
+  ctx.fillText('选择你的航路',W/2,H*0.075);
+  ctx.font=Math.round(Math.min(16,W*0.024))+'px sans-serif';
+  ctx.fillStyle=rgba('#9fc6e8',0.9);
+  ctx.fillText('航段 '+(G.curRow+2)+' / '+(G.map?G.map.length:16)+' · 💎 '+G.pearls+' · 卡牌 '+G.deck.length+' · 点击金圈节点前进',W/2,H*0.115);
+  ctx.restore();
+}
+
+/* ================= 奇遇 / 商店 ================= */
+const EVENT_CHOICES=[
+ {id:'sacrifice',name:'🩸 深海献祭',desc:'全队体型 -15%，获得 💎45',run(){for(const p of G.players)p.size=Math.max(12,p.size*0.85);G.pearls+=45;}},
+ {id:'map',name:'📜 藏宝图',desc:'获得 💎30，全队体型 +10%',run(){G.pearls+=30;for(const p of G.players)p.size=Math.min(300,p.size*1.1);}},
+ {id:'gamble',name:'🎲 深海赌局',desc:'50% 获得 💎70，50% 体型 -12%',run(){if(Math.random()<0.5)G.pearls+=70;else for(const p of G.players)p.size=Math.max(12,p.size*0.88);}},
+ {id:'bottle',name:'🐚 漂流瓶',desc:'随机获得一张稀有以上卡牌',run(){
+   const pool=CARDS.filter(c=>c.rarity==='rare'||c.rarity==='epic');
+   const c=pick(pool);c.apply(G.players);G.deck.push(c.id);checkPairSynergies();showBanner('获得卡牌！',c.name);}},
+ {id:'rest',name:'🌙 洋流小憩',desc:'全队体型 +15%',run(){
+   for(const p of G.players)p.size=Math.min(300,p.size*1.15);}},
+ {id:'bless',name:'⚡ 海神祝福',desc:'永久成长速度 +8%',run(){for(const p of G.players)p.stats.growth*=1.08;}},
+ {id:'ambush',name:'👹 伏击预警',desc:'获得 💎35，但下一场敌鱼更快',run(){G.pearls+=35;G.frenzyNext=true;}},
+ {id:'chest',name:'🎁 神秘宝箱',desc:'随机获得 2 个道具效果',run(){
+   for(let i=0;i<2;i++)for(const p of G.players){const t=pick(ITEM_TYPES);applyItem(p,{type:t.id,def:t,x:p.x,y:p.y});}}}
+];
+function buildEventScreen(){
+  $('cardTitle').textContent='❓ 深海奇遇 · 三选一';
+  $('synergyBar').innerHTML='';
+  $('cardExtra').innerHTML='';
+  const pool=EVENT_CHOICES.slice();
+  const choices=[];
+  while(choices.length<3&&pool.length)choices.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  const row=$('cardRow');row.innerHTML='';
+  for(const ev of choices){
+    const div=document.createElement('div');
+    div.className='card rar-rare';
+    div.innerHTML='<span class="card-rar">奇遇</span><div class="card-name">'+ev.name+'</div><div class="card-desc">'+ev.desc+'</div>';
+    div.addEventListener('click',()=>{Audio2.blip();ev.run();goToMap();});
+    row.appendChild(div);
+  }
+}
+function buildShopScreen(){
+  $('cardTitle').textContent='🛒 深海商人 · 💎 '+G.pearls;
+  $('synergyBar').innerHTML='';
+  const row=$('cardRow');row.innerHTML='';
+  const offers=pickCards(3,true);
+  const prices=[25,40,60];
+  offers.forEach((c,i)=>{
+    const div=document.createElement('div');
+    div.className='card rar-'+c.rarity;
+    div.innerHTML='<span class="card-rar">'+RARITY[c.rarity].name+'</span><div class="card-name">'+c.name+'</div><div class="card-desc">'+c.desc+'</div><div class="card-tag">价格：💎 '+prices[i]+'</div>';
+    div.addEventListener('click',()=>{
+      if(G.pearls<prices[i]){showBanner('珍珠不足！','还差 💎 '+(prices[i]-G.pearls));Audio2.blip();return;}
+      G.pearls-=prices[i];
+      c.apply(G.players);G.deck.push(c.id);Audio2.card();
+      checkPairSynergies();
+      div.style.opacity='0.35';
+      div.innerHTML='<div class="card-name">'+c.name+'</div><div class="card-desc">已购买 ✓</div>';
+      $('cardTitle').textContent='🛒 深海商人 · 💎 '+G.pearls;
+    });
+    row.appendChild(div);
+  });
+  const extra=$('cardExtra');extra.innerHTML='';
+  const healBtn=document.createElement('button');
+  healBtn.className='btn btn-small';
+  healBtn.textContent='💎 20 · 体型 +12%';
+  healBtn.addEventListener('click',()=>{
+    if(G.pearls<20){Audio2.blip();return;}
+    G.pearls-=20;
+    for(const p of G.players){p.size=Math.min(300,p.size*1.12);addFloater(p.x,p.y-p.size-22,'+12% 体型','#8dffc8');}
+    Audio2.coin();
+    $('cardTitle').textContent='🛒 深海商人 · 💎 '+G.pearls;
+  });
+  const leaveBtn=document.createElement('button');
+  leaveBtn.className='btn btn-small btn-primary';
+  leaveBtn.textContent='离开商店';
+  leaveBtn.addEventListener('click',()=>{Audio2.blip();goToMap();});
+  extra.appendChild(healBtn);extra.appendChild(leaveBtn);
+}
+
+/* ================= 节点流程 ================= */
+function startNode(node){
+  G.node=node;node.done=true;
+  G.curRow=node.row;G.curIdx=node.idx;
+  if(node.type==='event'){G.mode='event';buildEventScreen();showScreen('screen-cards');hudEl.classList.add('hidden');return;}
+  if(node.type==='shop'){G.mode='shop';buildShopScreen();showScreen('screen-cards');hudEl.classList.add('hidden');return;}
+  if(node.type==='treasure'){
+    G.mode='cards';
+    buildCardScreen(pickCards(3,true),'🎁 漂流宝箱 · 三选一');
+    showScreen('screen-cards');hudEl.classList.add('hidden');
+    G.pearls+=8;
+    return;
+  }
+  if(node.type==='rest'){
+    for(const p of G.players){p.size=Math.min(300,p.size*1.45);addFloater(p.x,p.y-p.size-24,'+45% 体型','#8dffc8');}
+    Audio2.clear();
+    showBanner('🌙 休息完毕','体型大幅恢复');
+    goToMap();
+    return;
+  }
+  beginStage(node);
+}
+function beginStage(node){
+  Audio2.init();
+  G.mode='playing';G.paused=false;
+  G.stage=node.row+1;
+  G.stageTime=0;G.stageEaten=0;
+  G.enemies=[];G.foods=[];G.items=[];G.hazards=[];G.particles=[];G.proj=[];G.boss=null;
+  G.spawnT=0.5;G.hazardT=2.5;G.shake=0;G.enemySpeedMul=1;
+  G.stageDamage=0;G.stageBestCombo=0;
+  G.eventT=rand(30,52);G.blessT=15;G.tempCurrent=0;
+  G.mods=rollMods();
+  if(G.frenzyNext){if(!G.mods.includes('frenzy'))G.mods.push('frenzy');G.frenzyNext=false;}
+  const isBossNode=node.type==='boss';
+  const isEliteNode=node.type==='elite';
+  if(isBossNode||isEliteNode)G.objective={kind:'boss',target:1,progress:0};
+  else G.objective=rollObjective(G.stage);
+  for(const p of G.players){
+    p.alive=true;p.isGhost=false;p.respawnT=0;
+    p.invuln=Math.max(p.invuln,1.6);
+    p.x=AW*(p.id===0?0.32:0.68);p.y=AH*0.5;p.vx=0;p.vy=0;
+  }
+  if(G.modeKind==='coop')G.sharedHp=Math.max(G.sharedHp,3);
+  makeDecor();
+  showScreen('');
+  hudEl.classList.remove('hidden');
+  bossWrap.classList.add('hidden');
+  if(('ontouchstart' in window)&&G.modeKind==='single')touchHint.classList.remove('hidden');
+  else touchHint.classList.add('hidden');
+  G.cam.x=G.players[0].x;G.cam.y=G.players[0].y;
+  const pal=stagePalette();
+  showBanner('第 '+G.stage+' 阶段 · '+pal.name,
+    (isBossNode?'大Boss战！冲刺撞击弱点':isEliteNode?'小Boss 战！':pal.mech)+modsText(),3.4);
+  if(isBossNode)startBoss(false);
+  else if(isEliteNode)startBoss(true);
+  updateHudDOM();
+}
+function goToMap(){
+  const n=G.node;
+  if(n&&n.row>=(G.map?G.map.length-1:0)&&n.done){endGame('win');return;}
+  if(n&&G.map&&G.map[n.row+1]){
+    G.curRow=n.row;G.curIdx=n.idx;
+    G.availNodes=n.edges.map(idx=>G.map[n.row+1][idx]).filter(Boolean);
+    if(!G.availNodes.length)G.availNodes=[G.map[n.row+1][0]];
+  }else if(G.map){
+    G.availNodes=[G.map[0][0]];
+  }
+  G.mode='map';
+  hudEl.classList.add('hidden');
+  bossWrap.classList.add('hidden');
+  showScreen('');
+}
+
+/* ================= 图鉴（内容由游戏数据动态生成） ================= */
+const CODEX_ENEMY_DESC={
+  round:'海洋里的普通居民，最爱成群游弋',
+  shark:'嗅到血腥就兴奋的追猎者',
+  puffer:'受惊就膨胀，刺比脾气硬',
+  jelly:'慢悠悠的发光伞盖，碰一下麻半天',
+  eel:'身体里藏着一座小电站',
+  squid:'平时低调，爆发起来像离弦之箭',
+  ray:'张开双翼滑翔的优雅巨人',
+  sword:'一言不合就冲刺的急性子',
+  seahorse:'悠哉漂浮，尾巴卷住海草发呆',
+  lantern:'头顶小灯笼，深海里的钓鱼佬',
+  sunfish:'圆得像被拍扁了，但分量十足'
+};
+const CODEX_BOSS_DESC={
+  shark:'高速冲锋撕碎一切，弱点在发光的吻部',
+  whale:'巨体压制 + 环形弹幕，慢但致命',
+  squid:'瞬移突袭 + 弹幕连射，行踪诡秘',
+  beast:'召唤熔岩雨，被撞到就掉层皮'
+};
+const CODEX_NODE_DESC={
+  battle:'吞食成长、完成目标即可晋级',
+  elite:'小Boss战，击败可吞噬一条特性',
+  boss:'大Boss战，吞噬强力特性 + 战利品',
+  event:'三选一奇遇：高风险高回报',
+  shop:'花珍珠购买道具与治疗',
+  treasure:'免费三选一宝物',
+  rest:'回复生命，休整再出发'
+};
+function codexCard(html,chipText,chipColor){
+  const div=document.createElement('div');
+  div.className='codex-card';
+  div.innerHTML=html+(chipText?'<div class="codex-chip"'+(chipColor?' style="color:'+chipColor+'"':'')+'>'+chipText+'</div>':'');
+  return div;
+}
+function buildCodex(tab,filter){
+  const body=$('codexBody');
+  const filterBar=$('codexFilter');
+  body.innerHTML='';
+  filter=filter||'all';
+  if(tab==='items'){
+    filterBar.classList.remove('hidden');
+    if(!filterBar.childNodes||filterBar.childNodes.length===0){
+      const opts=[['all','全部'],['common','普通'],['rare','稀有'],['epic','史诗']];
+      for(const o of opts){
+        const b=document.createElement('button');
+        b.className='tab'+(o[0]==='all'?' active':'');
+        b.textContent=o[1];
+        b.addEventListener('click',()=>{
+          const all=filterBar.querySelectorAll?filterBar.querySelectorAll('.tab'):[];
+          for(const x of all)x.classList.remove('active');
+          b.classList.add('active');
+          buildCodex('items',o[0]);
+        });
+        filterBar.appendChild(b);
+      }
+    }
+  }else{
+    filterBar.classList.add('hidden');
+  }
+  if(tab==='fish'){
+    for(const f of FISH_DEFS){
+      const unlocked=isUnlocked('fish',f.id);
+      body.appendChild(codexCard(
+        '<div class="codex-dot" style="background:radial-gradient(circle at 32% 28%,'+f.c2+','+f.c1+' 72%)"></div>'+
+        '<div class="codex-title">'+f.name+'</div><div class="codex-desc">'+f.passive+'</div>',
+        unlocked?'初始鱼':'🔒 '+unlockText(f),'#bfe8ff'));
+    }
+    for(const t of FISH_TYPES){
+      body.appendChild(codexCard(
+        '<div class="codex-title">🌊 '+t.name+'</div><div class="codex-desc">'+(CODEX_ENEMY_DESC[t.id]||'')+'</div>',
+        '野生鱼类','#8fe8ff'));
+    }
+  }else if(tab==='items'){
+    for(const it of ITEM_POOL){
+      if(filter!=='all'&&it.rarity!==filter)continue;
+      const look=it.look||LOOKS[0];
+      const rc=it.rarity==='epic'?'#c084fc':it.rarity==='rare'?'#60a5fa':'#7dd3fc';
+      body.appendChild(codexCard(
+        '<div class="codex-dot" style="background:radial-gradient(circle at 32% 28%,'+look.color+',#0e2440 78%)"></div>'+
+        '<div class="codex-title">'+it.name+'</div><div class="codex-desc">'+it.desc+'</div>',
+        RARITY[it.rarity].name+' · 羁绊：'+it.family,rc));
+    }
+  }else if(tab==='boss'){
+    for(const b of BOSS_DEFS){
+      body.appendChild(codexCard(
+        '<div class="codex-dot" style="background:radial-gradient(circle at 32% 28%,'+b.c2+','+b.c1+' 72%)"></div>'+
+        '<div class="codex-title">'+b.name+'</div><div class="codex-desc">'+(CODEX_BOSS_DESC[b.id]||'')+'</div>',
+        '大Boss','#ffd166'));
+    }
+    for(const t of BOSS_TRAITS){
+      body.appendChild(codexCard(
+        '<div class="codex-title">👑 '+t.name+'</div><div class="codex-desc">'+t.desc+'</div>',
+        '吞噬特性','#ffd166'));
+    }
+  }else{
+    for(const m of STAGE_MODS){
+      body.appendChild(codexCard(
+        '<div class="codex-title">🌀 '+m.name+'</div><div class="codex-desc">'+m.desc+'</div>',
+        '环境词缀','#8fe8ff'));
+    }
+    for(const ev of EVENTS){
+      body.appendChild(codexCard(
+        '<div class="codex-title">'+ev.name+'</div><div class="codex-desc">'+ev.sub+'</div>',
+        '随机事件','#bfe8ff'));
+    }
+    for(const k of Object.keys(NODE_META)){
+      const meta=NODE_META[k];
+      body.appendChild(codexCard(
+        '<div class="codex-title">'+meta.icon+' '+meta.name+'</div><div class="codex-desc">'+(CODEX_NODE_DESC[k]||'')+'</div>',
+        '地图节点','#c9b8ff'));
+    }
+  }
+}
+
+/* ================= UI 接线 ================= */
+function showScreen(id){
+  const ids=['screen-menu','screen-help','screen-fish','screen-cards','screen-result','screen-codex','screen-settings'];
+  for(const s of ids){
+    const el=$(s);
+    if(el)el.classList.toggle('hidden',s!==id);
+  }
+}
+function updateMenuRecord(){
+  $('menuBest').textContent=Math.round(SAVE.best);
+  $('menuStage').textContent=SAVE.bestStage;
+  $('menuBoss').textContent=SAVE.bossKills;
+  $('btnSound').textContent=SAVE.sound?'🔊 音效：开':'🔇 音效：关';
+}
+function buildFishGrid(){
+  const grid=$('fishGrid');
+  grid.innerHTML='';
+  for(const f of FISH_DEFS){
+    const unlocked=isUnlocked('fish',f.id);
+    const div=document.createElement('div');
+    div.className='fish-card'+(SAVE.fish===f.id?' selected':'')+(unlocked?'':' locked');
+    div.innerHTML='<div class="fish-orb" style="background:radial-gradient(circle at 32% 28%,'+f.c2+','+f.c1+' 72%)"></div>'+
+      '<div class="fish-name">'+f.name+'</div>'+
+      '<div class="fish-passive">'+f.passive+'</div>'+
+      (unlocked?'':'<div class="fish-lock">🔒 '+unlockText(f)+'</div>');
+    if(unlocked)div.addEventListener('click',()=>{SAVE.fish=f.id;persist();Audio2.blip();buildFishGrid();});
+    grid.appendChild(div);
+  }
+}
+let cosTab='skin';
+function buildCosGrid(){
+  const grid=$('cosGrid');
+  grid.innerHTML='';
+  const arr=cosTab==='skin'?SKINS:cosTab==='fin'?FINS:TRAILS;
+  const current=cosTab==='skin'?SAVE.skin:cosTab==='fin'?SAVE.fin:SAVE.trail;
+  for(const item of arr){
+    const unlocked=isUnlocked(cosTab,item.id);
+    const div=document.createElement('div');
+    div.className='cos-card'+(current===item.id?' selected':'')+(unlocked?'':' locked');
+    const dotStyle=cosTab==='skin'
+      ?'background:radial-gradient(circle at 32% 28%,'+item.c2+','+item.c1+' 72%)'
+      :'background:linear-gradient(140deg,#4be3ff,#7b5cff)';
+    div.innerHTML='<div class="cos-dot" style="'+dotStyle+'"></div><div class="cos-name">'+item.name+'</div>'+
+      (unlocked?'':'<div class="cos-lock">🔒 '+unlockText(item)+'</div>');
+    if(unlocked)div.addEventListener('click',()=>{
+      if(cosTab==='skin')SAVE.skin=item.id;
+      else if(cosTab==='fin')SAVE.fin=item.id;
+      else SAVE.trail=item.id;
+      persist();Audio2.blip();buildCosGrid();
+    });
+    grid.appendChild(div);
+  }
+}
+function buildCardScreen(cards,titleText){
+  $('cardTitle').textContent=titleText||'选择一张强化卡牌';
+  $('synergyBar').innerHTML='';
+  $('cardExtra').innerHTML='';
+  const row=$('cardRow');
+  row.innerHTML='';
+  for(const c of cards){
+    const div=document.createElement('div');
+    div.className='card rar-'+c.rarity;
+    div.innerHTML='<span class="card-rar">'+RARITY[c.rarity].name+'</span>'+
+      '<div class="card-name">'+c.name+'</div>'+
+      '<div class="card-desc">'+c.desc+'</div>'+
+      '<div class="card-tag">'+(SYNERGIES[c.tag]?('流派：'+SYNERGIES[c.tag].name+' · '+SYNERGIES[c.tag].desc):('羁绊：'+(rewardFamily(c)||'通用')+(c.isItem?' · 道具':' · 卡牌')))+'</div>';
+    div.addEventListener('click',()=>{Audio2.blip();applyCardAndAdvance(c);});
+    row.appendChild(div);
+  }
+  const bar=$('synergyBar');
+  bar.innerHTML='';
+  for(const tag of Object.keys(SYNERGIES)){
+    const n=tagCount(tag);
+    if(n>0){
+      const chip=document.createElement('div');
+      chip.className='synergy-chip';
+      chip.textContent=SYNERGIES[tag].name+' ×'+n+' — '+SYNERGIES[tag].desc;
+      bar.appendChild(chip);
+    }
+  }
+  const fams=['疾行','进化','财富','生命','连击','冲刺','狩猎','幸运','治愈','寒冰','灼热','荆棘'];
+  for(const f of fams){
+    const n=famCount(f);
+    if(n>=2){
+      const chip=document.createElement('div');
+      chip.className='synergy-chip';
+      chip.textContent='🧩 羁绊·'+f+' ×'+n+(n>=4?'（强化）':'');
+      bar.appendChild(chip);
+    }
+  }
+  const traitChip=G.players.length&&G.players[0].traits&&G.players[0].traits.length;
+  if(traitChip){
+    const chip=document.createElement('div');
+    chip.className='synergy-chip';
+    chip.textContent='👑 特性：'+G.players[0].traits.map(t=>t.name).join(' / ');
+    bar.appendChild(chip);
+  }
+}
+function buildResultScreen(reason,total,newBest,unlocks){
+  const title=$('resultTitle');
+  if(reason==='win')title.textContent='🏆 深海霸主 · 通关！';
+  else if(G.modeKind==='versus'){
+    const s0=Math.round(G.players[0].score);
+    const s1=G.players[1]?Math.round(G.players[1].score):0;
+    title.textContent=s0===s1?'平局！':(s0>s1?'🏆 P1 获胜！':'🏆 P2 获胜！');
+  }else if(reason==='time')title.textContent='时间到！';
+  else title.textContent='旅程终结';
+  const rows=[
+    ['到达阶段','第 '+G.stage+' 阶段 · '+stagePalette().name],
+    ['最高连击','x'+G.stats.bestCombo],
+    ['吞食小鱼',G.stats.eaten+' 条'],
+    ['被咬次数',G.stats.dmg+' 次'],
+    ['Boss 击杀','累计 '+SAVE.bossKills+' 个'],
+    ['历史最高',SAVE.best]
+  ];
+  let html='<div style="text-align:center"><div class="hud-label">FINAL SCORE</div>'+
+    '<div class="result-big">'+Math.round(total)+'</div>'+
+    (newBest?'<div class="newbest">🏆 新纪录</div>':'')+'</div>';
+  if(G.modeKind==='versus'){
+    html+='<div class="result-row"><span>对抗比分</span><b>P1 '+Math.round(G.players[0].score)+' · P2 '+(G.players[1]?Math.round(G.players[1].score):0)+'</b></div>';
+  }
+  for(const r of rows)html+='<div class="result-row"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>';
+  if(G.deck.length){
+    html+='<div class="result-row"><span>本局构筑</span><b style="font-size:12.5px;line-height:1.9;text-align:right">'+
+      G.deck.slice(-14).map(id=>{const c=findReward(id);return c?c.name:'';}).join(' · ')+'</b></div>';
+  }
+  if(G.players[0].traits&&G.players[0].traits.length){
+    html+='<div class="result-row"><span>吞噬特性</span><b style="font-size:12.5px;line-height:1.9;text-align:right">'+
+      G.players[0].traits.map(t=>t.name).join(' · ')+'</b></div>';
+  }
+  if(unlocks&&unlocks.length){
+    html+='<div style="margin-top:12px"><div class="hud-label">NEW UNLOCKS</div>'+
+      unlocks.map(n=>'<span class="unlock-chip">✨ '+n+'</span>').join('')+'</div>';
+  }
+  $('resultBody').innerHTML=html;
+}
+function handleKey(k){
+  if(G.mode==='playing'&&k==='p'){
+    G.paused=!G.paused;
+    showBanner(G.paused?'已暂停':'继续！',G.paused?'按 P 键继续冒险':'');
+  }
+  if(G.mode==='menu'&&k==='enter')startGame('single');
+}
+$('btnStart').addEventListener('click',()=>startGame('single'));
+$('btnCoop').addEventListener('click',()=>startGame('coop'));
+$('btnVersus').addEventListener('click',()=>startGame('versus'));
+$('btnFish').addEventListener('click',()=>{buildFishGrid();buildCosGrid();showScreen('screen-fish');});
+$('btnHelp').addEventListener('click',()=>showScreen('screen-help'));
+$('btnCodex').addEventListener('click',()=>{buildCodex('fish','all');showScreen('screen-codex');});
+$('codexBack').addEventListener('click',()=>{showScreen('screen-menu');updateMenuRecord();});
+function refreshSettingsUI(){
+  const st=$('shakeToggle');if(st)st.textContent=SAVE.shake?'开启':'关闭';
+  const s2=$('soundToggle2');if(s2)s2.textContent=SAVE.sound?'开启':'关闭';
+  const opts=document.querySelectorAll('#zoomOpts .btn');
+  for(const b of opts){
+    const z=parseFloat(b.getAttribute('data-zoom'))||1;
+    b.className='btn btn-small'+(Math.abs(z-(SAVE.zoomPref||1))<0.01?' btn-primary':'');
+  }
+}
+$('btnSettings').addEventListener('click',()=>{refreshSettingsUI();showScreen('screen-settings');});
+$('settingsBack').addEventListener('click',()=>{persist();showScreen('screen-menu');updateMenuRecord();});
+$('shakeToggle').addEventListener('click',()=>{SAVE.shake=!SAVE.shake;persist();refreshSettingsUI();});
+$('soundToggle2').addEventListener('click',()=>{Audio2.init();Audio2.setSound(!SAVE.sound);refreshSettingsUI();updateMenuRecord();});
+const zoomOptEls=document.querySelectorAll('#zoomOpts .btn');
+for(const zb of zoomOptEls){
+  zb.addEventListener('click',()=>{SAVE.zoomPref=parseFloat(zb.getAttribute('data-zoom'))||1;persist();refreshSettingsUI();});
+}
+const codexTabEls=document.querySelectorAll('#codexTabs .tab');
+for(const ct of codexTabEls){
+  ct.addEventListener('click',()=>{
+    for(const t of codexTabEls)t.classList.remove('active');
+    ct.classList.add('active');
+    buildCodex(ct.getAttribute('data-ctab')||'fish','all');
+  });
+}
+$('helpBack').addEventListener('click',()=>{showScreen('screen-menu');updateMenuRecord();});
+$('btnSound').addEventListener('click',()=>{
+  Audio2.init();Audio2.setSound(!SAVE.sound);
+  $('btnSound').textContent=SAVE.sound?'🔊 音效：开':'🔇 音效：关';
+});
+$('btnFishBack').addEventListener('click',()=>{persist();showScreen('screen-menu');updateMenuRecord();});
+$('btnRetry').addEventListener('click',()=>startGame(G.modeKind||'single'));
+$('btnHome').addEventListener('click',()=>{showScreen('screen-menu');updateMenuRecord();});
+const tabEls=document.querySelectorAll('.tab');
+for(const tab of tabEls){
+  tab.addEventListener('click',()=>{
+    cosTab=tab.getAttribute('data-tab')||'skin';
+    for(const t of tabEls)t.classList.remove('active');
+    tab.classList.add('active');
+    buildCosGrid();
+  });
+}
+
+/* ================= 启动 ================= */
+function init(){
+  resize();
+  initAmbientScene();
+  makeDecor();
+  updateMenuRecord();
+  showScreen('screen-menu');
+  hudEl.classList.add('hidden');
+  bossWrap.classList.add('hidden');
+}
+init();
+let last=0;
+function frame(ts){
+  const dt=Math.min(Math.max((ts-last)/1000,0),0.05);
+  last=ts;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
 </body>
 </html>
