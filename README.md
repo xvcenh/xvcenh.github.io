@@ -98,7 +98,7 @@ keywords: [关键词1, 关键词2]
 
 ## 技术栈
 
-- **Jekyll 3.x** + minima 主题，插件：`jekyll-feed` / `jekyll-sitemap` / `jekyll-paginate` / `jekyll-seo-tag`
+- **Jekyll 4.3** + minima 2.5 主题，插件：`jekyll-feed` / `jekyll-sitemap` / `jekyll-paginate` / `jekyll-seo-tag`
 - Markdown 引擎 kramdown，分页每页 12 篇
 - 首页视觉：Canvas 星空 + Three.js 3D 星系（延迟 1 秒懒加载，避免阻塞首屏）
 - 时区 `Asia/Shanghai`，页面语言 `zh-CN`
