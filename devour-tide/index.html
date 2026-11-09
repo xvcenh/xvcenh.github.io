@@ -27,13 +27,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
   box-shadow:0 20px 60px rgba(0,8,24,.55),inset 0 1px 0 rgba(255,255,255,.14)}
 
 /* ---------- 屏幕容器 ---------- */
-.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:safe center;
   gap:clamp(10px,2.2vh,22px);padding:clamp(14px,3vw,32px);overflow-y:auto;overflow-x:hidden}
 .screen::-webkit-scrollbar{width:6px}
 .screen::-webkit-scrollbar-thumb{background:rgba(120,190,255,.35);border-radius:8px}
+/* 模态界面遮罩：主菜单不加，保留背景鱼群作为开场画面；
+   其余界面盖一层深色，避免游戏画面与 HUD 数字穿透干扰阅读 */
+.screen.scrim{background:radial-gradient(125% 95% at 50% 0%,rgba(5,17,34,.88),rgba(1,5,12,.96));
+  backdrop-filter:blur(3px) saturate(120%);-webkit-backdrop-filter:blur(3px) saturate(120%)}
 
 /* ---------- 按钮 ---------- */
 .btn{position:relative;min-width:min(300px,80vw);padding:14px 26px;border-radius:16px;cursor:pointer;
+  flex:0 0 auto;   /* 防止在 flex 列容器里被压扁（实测曾被压到 24px 高） */
   border:1px solid rgba(140,210,255,.3);color:var(--ink);font-size:clamp(15px,2.2vw,19px);font-weight:600;
   letter-spacing:.05em;overflow:hidden;
   background:linear-gradient(160deg,rgba(38,92,158,.88),rgba(18,44,88,.94));
@@ -180,18 +185,29 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
   background:rgba(255,255,255,.12);border:1px solid rgba(160,215,255,.32);letter-spacing:.08em}
 
 /* ---------- 图鉴 ---------- */
-#codexBody{max-width:1040px;width:100%;max-height:min(56vh,520px);overflow-y:auto;padding:6px 4px}
+/* 200 条道具原先是 158px 高的竖排卡片，一屏只看得到 8 条、要滚 21 屏。
+   改成横向紧凑行（色点 + 名称/效果两行 + 徽章），一屏约 24 条。 */
+#codexBody{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;
+  max-width:1180px;width:100%;max-height:min(62vh,560px);overflow-y:auto;padding:6px 4px;align-content:start}
 #codexBody::-webkit-scrollbar{width:6px}
 #codexBody::-webkit-scrollbar-thumb{background:rgba(120,190,255,.35);border-radius:8px}
-.codex-card{width:min(216px,44vw);padding:14px 12px;border-radius:16px;text-align:center;
+.codex-card{display:flex;align-items:center;gap:10px;width:auto;padding:9px 12px;border-radius:12px;text-align:left;
   background:rgba(14,34,62,.6);border:1px solid rgba(140,210,255,.18);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.codex-title{font-size:14px;font-weight:700;letter-spacing:.06em}
-.codex-desc{margin-top:6px;font-size:11.5px;line-height:1.65;color:var(--dim)}
-.codex-chip{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:999px;font-size:10px;
-  letter-spacing:.12em;background:rgba(120,200,255,.18);color:#bfe8ff}
-.codex-dot{width:52px;height:52px;margin:0 auto 8px;border-radius:50%;
-  box-shadow:inset 0 -8px 16px rgba(0,0,20,.4),0 6px 18px rgba(0,20,50,.5)}
+.codex-main{flex:1;min-width:0}
+.codex-title{font-size:13.5px;font-weight:700;letter-spacing:.04em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.codex-desc{margin-top:2px;font-size:12px;line-height:1.5;color:var(--dim);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.codex-chip{flex:0 0 auto;margin:0;padding:2px 9px;border-radius:999px;font-size:10.5px;white-space:nowrap;
+  letter-spacing:.1em;background:rgba(120,200,255,.18);color:#bfe8ff}
+.codex-dot{flex:0 0 auto;width:26px;height:26px;margin:0;border-radius:50%;
+  box-shadow:inset 0 -4px 8px rgba(0,0,20,.4),0 3px 10px rgba(0,20,50,.5)}
+.codex-search{max-width:1180px;width:100%;margin:0 auto;padding:9px 14px;border-radius:12px;
+  background:rgba(12,30,56,.7);border:1px solid rgba(140,210,255,.25);color:var(--ink);
+  font-size:14px;font-family:inherit;outline:none}
+.codex-search:focus{border-color:rgba(120,220,255,.65);box-shadow:0 0 0 3px rgba(80,200,255,.16)}
+.codex-empty{grid-column:1/-1;text-align:center;color:var(--dim);font-size:13px;padding:24px 0}
 
 @media (max-height:640px){
   .title{font-size:clamp(28px,7vw,44px)}
@@ -252,7 +268,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
 </div>
 
 <!-- ============ 帮助 ============ -->
-<div id="screen-help" class="screen hidden">
+<div id="screen-help" class="screen scrim hidden">
   <h2 class="screen-title">玩法说明</h2>
   <div class="help-glass glass">
     <h3>目标</h3>
@@ -295,7 +311,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
 </div>
 
 <!-- ============ 选鱼 / 装扮 ============ -->
-<div id="screen-fish" class="screen hidden">
+<div id="screen-fish" class="screen scrim hidden">
   <h2 class="screen-title">选择你的鱼</h2>
   <div id="fishGrid" class="fish-grid"></div>
   <h2 class="screen-title">装扮（纯外观 · 不影响平衡）</h2>
@@ -309,7 +325,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
 </div>
 
 <!-- ============ 设置 ============ -->
-<div id="screen-settings" class="screen hidden">
+<div id="screen-settings" class="screen scrim hidden">
   <h2 class="screen-title">⚙ 游戏设置</h2>
   <div class="help-glass glass" style="text-align:center;width:min(620px,92vw)">
     <h3>视野范围（游戏内固定，不受窗口影响）</h3>
@@ -333,7 +349,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
 </div>
 
 <!-- ============ 图鉴 ============ -->
-<div id="screen-codex" class="screen hidden">
+<div id="screen-codex" class="screen scrim hidden">
   <h2 class="screen-title">📖 深海图鉴</h2>
   <div class="cos-tabs" id="codexTabs">
     <button class="tab active" data-ctab="fish">🐟 鱼类</button>
@@ -342,12 +358,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
     <button class="tab" data-ctab="misc">🌊 词缀与奇遇</button>
   </div>
   <div class="cos-tabs hidden" id="codexFilter"></div>
+  <input id="codexSearch" class="codex-search" type="search" placeholder="搜索名称或效果关键词…" autocomplete="off">
   <div id="codexBody" class="fish-grid"></div>
   <button class="btn btn-primary btn-small" id="codexBack">返回主菜单</button>
 </div>
 
 <!-- ============ 卡牌三选一 ============ -->
-<div id="screen-cards" class="screen hidden">
+<div id="screen-cards" class="screen scrim hidden">
   <div class="card-title" id="cardTitle">选择一张强化卡牌</div>
   <div class="card-row" id="cardRow"></div>
   <div class="synergy-bar" id="synergyBar"></div>
@@ -356,7 +373,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
 </div>
 
 <!-- ============ 结算 ============ -->
-<div id="screen-result" class="screen hidden">
+<div id="screen-result" class="screen scrim hidden">
   <div class="result-title" id="resultTitle">旅程终结</div>
   <div class="result-glass glass" id="resultBody"></div>
   <div class="row">
@@ -3505,6 +3522,10 @@ function beginStage(node){
   updateHudDOM();
 }
 function goToMap(){
+  // 进地图前清掉阶段横幅：横幅是 z-index 15 的 HTML 层，而航路图画在 canvas 上，
+  // 不清就会让「第 N 阶段 · 海域名」直接压在节点上（实测确认过）。
+  G.bannerT=0;
+  bannerEl.classList.add('hidden');
   const n=G.node;
   if(n&&n.row>=(G.map?G.map.length-1:0)&&n.done){endGame('win');return;}
   if(n&&G.map&&G.map[n.row+1]){
@@ -3552,14 +3573,25 @@ const CODEX_NODE_DESC={
 function codexCard(html,chipText,chipColor){
   const div=document.createElement('div');
   div.className='codex-card';
-  div.innerHTML=html+(chipText?'<div class="codex-chip"'+(chipColor?' style="color:'+chipColor+'"':'')+'>'+chipText+'</div>':'');
+  // 把开头的色点从内容里剥离出来，作为 flex 左侧固定块，
+  // 右侧文字才能排成「名称 / 效果」两行左对齐的紧凑行。
+  const m=html.match(/^<div class="codex-dot"[^>]*><\/div>/);
+  const dot=m?m[0]:'';
+  const rest=m?html.slice(dot.length):html;
+  div.innerHTML=dot+'<div class="codex-main">'+rest+'</div>'+
+    (chipText?'<div class="codex-chip"'+(chipColor?' style="color:'+chipColor+'"':'')+'>'+chipText+'</div>':'');
   return div;
 }
+let codexTabCur='fish',codexFilterCur='all';
 function buildCodex(tab,filter){
   const body=$('codexBody');
   const filterBar=$('codexFilter');
   body.innerHTML='';
   filter=filter||'all';
+  codexTabCur=tab;codexFilterCur=filter;
+  const searchEl=$('codexSearch');
+  const q=(searchEl&&searchEl.value?searchEl.value:'').trim().toLowerCase();
+  const hit=(name,desc)=>!q||String(name||'').toLowerCase().includes(q)||String(desc||'').toLowerCase().includes(q);
   if(tab==='items'){
     filterBar.classList.remove('hidden');
     if(!filterBar.childNodes||filterBar.childNodes.length===0){
@@ -3582,6 +3614,7 @@ function buildCodex(tab,filter){
   }
   if(tab==='fish'){
     for(const f of FISH_DEFS){
+      if(!hit(f.name,f.passive))continue;
       const unlocked=isUnlocked('fish',f.id);
       body.appendChild(codexCard(
         '<div class="codex-dot" style="background:radial-gradient(circle at 32% 28%,'+f.c2+','+f.c1+' 72%)"></div>'+
@@ -3589,6 +3622,7 @@ function buildCodex(tab,filter){
         unlocked?'初始鱼':'🔒 '+unlockText(f),'#bfe8ff'));
     }
     for(const t of FISH_TYPES){
+      if(!hit(t.name,CODEX_ENEMY_DESC[t.id]))continue;
       body.appendChild(codexCard(
         '<div class="codex-title">🌊 '+t.name+'</div><div class="codex-desc">'+(CODEX_ENEMY_DESC[t.id]||'')+'</div>',
         '野生鱼类','#8fe8ff'));
@@ -3596,42 +3630,54 @@ function buildCodex(tab,filter){
   }else if(tab==='items'){
     for(const it of ITEM_POOL){
       if(filter!=='all'&&it.rarity!==filter)continue;
+      if(!hit(it.name,it.desc))continue;
       const look=it.look||LOOKS[0];
       const rc=it.rarity==='epic'?'#c084fc':it.rarity==='rare'?'#60a5fa':'#7dd3fc';
       body.appendChild(codexCard(
         '<div class="codex-dot" style="background:radial-gradient(circle at 32% 28%,'+look.color+',#0e2440 78%)"></div>'+
         '<div class="codex-title">'+it.name+'</div><div class="codex-desc">'+it.desc+'</div>',
-        RARITY[it.rarity].name+' · 羁绊：'+it.family,rc));
+        RARITY[it.rarity].name+' · '+it.family,rc));
     }
   }else if(tab==='boss'){
     for(const b of BOSS_DEFS){
+      if(!hit(b.name,CODEX_BOSS_DESC[b.id]))continue;
       body.appendChild(codexCard(
         '<div class="codex-dot" style="background:radial-gradient(circle at 32% 28%,'+b.c2+','+b.c1+' 72%)"></div>'+
         '<div class="codex-title">'+b.name+'</div><div class="codex-desc">'+(CODEX_BOSS_DESC[b.id]||'')+'</div>',
         '大Boss','#ffd166'));
     }
     for(const t of BOSS_TRAITS){
+      if(!hit(t.name,t.desc))continue;
       body.appendChild(codexCard(
         '<div class="codex-title">👑 '+t.name+'</div><div class="codex-desc">'+t.desc+'</div>',
         '吞噬特性','#ffd166'));
     }
   }else{
     for(const m of STAGE_MODS){
+      if(!hit(m.name,m.desc))continue;
       body.appendChild(codexCard(
         '<div class="codex-title">🌀 '+m.name+'</div><div class="codex-desc">'+m.desc+'</div>',
         '环境词缀','#8fe8ff'));
     }
     for(const ev of EVENTS){
+      if(!hit(ev.name,ev.sub))continue;
       body.appendChild(codexCard(
         '<div class="codex-title">'+ev.name+'</div><div class="codex-desc">'+ev.sub+'</div>',
         '随机事件','#bfe8ff'));
     }
     for(const k of Object.keys(NODE_META)){
       const meta=NODE_META[k];
+      if(!hit(meta.name,CODEX_NODE_DESC[k]))continue;
       body.appendChild(codexCard(
         '<div class="codex-title">'+meta.icon+' '+meta.name+'</div><div class="codex-desc">'+(CODEX_NODE_DESC[k]||'')+'</div>',
         '地图节点','#c9b8ff'));
     }
+  }
+  if(!body.children.length){
+    const empty=document.createElement('div');
+    empty.className='codex-empty';
+    empty.textContent=q?('没有匹配「'+q+'」的条目'):'暂无条目';
+    body.appendChild(empty);
   }
 }
 
@@ -3642,6 +3688,9 @@ function showScreen(id){
     const el=$(s);
     if(el)el.classList.toggle('hidden',s!==id);
   }
+  // HUD 显隐统一收口：只有「真正在战斗中」且「没有模态界面」时才显示。
+  // 之前 stageComplete 进选卡时忘了隐藏 HUD，而奇遇/商店分支隐藏了，行为不一致。
+  hudEl.classList.toggle('hidden',!!id||G.mode!=='playing');
 }
 function updateMenuRecord(){
   $('menuBest').textContent=Math.round(SAVE.best);
@@ -3783,7 +3832,7 @@ $('btnCoop').addEventListener('click',()=>startGame('coop'));
 $('btnVersus').addEventListener('click',()=>startGame('versus'));
 $('btnFish').addEventListener('click',()=>{buildFishGrid();buildCosGrid();showScreen('screen-fish');});
 $('btnHelp').addEventListener('click',()=>showScreen('screen-help'));
-$('btnCodex').addEventListener('click',()=>{buildCodex('fish','all');showScreen('screen-codex');});
+$('btnCodex').addEventListener('click',()=>{const s=$('codexSearch');if(s)s.value='';buildCodex('fish','all');showScreen('screen-codex');});
 $('codexBack').addEventListener('click',()=>{showScreen('screen-menu');updateMenuRecord();});
 function refreshSettingsUI(){
   const st=$('shakeToggle');if(st)st.textContent=SAVE.shake?'开启':'关闭';
@@ -3821,6 +3870,15 @@ for(const ct of codexTabEls){
     for(const t of codexTabEls)t.classList.remove('active');
     ct.classList.add('active');
     buildCodex(ct.getAttribute('data-ctab')||'fish','all');
+  });
+}
+/* 图鉴搜索：200 条道具靠翻页找太慢，加输入即筛（120ms 防抖，避免逐字重建） */
+const codexSearchEl=$('codexSearch');
+if(codexSearchEl){
+  let codexSearchTimer=null;
+  codexSearchEl.addEventListener('input',()=>{
+    clearTimeout(codexSearchTimer);
+    codexSearchTimer=setTimeout(()=>buildCodex(codexTabCur,codexFilterCur),120);
   });
 }
 $('helpBack').addEventListener('click',()=>{showScreen('screen-menu');updateMenuRecord();});
