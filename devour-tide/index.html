@@ -318,6 +318,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#02070f;color:var(--
       <button class="btn btn-small" data-zoom="1">标准</button>
       <button class="btn btn-small" data-zoom="1.22">远 · 看得更广</button>
     </div>
+    <h3>画质（影响发光、粒子密度与渲染分辨率）</h3>
+    <div class="row" id="qualityOpts">
+      <button class="btn btn-small" data-q="0">性能 · 最省电</button>
+      <button class="btn btn-small" data-q="1">均衡</button>
+      <button class="btn btn-small" data-q="2">精细 · 全特效</button>
+    </div>
     <h3>屏幕震动</h3>
     <div class="row"><button class="btn btn-small" id="shakeToggle">开启</button></div>
     <h3>音效</h3>
@@ -377,9 +383,34 @@ function camScale(){
   const pref=(typeof SAVE!=='undefined'&&SAVE.zoomPref)||1;
   return H*z/(BASE_VIEW*pref);
 }
-function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=window.innerWidth;H=window.innerHeight;
-  canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);}
+/* ================= 画质分级（0 性能 / 1 均衡 / 2 精细） ================= */
+/* 说明：QL() 读存档里的 quality；SAVE 尚未初始化时兜底为「均衡」，避免启动期报错。 */
+const QUALITY_NAMES=['性能','均衡','精细'];
+function QL(){return (typeof SAVE!=='undefined'&&SAVE.quality!==undefined)?SAVE.quality:1;}
+function qLo(){return QL()<=0;}
+function qHi(){return QL()>=2;}
+/* 阴影强度系数：draw 层用它缩放 canvas 的 shadowBlur（最昂贵的操作之一） */
+function qGlow(){const q=QL();return q>=2?1:(q===1?0.45:0);}
+/* 各画质档的 devicePixelRatio 上限 */
+const DPR_CAP=[1.1,1.5,2];
+/* 单帧渲染像素预算，超出则继续下调 DPR（4K + 2x 会到 3300 万像素，必须兜住） */
+const PIXEL_BUDGET=[1.3e6,2.6e6,4.2e6];
+
+let bgGrad=null,bgGradKey='',vigGrad=null,shaftGrad=null,shaftGradKey='';
+
+function resize(){
+  W=window.innerWidth;H=window.innerHeight;
+  let dpr=Math.min(window.devicePixelRatio||1,DPR_CAP[QL()]);
+  const budget=PIXEL_BUDGET[QL()];
+  if(W*H*dpr*dpr>budget)dpr=Math.max(0.75,Math.sqrt(budget/(W*H)));
+  DPR=Math.round(dpr*20)/20;
+  canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  bgGrad=null;vigGrad=null;shaftGrad=null;   // 尺寸变化后所有屏幕空间缓存失效
+}
 window.addEventListener('resize',resize);
+/* 切换画质后立即生效：重建画布尺寸，并让所有尺寸相关缓存失效 */
+function applyQuality(){resize();}
 
 const TAU=Math.PI*2;
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
@@ -390,11 +421,19 @@ const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
 function angLerp(a,b,t){let d=((b-a+Math.PI*3)%TAU)-Math.PI;return a+d*t;}
 function hexRgb(h){h=String(h).replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
   return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
-function rgba(hex,a){const c=hexRgb(hex);return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';}
+/* 颜色解析缓存：rgba() 每帧被调用数百次，而色值集合很小，缓存掉字符串解析 */
+const _hexCache=Object.create(null);
+function hexRgbCached(h){
+  const k=h;
+  let v=_hexCache[k];
+  if(v===undefined){v=hexRgb(h);_hexCache[k]=v;}
+  return v;
+}
+function rgba(hex,a){const c=hexRgbCached(hex);return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';}
 
 /* ================= 存档 ================= */
 const SAVE_KEY='deepBigFish_deluxe_v1';
-const DEFAULT_SAVE={best:0,bestStage:1,bossKills:0,fish:'blue',skin:'ocean',fin:'fin0',trail:'trail0',sound:true,zoomPref:1,shake:true,
+const DEFAULT_SAVE={best:0,bestStage:1,bossKills:0,fish:'blue',skin:'ocean',fin:'fin0',trail:'trail0',sound:true,zoomPref:1,shake:true,quality:1,
   unlocked:{fish:['blue'],skin:['ocean'],fin:['fin0'],trail:['trail0']}};
 function clone(o){return JSON.parse(JSON.stringify(o));}
 let SAVE=clone(DEFAULT_SAVE);
@@ -1105,7 +1144,12 @@ function checkRevives(){
 }
 
 /* ================= 粒子 / 道具 / 刷怪 ================= */
-function addParticle(x,y,vx,vy,life,color,size){G.particles.push({x:x,y:y,vx:vx,vy:vy,life:life,max:life,color:color,size:size});}
+/* 粒子上限按画质档位收敛：高端机吃满特效，低端机优先保帧率 */
+const PARTICLE_CAP=[240,520,900];
+function addParticle(x,y,vx,vy,life,color,size){
+  if(G.particles.length>=PARTICLE_CAP[QL()])return;
+  G.particles.push({x:x,y:y,vx:vx,vy:vy,life:life,max:life,color:color,size:size});
+}
 function addFloater(x,y,text,color){G.floaters.push({x:x,y:y,text:text,color:color||'#ffffff',life:1.15,max:1.15});}
 function addBurst(x,y,color,n,spd){
   for(let i=0;i<n;i++){const a=rand(0,TAU),s=rand(spd*0.22,spd);
@@ -1672,6 +1716,21 @@ function viewRect(){
   const cx=(G.cam?G.cam.x:AW/2),cy=(G.cam?G.cam.y:AH/2);
   return {x:cx-vw/2,y:cy-vh/2,w:vw,h:vh};
 }
+/* ---- 视口裁剪 ----
+   世界 5200×3000，而视野通常只有 1500×900 上下，背景层原本是全量绘制。
+   每帧缓存一次带外扩的可见矩形，绘制前先判断，越界直接跳过。 */
+let _cullRect=null,_cullTick=-1,renderTick=0;
+function cullRect(){
+  if(_cullTick===renderTick&&_cullRect)return _cullRect;
+  const v=viewRect();
+  _cullRect={x:v.x-200,y:v.y-200,w:v.w+400,h:v.h+400};
+  _cullTick=renderTick;
+  return _cullRect;
+}
+function inView(x,y,r){
+  const v=cullRect();r=r||0;
+  return x+r>v.x&&x-r<v.x+v.w&&y+r>v.y&&y-r<v.y+v.h;
+}
 function updateCamera(dt){
   const alive=G.players.filter(p=>p.alive);
   const list=alive.length?alive:G.players;
@@ -1767,6 +1826,7 @@ function updateHudDOM(){
 }
 /* ================= 渲染（深海霓虹） ================= */
 function render(){
+  renderTick++;
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,W,H);
   const menuMode=(G.mode==='menu'||G.mode==='help'||G.mode==='fish');
@@ -1777,6 +1837,10 @@ function render(){
   if(G.shake>0&&G.mode==='playing'&&SAVE.shake!==false){
     ctx.translate(rand(-1,1)*G.shake*11,rand(-1,1)*G.shake*11);
   }
+  // ---- 屏幕空间：水体底色 ----
+  // 原本是世界坐标里每帧新建的线性渐变；移到屏幕空间后可缓存，且只覆盖视口而非世界。
+  ctx.fillStyle=bgFill(pal);
+  ctx.fillRect(-48,-48,W+96,H+96);
   // ---- 世界坐标：镜头跟随 + 游戏内固定视野 ----
   ctx.save();
   ctx.translate(W/2,H/2);
@@ -1830,11 +1894,19 @@ function drawRidge(v,baseY,amp,color,factor){
   ctx.closePath();
   ctx.fill();
 }
+function bgFill(pal){
+  const key=pal.top+pal.mid+pal.bot+'|'+H;
+  if(!bgGrad||bgGradKey!==key){
+    bgGrad=ctx.createLinearGradient(0,0,0,H);
+    bgGrad.addColorStop(0,pal.top);bgGrad.addColorStop(0.38,pal.mid);
+    bgGrad.addColorStop(0.72,pal.bot);bgGrad.addColorStop(1,pal.bot);
+    bgGradKey=key;
+  }
+  return bgGrad;
+}
 function drawBackground(pal){
   const v=viewRect();
-  const g=ctx.createLinearGradient(0,v.y,0,v.y+v.h);
-  g.addColorStop(0,pal.top);g.addColorStop(0.38,pal.mid);g.addColorStop(0.72,pal.bot);g.addColorStop(1,pal.bot);
-  ctx.fillStyle=g;ctx.fillRect(v.x-140,v.y-140,v.w+280,v.h+280);
+  // 水体底色改由 render() 用缓存的屏幕空间渐变铺好，此处不再重复创建渐变并填充
   // 远景山脊（双层视差）
   drawRidge(v,v.y+v.h*0.62,v.h*0.09,rgba('#041426',0.5),0.22);
   drawRidge(v,v.y+v.h*0.78,v.h*0.12,rgba('#020c18',0.72),0.45);
@@ -1859,32 +1931,38 @@ function drawBackground(pal){
     ctx.fillRect(v.x-140,v.y-140,v.w+280,v.h+280);
   }
   // 水光网纹（双向正弦，缓慢流动）
-  ctx.strokeStyle=rgba(pal.accent,0.075);ctx.lineWidth=1.6;
-  for(let i=0;i<6;i++){
-    ctx.beginPath();
-    const yBase=v.y+v.h*(0.05+i*0.075);
-    let started=false;
-    for(let x=v.x;x<=v.x+v.w;x+=26){
-      const y=yBase+Math.sin(x*0.011+T*0.75+i*1.6)*(8+i*3)+Math.sin(x*0.004-T*0.4)*10;
-      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+  // 采样密度按画质下调；性能档直接跳过——这里是每帧数百次 sin + lineTo，纯装饰
+  if(!qLo()){
+    const stepX=qHi()?26:46,stepY=qHi()?30:52,rowsX=qHi()?6:4,colsY=qHi()?8:5;
+    ctx.strokeStyle=rgba(pal.accent,0.075);ctx.lineWidth=1.6;
+    for(let i=0;i<rowsX;i++){
+      ctx.beginPath();
+      const yBase=v.y+v.h*(0.05+i*0.075);
+      let started=false;
+      for(let x=v.x;x<=v.x+v.w;x+=stepX){
+        const y=yBase+Math.sin(x*0.011+T*0.75+i*1.6)*(8+i*3)+Math.sin(x*0.004-T*0.4)*10;
+        if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
-  }
-  ctx.strokeStyle=rgba(pal.accent2,0.05);ctx.lineWidth=1.3;
-  for(let i=0;i<8;i++){
-    ctx.beginPath();
-    const xBase=v.x+v.w*(0.04+i*0.13);
-    let started=false;
-    for(let y=v.y;y<=v.y+v.h;y+=30){
-      const x=xBase+Math.sin(y*0.013+T*0.55+i*1.2)*(10+i*2);
-      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+    ctx.strokeStyle=rgba(pal.accent2,0.05);ctx.lineWidth=1.3;
+    for(let i=0;i<colsY;i++){
+      ctx.beginPath();
+      const xBase=v.x+v.w*(0.04+i*0.13);
+      let started=false;
+      for(let y=v.y;y<=v.y+v.h;y+=stepY){
+        const x=xBase+Math.sin(y*0.013+T*0.55+i*1.2)*(10+i*2);
+        if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
     }
-    ctx.stroke();
   }
   ctx.restore();
 }
 function drawDecor(pal){
   for(const d of G.decor){
+    // 装饰物体积较大，用较宽松的外扩半径判断，避免边缘突然消失
+    if(!inView(d.x,d.y,(d.r||d.w||100)*2.2))continue;
     if(d.type==='coral'){
       ctx.save();
       ctx.strokeStyle=rgba(pal.accent2,0.2);ctx.lineWidth=Math.max(6,d.r*0.16);ctx.lineCap='round';
@@ -1900,7 +1978,7 @@ function drawDecor(pal){
       ctx.translate(d.x,d.y);ctx.rotate(Math.sin(T*0.3+d.phase)*0.12+d.rot);
       const g=ctx.createLinearGradient(0,-d.r,0,d.r);
       g.addColorStop(0,rgba('#eaf9ff',0.5));g.addColorStop(1,rgba('#8fd8ff',0.16));
-      ctx.fillStyle=g;ctx.shadowColor=rgba('#b7f3ff',0.5);ctx.shadowBlur=26;
+      ctx.fillStyle=g;const _ig=qGlow();if(_ig>0){ctx.shadowColor=rgba('#b7f3ff',0.5);ctx.shadowBlur=26*_ig;}
       ctx.beginPath();
       for(let i=0;i<6;i++){
         const a=i/6*TAU;
@@ -1944,16 +2022,26 @@ function drawDecor(pal){
   }
 }
 function drawShafts(pal){
+  if(!G.shafts.length)return;
+  // 原先每根光柱每帧新建一个线性渐变（12 个/帧）。改为缓存单个渐变，
+  // 各光柱的明暗差异用 globalAlpha 表达，视觉效果等价而分配降为 0。
+  const key=pal.accent+'|'+H;
+  if(!shaftGrad||shaftGradKey!==key){
+    shaftGrad=ctx.createLinearGradient(0,0,0,H*1.1);
+    shaftGrad.addColorStop(0,rgba(pal.accent,1));
+    shaftGrad.addColorStop(0.55,rgba(pal.accent,0.34));
+    shaftGrad.addColorStop(1,rgba(pal.accent,0));
+    shaftGradKey=key;
+  }
+  const v=cullRect();
   ctx.save();
   ctx.globalCompositeOperation='lighter';
   for(const s of G.shafts){
+    if(s.x+s.w<v.x||s.x-s.w>v.x+v.w)continue;   // 横向越界的光柱直接跳过
     ctx.save();
     ctx.translate(s.x,0);ctx.rotate(s.ang);
-    const g=ctx.createLinearGradient(0,0,0,H*1.1);
-    g.addColorStop(0,rgba(pal.accent,0.15*s.alpha));
-    g.addColorStop(0.55,rgba(pal.accent,0.05*s.alpha));
-    g.addColorStop(1,rgba(pal.accent,0));
-    ctx.fillStyle=g;
+    ctx.globalAlpha=0.15*s.alpha;
+    ctx.fillStyle=shaftGrad;
     ctx.fillRect(-s.w/2,-40,s.w,H*1.15);
     ctx.restore();
   }
@@ -1961,11 +2049,13 @@ function drawShafts(pal){
 }
 function drawBubbles(pal){
   ctx.save();
+  const fill=pal.accent;
   for(const b of G.bubbles){
+    if(!inView(b.x,b.y,b.r+4))continue;
     const alpha=0.12+b.layer*0.22;
     ctx.beginPath();
     ctx.arc(b.x,b.y,b.r,0,TAU);
-    ctx.fillStyle=rgba(pal.accent,alpha*0.5);
+    ctx.fillStyle=rgba(fill,alpha*0.5);
     ctx.fill();
     ctx.strokeStyle=rgba('#ffffff',alpha*0.85);
     ctx.lineWidth=Math.max(0.6,b.r*0.22);
@@ -1978,6 +2068,7 @@ function drawMotes(){
   ctx.save();
   ctx.globalCompositeOperation='lighter';
   for(const m of G.motes){
+    if(!inView(m.x,m.y,m.r+2))continue;
     const a=m.alpha*(0.6+0.4*Math.sin(T*1.4+m.wob));
     ctx.beginPath();
     ctx.arc(m.x,m.y,m.r,0,TAU);
@@ -2199,7 +2290,7 @@ function drawHazards(){
       ctx.save();ctx.translate(h.x,h.y);ctx.rotate(Math.sin(h.phase*0.5)*0.12+h.rot);
       const g=ctx.createLinearGradient(0,-h.r,0,h.r);
       g.addColorStop(0,rgba('#dff6ff',0.55));g.addColorStop(1,rgba('#8fd8ff',0.14));
-      ctx.fillStyle=g;ctx.shadowColor=rgba('#b7f3ff',0.7);ctx.shadowBlur=24;
+      ctx.fillStyle=g;const _hg=qGlow();if(_hg>0){ctx.shadowColor=rgba('#b7f3ff',0.7);ctx.shadowBlur=24*_hg;}
       ctx.beginPath();
       for(let i=0;i<7;i++){
         const a=i/7*TAU;
@@ -2249,7 +2340,7 @@ function drawFishShape(x,y,size,ang,c1,c2,accent,opts){
   ctx.rotate(ang);
   ctx.globalAlpha=alpha;
   ctx.shadowColor=rgba(accent,0.8);
-  ctx.shadowBlur=Math.min(70,s*0.9);
+  const _g=qGlow();if(_g>0)ctx.shadowBlur=Math.min(70,s*0.9)*_g;
   // 尾鳍
   const tg=ctx.createLinearGradient(-s*1.75,0,-s*0.55,0);
   tg.addColorStop(0,rgba(accent,0.8));tg.addColorStop(1,rgba(c2,0.96));
@@ -2627,12 +2718,13 @@ function drawFloaters(){
   if(!G.floaters.length)return;
   ctx.save();
   ctx.textAlign='center';ctx.textBaseline='middle';
+  const _fg=qGlow();
   for(const f of G.floaters){
     const a=clamp(f.life/f.max,0,1);
     ctx.globalAlpha=Math.min(1,a*1.6);
     ctx.font='bold '+Math.round(14/Math.max(0.12,camScale()))+'px sans-serif';
     ctx.fillStyle=f.color;
-    ctx.shadowColor=f.color;ctx.shadowBlur=14;
+    if(_fg>0){ctx.shadowColor=f.color;ctx.shadowBlur=14*_fg;}
     ctx.fillText(f.text,f.x,f.y);
   }
   ctx.restore();
@@ -2671,7 +2763,7 @@ function drawModernFish(x,y,size,ang,c1,c2,accent,opts){
   ctx.rotate(ang);
   ctx.globalAlpha=alpha;
   ctx.shadowColor=rgba(accent,0.85);
-  ctx.shadowBlur=Math.min(70,s*0.9);
+  const _g=qGlow();if(_g>0)ctx.shadowBlur=Math.min(70,s*0.9)*_g;
   for(let layer=0;layer<3;layer++){
     const la=[0.5,0.32,0.2][layer];
     const off=layer*s*0.15;
@@ -2762,7 +2854,7 @@ function drawSoftFish(x,y,size,ang,c1,c2,accent,opts){
   ctx.save();
   ctx.translate(x,y);ctx.rotate(ang);ctx.globalAlpha=alpha;
   ctx.shadowColor=rgba(accent,0.85);
-  ctx.shadowBlur=Math.min(70,s*0.9);
+  const _g=qGlow();if(_g>0)ctx.shadowBlur=Math.min(70,s*0.9)*_g;
   const spineY=u=>bend*Math.sin((u+1)*0.5*Math.PI*0.9)*s*0.5+wave*Math.pow(Math.max(0,-u),1.6)*s*0.34;
   const prof=u=>Math.sin(Math.pow((u+1)/2,0.72)*Math.PI)*0.74+0.05;
   const ty0=spineY(-0.92);
@@ -2981,7 +3073,7 @@ function drawEnemyFish(e){
   ctx.translate(e.x,e.y);
   ctx.rotate(e.ang);
   ctx.shadowColor=rgba(e.accent,0.8);
-  ctx.shadowBlur=Math.min(70,s*0.9);
+  const _g=qGlow();if(_g>0)ctx.shadowBlur=Math.min(70,s*0.9)*_g;
   switch(e.type){
     case 'shark':bodyShark(s,e.c1,e.c2,e.accent,sway);break;
     case 'puffer':bodyPuffer(s,e.c1,e.c2,e.accent,sway,e.inflate);break;
@@ -3034,7 +3126,7 @@ function drawPlayerFish(p){
     ctx.beginPath();
     ctx.arc(p.x,p.y,p.size*1.5,0,TAU);
     ctx.strokeStyle=rgba('#a78bfa',0.55);ctx.lineWidth=2.5;
-    ctx.shadowColor=rgba('#a78bfa',0.8);ctx.shadowBlur=18;
+    const _sg=qGlow();if(_sg>0){ctx.shadowColor=rgba('#a78bfa',0.8);ctx.shadowBlur=18*_sg;}
     ctx.stroke();
     ctx.restore();
   }
@@ -3071,7 +3163,7 @@ function drawBoss(){
   ctx.save();
   ctx.translate(b.x,b.y);ctx.rotate(b.ang);
   ctx.shadowColor=rgba('#ffd166',0.7);
-  ctx.shadowBlur=Math.min(110,b.size*0.95);
+  const _gb=qGlow();if(_gb>0)ctx.shadowBlur=Math.min(110,b.size*0.95)*_gb;
   if(did==='whale')bodyWhale(b.size,c1,c2,'#b7f3ff',sway);
   else if(did==='squid')bodySquid(b.size,c1,c2,'#c084fc',sway);
   else if(did==='beast')bodyPuffer(b.size,c1,c2,'#ffb45c',sway,1);
@@ -3108,13 +3200,15 @@ function drawProjectiles(){
   ctx.restore();
 }
 function drawParticles(){
+  const list=G.particles;
+  if(!list.length)return;
   ctx.save();
   ctx.globalCompositeOperation='lighter';
-  for(const q of G.particles){
+  for(const q of list){
     const a=clamp(q.life/q.max,0,1);
     ctx.beginPath();
     ctx.arc(q.x,q.y,q.size*(0.4+a*0.8),0,TAU);
-    ctx.fillStyle=rgba(q.color.startsWith('#')?q.color:'#ffffff',a*0.8);
+    ctx.fillStyle=rgba((typeof q.color==='string'&&q.color.charAt(0)==='#')?q.color:'#ffffff',a*0.8);
     ctx.fill();
   }
   ctx.restore();
@@ -3699,6 +3793,11 @@ function refreshSettingsUI(){
     const z=parseFloat(b.getAttribute('data-zoom'))||1;
     b.className='btn btn-small'+(Math.abs(z-(SAVE.zoomPref||1))<0.01?' btn-primary':'');
   }
+  const qBtns=document.querySelectorAll('#qualityOpts .btn');
+  for(const b of qBtns){
+    const q=parseInt(b.getAttribute('data-q'),10);
+    b.className='btn btn-small'+(q===QL()?' btn-primary':'');
+  }
 }
 $('btnSettings').addEventListener('click',()=>{refreshSettingsUI();showScreen('screen-settings');});
 $('settingsBack').addEventListener('click',()=>{persist();showScreen('screen-menu');updateMenuRecord();});
@@ -3707,6 +3806,14 @@ $('soundToggle2').addEventListener('click',()=>{Audio2.init();Audio2.setSound(!S
 const zoomOptEls=document.querySelectorAll('#zoomOpts .btn');
 for(const zb of zoomOptEls){
   zb.addEventListener('click',()=>{SAVE.zoomPref=parseFloat(zb.getAttribute('data-zoom'))||1;persist();refreshSettingsUI();});
+}
+const qualityOptEls=document.querySelectorAll('#qualityOpts .btn');
+for(const qb of qualityOptEls){
+  qb.addEventListener('click',()=>{
+    SAVE.quality=parseInt(qb.getAttribute('data-q'),10)||0;
+    persist();applyQuality();refreshSettingsUI();
+    showBanner('画质：'+QUALITY_NAMES[SAVE.quality],SAVE.quality>=2?'全特效开启':(SAVE.quality===1?'已平衡性能与观感':'已关闭发光与大部分粒子'),2.2);
+  });
 }
 const codexTabEls=document.querySelectorAll('#codexTabs .tab');
 for(const ct of codexTabEls){
@@ -3746,9 +3853,28 @@ function init(){
 }
 init();
 let last=0;
+/* ---- 帧率采样：游戏内连续低帧时自动降一档画质 ---- */
+let fpsAcc=0,fpsFrames=0,fpsLowSec=0;
+function sampleFps(dt){
+  fpsAcc+=dt;fpsFrames++;
+  if(fpsAcc<1)return;
+  const fps=fpsFrames/fpsAcc;fpsAcc=0;fpsFrames=0;
+  if(G.mode!=='playing'||G.paused){fpsLowSec=0;return;}
+  if(fps<40&&QL()>0){
+    if(++fpsLowSec>=3){
+      fpsLowSec=0;
+      SAVE.quality=QL()-1;persist();
+      applyQuality();
+      showBanner('已自动降低画质','当前：'+QUALITY_NAMES[SAVE.quality]+'，可在设置里改回',3);
+    }
+  }else fpsLowSec=0;
+}
 function frame(ts){
+  // 切到后台时停止更新与绘制，避免后台空转耗电
+  if(document.hidden){last=ts;requestAnimationFrame(frame);return;}
   const dt=Math.min(Math.max((ts-last)/1000,0),0.05);
   last=ts;
+  sampleFps(dt);
   update(dt);
   render();
   requestAnimationFrame(frame);
