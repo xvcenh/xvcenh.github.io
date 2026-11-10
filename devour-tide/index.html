@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
 <title>吞噬之潮 · 物种器官原型 v0.8</title>
 <style>
   html,body{margin:0;height:100%;background:#02060f;overflow:hidden;
@@ -154,10 +154,51 @@
   }
   .c-foot{padding:7px 12px 9px;font-size:10px;letter-spacing:.08em;color:#5e8fb4;
     border-top:1px solid rgba(120,190,255,0.10);flex:0 0 auto;}
+
+  /* ===== 手机模式（html.mobile 由脚本按触屏能力挂上） ===== */
+  /* 安全区探针：只用来把 env(safe-area-inset-*) 读进 JS（刘海 / 手势条） */
+  #safeProbe{position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;
+    padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px)
+            env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);}
+  html.mobile,html.mobile body{overscroll-behavior:none;-webkit-touch-callout:none;}
+  html.mobile *{-webkit-tap-highlight-color:transparent;}
+  html.mobile .ov{padding:8px;}
+  html.mobile .panel{box-sizing:border-box;  /* 不加这个 max-height 会连 padding 一起超出去 */
+    padding:18px 15px;max-height:90vh;max-height:calc(100dvh - 16px);
+    border-radius:14px;}
+  html.mobile .panel.start{padding:16px 14px 12px;}
+  html.mobile .hero{margin-bottom:14px;}
+  html.mobile .hero-title{font-size:30px;letter-spacing:7px;padding-left:7px;
+    filter:drop-shadow(0 0 16px rgba(90,190,255,.3));}
+  html.mobile .hero-sub{font-size:9px;letter-spacing:2px;}
+  html.mobile .sec-label{font-size:11px;letter-spacing:1px;}
+  html.mobile .sec-label span{display:none;}
+  html.mobile .fishpick{gap:6px;}
+  html.mobile .fishcard{padding:5px 6px 7px;}
+  html.mobile .fishcard canvas{height:40px;}
+  html.mobile .fishcard b{font-size:11.5px;}
+  html.mobile .fishcard i{min-height:24px;font-size:9.5px;line-height:1.4;margin-top:3px;}
+  /* 按钮竖排铺满：拇指好点，也避免两个按钮挤在一行 */
+  html.mobile .start-actions{flex-direction:column;gap:9px;margin:12px 0 10px;}
+  html.mobile .btn{width:100%;margin:0;padding:14px 18px;letter-spacing:2px;}
+  html.mobile .btn:disabled{opacity:.4;filter:grayscale(.7);box-shadow:none;}
+  html.mobile .note{font-size:11.5px;line-height:1.75;margin-top:10px;}
+  html.mobile .row{gap:8px;}
+  html.mobile .report{grid-template-columns:repeat(2,1fr);}
+  html.mobile .cards{flex-direction:column;align-items:stretch;}
+  html.mobile .card{width:auto;}
+  html.mobile .rank{width:38px;height:38px;font-size:20px;}
+  /* 图鉴：改成底部抽屉，别再压掉半个屏幕 */
+  html.mobile #codex{top:auto;bottom:0;left:0;right:0;width:auto;max-height:46vh;
+    transform:none;border-radius:16px 16px 0 0;
+    padding-bottom:env(safe-area-inset-bottom,0px);}
+  html.mobile .c-list{padding:4px;}
+  html.mobile .c-item{padding:7px 8px;}
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
+<div id="safeProbe"></div>
 
 <div class="ov" id="ovStart">
   <div class="panel start">
@@ -248,14 +289,77 @@ var cv = document.getElementById('cv');
 var ctx = cv.getContext('2d');
 var W = 0, H = 0, DPR = 1;
 
+/* ============================================================
+   手机模式
+   ------------------------------------------------------------
+   触屏设备自动切到手机模式：左下长出一根浮动摇杆，右下长出
+   啃咬/冲刺/技能/封印四个键，HUD 重排到不挡手的位置，画质先降一档。
+   桌面想手动控制：?mobile=1 强制开、?mobile=0 强制关。
+   ============================================================ */
+var MQ = window.matchMedia ? window.matchMedia.bind(window) : null;
+var IS_TOUCH = false;
+try {
+  IS_TOUCH = (navigator.maxTouchPoints || 0) > 0 &&
+             (!MQ || MQ('(pointer: coarse)').matches || !MQ('(hover: hover)').matches);
+  if (MQ && MQ('(pointer: coarse)').matches) IS_TOUCH = true;
+} catch(e){}
+var MOBILE = !!IS_TOUCH;
+(function(){
+  var q = /[?&]mobile=([01])/.exec(location.search);
+  if (q) MOBILE = q[1] === '1';
+  if (MOBILE) document.documentElement.classList.add('mobile');
+})();
+
+/* 安全区（刘海 / 手势条）：CSS 读不到 env()，拿一个探针元素量出来 */
+var SAFE = { t:0, r:0, b:0, l:0 };
+function readSafe(){
+  var el = document.getElementById('safeProbe');
+  if (!el) return;
+  var cs = getComputedStyle(el);
+  SAFE.t = parseFloat(cs.paddingTop) || 0;
+  SAFE.r = parseFloat(cs.paddingRight) || 0;
+  SAFE.b = parseFloat(cs.paddingBottom) || 0;
+  SAFE.l = parseFloat(cs.paddingLeft) || 0;
+}
+
+/* 触屏控件几何：绘制与命中检测共用同一份坐标 */
+var TC = { s:1, jr:56, joy:{ x:0, y:0 }, btns:[], top:[] };
+function layoutTouch(){
+  TC.btns = []; TC.top = [];
+  if (!MOBILE) return;
+  var s = clamp(Math.min(W, H) / 660, 0.8, 1.15);
+  TC.s = s;
+  TC.jr = 54 * s;
+  TC.joy.x = SAFE.l + 20 * s + TC.jr;
+  TC.joy.y = H - SAFE.b - 20 * s - TC.jr;
+
+  var R = 38 * s, r = 28 * s, gap = 12 * s;
+  var cx = W - SAFE.r - 20 * s - R;
+  var cy = H - SAFE.b - 20 * s - R;
+  TC.btns = [
+    { id:'chomp', x:cx,                y:cy,                r:R, glyph:'咬' },
+    { id:'dash',  x:cx - R - r - gap,  y:cy - 2 * s,        r:r, glyph:'冲' },
+    { id:'skill', x:cx - 4 * s,        y:cy - R - r - gap,  r:r, glyph:'技' },
+    { id:'seal',  x:cx - R - r - gap,  y:cy - R - r - gap,  r:r, glyph:'封' }
+  ];
+  var tp = 15 * s;
+  TC.top = [
+    { id:'pause', x:W / 2 - tp - 14 * s, y:SAFE.t + tp, r:14 * s, glyph:'‖' },
+    { id:'codex', x:W / 2 + tp + 14 * s, y:SAFE.t + tp, r:14 * s, glyph:'≡' }
+  ];
+}
+
 function resize(){
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = Math.floor(W * DPR); cv.height = Math.floor(H * DPR);
   cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (MOBILE){ readSafe(); layoutTouch(); }
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
+resize();
 
 var TAU = Math.PI * 2;
 function rand(a, b){ return a + Math.random() * (b - a); }
@@ -811,6 +915,11 @@ function viewRect(){
   var z = cam.zoom, vw = W / z, vh = H / z;
   return { x: cam.x - vw/2, y: cam.y - vh/2, w: vw, h: vh };
 }
+/* 手机屏幕窄：镜头再拉远一点，别让视野被挤成一条缝 */
+function viewFit(){
+  if (!MOBILE) return 1;
+  return clamp(W / 1000, 0.6, 1);
+}
 function alivePlayers(){
   var out = [];
   for (var i = 0; i < G.players.length; i++) if (!G.players[i].dead) out.push(G.players[i]);
@@ -845,12 +954,14 @@ cv.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 cv.addEventListener('mousedown', function(e){ if (e.button === 2) touch.bite = true; });
 window.addEventListener('mouseup', function(e){ if (e.button === 2) touch.bite = false; });
 cv.addEventListener('touchstart', function(e){
+  if (MOBILE) return;              /* 手机模式走下面的 pointer 层 */
   e.preventDefault();
   var t = e.touches[0];
   touch.active = true; touch.x = t.clientX; touch.y = t.clientY;
   touch.dx = 0; touch.dy = 0;
 }, { passive:false });
 cv.addEventListener('touchmove', function(e){
+  if (MOBILE) return;
   e.preventDefault();
   if (!touch.active) return;
   var t = e.touches[0];
@@ -858,7 +969,139 @@ cv.addEventListener('touchmove', function(e){
   var d = Math.hypot(dx, dy);
   if (d > 8){ touch.dx = dx/d; touch.dy = dy/d; } else { touch.dx = 0; touch.dy = 0; }
 }, { passive:false });
-cv.addEventListener('touchend', function(e){ e.preventDefault(); touch.active = false; touch.dx = 0; touch.dy = 0; }, { passive:false });
+cv.addEventListener('touchend', function(e){
+  if (MOBILE) return;
+  e.preventDefault(); touch.active = false; touch.dx = 0; touch.dy = 0;
+}, { passive:false });
+
+/* ------------------------------------------------------------
+   触屏输入（手机模式）
+   ------------------------------------------------------------
+   一根手指按在左半屏 → 摇杆就地出现，拖出方向；松手回中。
+   右下的键按住即生效，啃咬按住会按节拍连发（一口一口啃的节奏感）。
+   ------------------------------------------------------------ */
+var mIn = {
+  joy:false, bx:0, by:0, mx:0, my:0,
+  bite:false, biteT:0, bitePulse:0,
+  dash:false, skillPulse:0, releasePulse:0,
+  ptr:{}, down:{}
+};
+
+function cvXY(e){
+  var r = cv.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function hitCircle(q, b, pad){
+  var rr = b.r * (pad || 1.25);
+  var dx = q.x - b.x, dy = q.y - b.y;
+  return dx * dx + dy * dy <= rr * rr;
+}
+function sealedNow(){ return !!(G.p && G.p.sealed); }
+function btnVisible(b){
+  if (b.id === 'seal')  return sealedNow();
+  if (b.id === 'skill') return !!(G.p && G.p.skillKind);
+  return true;
+}
+function pressBtn(id){
+  mIn.down[id] = true;
+  if (id === 'chomp'){ mIn.bite = true; mIn.biteT = 0; mIn.bitePulse = 0.07; }
+  else if (id === 'dash') mIn.dash = true;
+  else if (id === 'skill') mIn.skillPulse = 0.12;
+  else if (id === 'seal') mIn.releasePulse = 0.12;
+}
+function releaseBtn(id){
+  delete mIn.down[id];
+  if (id === 'chomp') mIn.bite = false;
+  else if (id === 'dash') mIn.dash = false;
+}
+function topTap(id){
+  if (id === 'pause') G.paused = !G.paused;
+  else if (id === 'codex') toggleCodex();
+}
+
+cv.addEventListener('pointerdown', function(e){
+  if (!MOBILE || G.mode !== 'play' || !G.p) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  var q = cvXY(e);
+  var i, b;
+
+  /* 顶部两个小键：暂停中也要能点 */
+  for (i = 0; i < TC.top.length; i++){
+    if (hitCircle(q, TC.top[i], 1.6)){
+      topTap(TC.top[i].id);
+      e.preventDefault();
+      return;
+    }
+  }
+  if (G.paused){ G.paused = false; e.preventDefault(); return; }   /* 点屏幕继续 */
+  if (G.coop) return;
+
+  /* 右下技能键：用放大 1.2 倍的判定圈，手指没那么准 */
+  for (i = 0; i < TC.btns.length; i++){
+    b = TC.btns[i];
+    if (!btnVisible(b) || !hitCircle(q, b, 1.2)) continue;
+    mIn.ptr[e.pointerId] = b.id;
+    pressBtn(b.id);
+    try { cv.setPointerCapture(e.pointerId); } catch(err){}
+    e.preventDefault();
+    return;
+  }
+
+  /* 左半屏：浮动摇杆 */
+  if (q.x < W * 0.62){
+    mIn.joy = true;
+    mIn.bx = q.x; mIn.by = q.y;
+    mIn.mx = 0; mIn.my = 0;
+    mIn.ptr[e.pointerId] = 'joy';
+    try { cv.setPointerCapture(e.pointerId); } catch(err){}
+    e.preventDefault();
+  }
+}, { passive:false });
+
+cv.addEventListener('pointermove', function(e){
+  if (!MOBILE || mIn.ptr[e.pointerId] !== 'joy') return;
+  var q = cvXY(e);
+  var dx = q.x - mIn.bx, dy = q.y - mIn.by;
+  var d = Math.hypot(dx, dy);
+  var dead = 8;
+  if (d < dead){ mIn.mx = 0; mIn.my = 0; return; }
+  /* 摇杆跟手：手指拖出圈外时底座慢慢追过去，方向不会丢 */
+  if (d > TC.jr){
+    mIn.bx += dx * (1 - TC.jr / d) * 0.5;
+    mIn.by += dy * (1 - TC.jr / d) * 0.5;
+    dx = q.x - mIn.bx; dy = q.y - mIn.by;
+    d = Math.hypot(dx, dy) || 1;
+  }
+  var m = Math.min(1, (d - dead) / Math.max(1, TC.jr - dead));
+  mIn.mx = dx / d * m;
+  mIn.my = dy / d * m;
+  e.preventDefault();
+}, { passive:false });
+
+function endPointer(e){
+  if (!MOBILE) return;
+  var role = mIn.ptr[e.pointerId];
+  if (!role) return;
+  delete mIn.ptr[e.pointerId];
+  if (role === 'joy'){ mIn.joy = false; mIn.mx = 0; mIn.my = 0; }
+  else releaseBtn(role);
+}
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
+window.addEventListener('pointerup', endPointer);
+window.addEventListener('pointercancel', endPointer);
+
+/* 每帧推进：啃咬按住连发，技能/封印只吃按下那一下 */
+function tickTouch(dt){
+  if (!MOBILE) return;
+  if (mIn.bite){
+    mIn.biteT += dt;
+    if (mIn.biteT >= 0.26){ mIn.biteT = 0; mIn.bitePulse = 0.07; }
+  }
+  if (mIn.bitePulse > 0) mIn.bitePulse -= dt;
+  if (mIn.skillPulse > 0) mIn.skillPulse -= dt;
+  if (mIn.releasePulse > 0) mIn.releasePulse -= dt;
+}
 
 function inputFor(p){
   var ax = 0, ay = 0, dash = false, bite = false, skill = false, release = false;
@@ -870,6 +1113,14 @@ function inputFor(p){
     skill = !!keys['k'];
     release = !!keys['q'];
     if (touch.active && !G.coop){ ax = touch.dx; ay = touch.dy; }
+    /* 手机模式：触屏输入叠加在键盘之上，接了外接键盘也能用 */
+    if (MOBILE && !G.coop){
+      if (mIn.mx || mIn.my){ ax = mIn.mx; ay = mIn.my; }
+      dash    = dash    || mIn.dash;
+      bite    = bite    || mIn.bitePulse > 0;
+      skill   = skill   || mIn.skillPulse > 0;
+      release = release || mIn.releasePulse > 0;
+    }
   } else {
     ax = (keys['arrowright'] ? 1 : 0) - (keys['arrowleft'] ? 1 : 0);
     ay = (keys['arrowdown'] ? 1 : 0) - (keys['arrowup'] ? 1 : 0);
@@ -2813,7 +3064,7 @@ function update(dt){
     }
     cx /= alive.length; cy /= alive.length;
   }
-  var zTarget = clamp(1.18 - maxSize * 0.0016, 0.62, 1.18) * camCtl.zoom * seaOf(G.stage).zoom;
+  var zTarget = clamp(1.18 - maxSize * 0.0016, 0.62, 1.18) * camCtl.zoom * seaOf(G.stage).zoom * viewFit();
   if (anyEye) zTarget *= 1.22;
   if (G.coop) zTarget *= 0.88;   /* 双人拉远一点，两边都看得见 */
   cam.zoom = lerp(cam.zoom, zTarget, Math.min(1, dt * 2.2));
@@ -3128,7 +3379,8 @@ var GLOW_SPRITE = (function(){
   return c;
 })();
 
-var LOWQ = false;
+/* 手机默认先关掉辉光精灵：真机掉帧比「好看 5%」值得先保 */
+var LOWQ = MOBILE;
 var PERF = { fps: 60, bad: 0, good: 0, acc: 0, frames: 0 };
 function setLowQ(on){
   if (LOWQ === on) return;
@@ -4720,7 +4972,8 @@ function refreshCodex(){
     for (k in codexItemMap) total++;
     for (k in CODEX_STATE.seen) ts++;
     for (k in CODEX_STATE.eaten) te++;
-    foot.textContent = '已遭遇 ' + ts + ' / ' + total + ' · 已吞噬 ' + te + ' / ' + total + ' · Tab 关闭';
+    foot.textContent = '已遭遇 ' + ts + ' / ' + total + ' · 已吞噬 ' + te + ' / ' + total +
+      ' · ' + (MOBILE ? '点 ≡ 关闭' : 'Tab 关闭');
   }
 }
 buildCodexPanel();
@@ -5640,9 +5893,154 @@ function drawChestAnim(){
 /* ============================================================
    HUD
    ============================================================ */
+/* ------------------------------------------------------------
+   触屏控件绘制（屏幕坐标，盖在 HUD 之上）
+   ------------------------------------------------------------ */
+function drawStick(){
+  var jr = TC.jr;
+  var jx = mIn.joy ? mIn.bx : TC.joy.x;
+  var jy = mIn.joy ? mIn.by : TC.joy.y;
+  ctx.save();
+  ctx.globalAlpha = mIn.joy ? 1 : 0.5;
+
+  ctx.beginPath(); ctx.arc(jx, jy, jr, 0, TAU);
+  ctx.fillStyle = 'rgba(6,20,38,0.42)';
+  ctx.fill();
+  ctx.lineWidth = 1.4;
+  ctx.strokeStyle = 'rgba(125,232,255,0.42)';
+  ctx.stroke();
+
+  /* 四向刻度：纯圆盘没方向感，加四个小刻度好认 */
+  ctx.strokeStyle = 'rgba(125,232,255,0.22)';
+  ctx.lineWidth = 1;
+  for (var i = 0; i < 4; i++){
+    var ang = i * Math.PI / 2;
+    var ca = Math.cos(ang), sa = Math.sin(ang);
+    ctx.beginPath();
+    ctx.moveTo(jx + ca * (jr - 9), jy + sa * (jr - 9));
+    ctx.lineTo(jx + ca * (jr - 3), jy + sa * (jr - 3));
+    ctx.stroke();
+  }
+
+  var hx = jx + mIn.mx * jr * 0.58, hy = jy + mIn.my * jr * 0.58;
+  var hr = jr * 0.40;
+  var hg = ctx.createRadialGradient(hx, hy - hr * 0.3, 0, hx, hy, hr);
+  hg.addColorStop(0, 'rgba(200,250,255,0.88)');
+  hg.addColorStop(1, 'rgba(60,150,205,0.5)');
+  ctx.beginPath(); ctx.arc(hx, hy, hr, 0, TAU);
+  ctx.fillStyle = hg; ctx.fill();
+  ctx.strokeStyle = 'rgba(183,243,255,0.95)';
+  ctx.lineWidth = 1.8; ctx.stroke();
+  ctx.restore();
+}
+
+function drawTopButtons(){
+  for (var i = 0; i < TC.top.length; i++){
+    var b = TC.top[i];
+    var on = b.id === 'codex' ? !!G.codexOpen : !!G.paused;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU);
+    ctx.fillStyle = on ? 'rgba(125,232,255,0.2)' : 'rgba(6,20,38,0.44)';
+    ctx.fill();
+    ctx.strokeStyle = on ? 'rgba(183,243,255,0.9)' : 'rgba(125,232,255,0.38)';
+    ctx.lineWidth = 1.3; ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold ' + Math.round(b.r * 0.86) + 'px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(200,240,255,0.92)';
+    ctx.fillText(b.glyph, b.x, b.y + 1);
+    ctx.restore();
+  }
+}
+
+function drawTouchButtons(){
+  var P = G.players[0];
+  if (!P) return;
+
+  for (var i = 0; i < TC.btns.length; i++){
+    var b = TC.btns[i];
+    if (!btnVisible(b)) continue;
+
+    var ready = true, cd = 0, main = '#22c1ff';
+    if (b.id === 'chomp'){
+      ready = P.chompCd <= 0 && P.chompRecover <= 0;
+      cd = Math.max(P.chompCd, P.chompRecover, 0);
+      main = '#ffd166';
+    } else if (b.id === 'dash'){
+      ready = P.dashCd <= 0;
+      cd = Math.max(P.dashCd, 0);
+      main = '#22c1ff';
+    } else if (b.id === 'skill'){
+      ready = P.skillCd <= 0 && P.inflateT <= 0;
+      cd = P.inflateT > 0 ? P.inflateT : Math.max(P.skillCd, 0);
+      main = '#fed7aa';
+    } else {
+      /* 封印：有货就一直亮，越亮越催你按 */
+      ready = true;
+      cd = 0;
+      main = '#c4b5fd';
+    }
+
+    var rad = b.r * (mIn.down[b.id] ? 0.93 : 1);
+    ctx.save();
+    ctx.globalAlpha = ready ? 0.97 : 0.66;
+
+    ctx.beginPath(); ctx.arc(b.x, b.y, rad, 0, TAU);
+    if (ready){
+      var gg = ctx.createRadialGradient(b.x, b.y - rad * 0.45, rad * 0.1, b.x, b.y, rad);
+      gg.addColorStop(0, rgba(main, 0.36));
+      gg.addColorStop(1, rgba(main, 0.14));
+      ctx.fillStyle = gg;
+    } else {
+      ctx.fillStyle = 'rgba(8,22,40,0.6)';
+    }
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = rgba(main, ready ? 0.88 : 0.3);
+    ctx.stroke();
+
+    /* 冷却扇形：从 12 点方向顺时针填满，扫完就绪 */
+    if (cd > 0.03){
+      var frac = clamp(cd / (b.id === 'chomp' ? 1.1 : b.id === 'dash' ? 1.4 : 8), 0, 1);
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.arc(b.x, b.y, rad - 1, -Math.PI / 2, -Math.PI / 2 + TAU * frac);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(2,8,18,0.48)';
+      ctx.fill();
+    }
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (cd > 0.05){
+      ctx.font = 'bold ' + Math.round(b.r * 0.5) + 'px ui-monospace,monospace';
+      ctx.fillStyle = 'rgba(214,238,252,0.92)';
+      ctx.fillText(cd.toFixed(1), b.x, b.y + 1);
+    } else {
+      ctx.font = 'bold ' + Math.round(b.r * 0.62) + 'px "PingFang SC",system-ui,sans-serif';
+      ctx.fillStyle = ready ? '#04121f' : 'rgba(170,200,220,0.72)';
+      ctx.fillText(b.glyph, b.x, b.y + 1);
+    }
+    ctx.restore();
+  }
+}
+
+function drawTouchUI(){
+  if (!MOBILE || G.mode !== 'play' || !G.p || G.coop) return;
+  drawTopButtons();
+  if (G.paused) return;
+  drawStick();
+  drawTouchButtons();
+}
+
 function drawHUD(){
   if (!G.p || G.mode === 'menu') return;
+  /* 手机安全区：用局部 W/H 覆盖全局值，靠右/靠底的对齐就自动避开刘海与手势条，
+     不用把每一处坐标都改一遍。真实屏幕尺寸另存 SW/SH，给满屏遮罩用。 */
+  const SW = cv.width / DPR, SH = cv.height / DPR;
+  let W = SW - (MOBILE ? SAFE.l + SAFE.r : 0);
+  let H = SH - (MOBILE ? SAFE.b + SAFE.t : 0);
   ctx.save();
+  ctx.globalAlpha = 1;          /* 防上游泄漏：转场/特效残留会把整个 HUD 压暗 */
+  if (MOBILE && (SAFE.l || SAFE.t)) ctx.translate(SAFE.l, SAFE.t);
 
   ctx.textAlign = 'left';
   ctx.font = 'bold 15px "PingFang SC",system-ui,sans-serif';
@@ -5657,12 +6055,13 @@ function drawHUD(){
   var prog = G.goal.kind === 'boss'
     ? (G.boss ? 1 - G.boss.hp / G.boss.maxHp : 0)
     : Math.min(1, G.eatenStage / G.goal.target);
+  var pw = MOBILE ? Math.min(190, W * 0.46) : 240;
   ctx.fillStyle = 'rgba(255,255,255,0.09)';
-  ctx.fillRect(22, 66, 240, 5);
-  var pg = ctx.createLinearGradient(22, 0, 262, 0);
+  ctx.fillRect(22, 66, pw, 5);
+  var pg = ctx.createLinearGradient(22, 0, 22 + pw, 0);
   pg.addColorStop(0, '#22c1ff'); pg.addColorStop(1, '#7de8ff');
   ctx.fillStyle = pg;
-  ctx.fillRect(22, 66, 240 * prog, 5);
+  ctx.fillRect(22, 66, pw * prog, 5);
 
   /* 右上：体型 */
   ctx.textAlign = 'right';
@@ -5716,8 +6115,47 @@ function drawHUD(){
   }
 
   /* 左下：器官槽位 */
-  var bx = 20;
-  if (G.coop){
+  var bx = MOBILE ? 14 : 20;
+  if (MOBILE && !G.coop){
+    /* 手机：槽位挪到左上，把整个左下角让给摇杆 */
+    var PM = G.players[0];
+    var ym = 84;
+    for (var sm = 0; sm < PM.maxSlots; sm++){
+      var ymr = ym + sm * 25;
+      var sidm = PM.slots[sm];
+      if (!sidm){
+        ctx.textAlign = 'left';
+        ctx.font = '10.5px "PingFang SC",system-ui,sans-serif';
+        ctx.fillStyle = 'rgba(110,135,160,0.45)';
+        ctx.fillText('空槽位', bx, ymr + 10);
+        continue;
+      }
+      var SM = SPECIES[sidm], lvm = PM.levels[sidm];
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 11.5px "PingFang SC",system-ui,sans-serif';
+      ctx.fillStyle = SM.glow;
+      ctx.fillText(SM.name, bx, ymr + 10);
+      for (var km = 0; km < 3; km++){
+        ctx.beginPath();
+        ctx.arc(bx + 50 + km * 9, ymr + 6, 2.9, 0, TAU);
+        ctx.fillStyle = km < lvm ? SM.color : 'rgba(255,255,255,0.13)';
+        ctx.fill();
+      }
+      if (lvm < 3){
+        var pm0 = lvm > 0 ? GENE_GATE[lvm - 1] : 0;
+        var pm1 = GENE_GATE[lvm];
+        var rm = clamp((PM.genes[sidm] - pm0) / Math.max(1, pm1 - pm0), 0, 1);
+        ctx.fillStyle = 'rgba(255,255,255,0.10)';
+        ctx.fillRect(bx + 84, ymr + 2, 52, 6);
+        ctx.fillStyle = SM.color;
+        ctx.fillRect(bx + 84, ymr + 2, 52 * rm, 6);
+      } else {
+        ctx.font = 'bold 9.5px ui-monospace,monospace';
+        ctx.fillStyle = rgba(SM.glow, 0.9);
+        ctx.fillText('MAX', bx + 84, ymr + 9);
+      }
+    }
+  } else if (G.coop){
     var rowH2 = 26;
     var by2 = H - 52 - G.players.length * rowH2;
     for (var pi = 0; pi < G.players.length; pi++){
@@ -5888,8 +6326,8 @@ function drawHUD(){
       }
     }
 
-    /* 封印槽：史诗道具不立刻生效，等你按 Q */
-    if (P0.sealed){
+    /* 封印槽：史诗道具不立刻生效，等你按 Q（手机上由「封」键承担） */
+    if (P0.sealed && !MOBILE){
       var sT = P0.sealed;
       var sw = 186, sh = 30;
       var sxS = W / 2 - sw / 2, syS = H - 172;
@@ -5918,7 +6356,9 @@ function drawHUD(){
 
   /* 底部中间：冲刺 / 撕咬 */
   ctx.textAlign = 'center';
-  if (!G.coop){
+  if (MOBILE){
+    /* 手机：就绪与冷却直接画在按键上，这里不再重复一遍文字 */
+  } else if (!G.coop){
     var P1 = G.players[0];
     ctx.font = '11px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = P1.dashCd <= 0 ? 'rgba(125,232,255,0.95)' : 'rgba(120,150,175,0.55)';
@@ -5992,29 +6432,40 @@ function drawHUD(){
   if (G.boss){
     var b = G.boss;
     var bw2 = Math.min(560, W * 0.5), bxx = (W - bw2) / 2;
+    var byB = H - (MOBILE ? 92 : 78);
     ctx.fillStyle = 'rgba(255,255,255,0.1)';
-    ctx.fillRect(bxx, H - 78, bw2, 8);
+    ctx.fillRect(bxx, byB, bw2, 8);
     ctx.fillStyle = b.weakT > 0 ? '#ffd166' : '#fb7185';
-    ctx.fillRect(bxx, H - 78, bw2 * clamp(b.hp / b.maxHp, 0, 1), 8);
+    ctx.fillRect(bxx, byB, bw2 * clamp(b.hp / b.maxHp, 0, 1), 8);
     ctx.textAlign = 'center';
     ctx.font = 'bold 12.5px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = 'rgba(253,164,175,0.95)';
-    ctx.fillText(b.name + (b.weakT > 0 ? ' · 弱点暴露！' : ''), W/2, H - 86);
+    ctx.fillText(b.name + (b.weakT > 0 ? ' · 弱点暴露！' : ''), W/2, byB - 8);
   }
 
   if (G.paused){
     ctx.fillStyle = 'rgba(2,8,18,0.62)';
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(-SAFE.l, -SAFE.t, SW, SH);
     ctx.textAlign = 'center';
-    ctx.font = 'bold 26px "PingFang SC",system-ui,sans-serif';
+    ctx.font = 'bold ' + (MOBILE ? 22 : 26) + 'px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = '#7de8ff';
     ctx.fillText('已暂停', W/2, H/2 - 6);
     ctx.font = '13px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = 'rgba(143,180,208,0.9)';
-    ctx.fillText('按 Esc 继续', W/2, H/2 + 24);
+    ctx.fillText(MOBILE ? '点击屏幕继续' : '按 Esc 继续', W/2, H/2 + 24);
+  }
+
+  /* 竖屏提示：这游戏是横向视野，竖着玩会被挤成一条缝 */
+  if (MOBILE && H > W && G.stage === 1 && G.stageT < 7 && !G.paused){
+    var oa = clamp((7 - G.stageT) / 2, 0, 1);
+    ctx.textAlign = 'center';
+    ctx.font = '12px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(183,243,255,' + (0.75 * oa) + ')';
+    ctx.fillText('横过来玩视野更宽', W/2, H * 0.72);
   }
 
   ctx.restore();
+  if (MOBILE) drawTouchUI();
 }
 
 function p2(){ return G.players[0]; }
@@ -6224,6 +6675,7 @@ document.getElementById('btnSingle').onclick = function(){
   startRun(false, selFish);
 };
 document.getElementById('btnCoop').onclick = function(){
+  if (MOBILE) return;            /* 手机上没有第二套触控，双人得接键盘 */
   G.paused = false;
   startRun(true, selFish, nextFish(selFish));
 };
@@ -6232,9 +6684,29 @@ document.getElementById('btnAgain').onclick = function(){
   startRun(false, selFish);
 };
 document.getElementById('btnAgainCoop').onclick = function(){
+  if (MOBILE) return;
   ovEnd.classList.add('hide');
   startRun(true, selFish, nextFish(selFish));
 };
+
+/* 手机模式：把键盘说明换成触屏说明，双人按钮置灰 */
+if (MOBILE){
+  var kvsEl = document.querySelector('#ovStart .kvs');
+  if (kvsEl) kvsEl.innerHTML =
+    '<span><b>左下摇杆</b> 游动</span>' +
+    '<span><b>咬</b> 啃咬</span>' +
+    '<span><b>冲</b> 冲刺</span>' +
+    '<span><b>技</b> 技能</span>' +
+    '<span><b>封</b> 释放封印</span>';
+  var snEl = document.querySelector('#ovStart .sbox-note');
+  if (snEl) snEl.textContent = '顶部 ‖ 暂停 · ≡ 图鉴 · 横屏握持视野更宽';
+  var bcEl = document.getElementById('btnCoop');
+  if (bcEl){ bcEl.disabled = true; bcEl.textContent = '双 人 合 作（需键盘）'; }
+  var bacEl = document.getElementById('btnAgainCoop');
+  if (bacEl){ bacEl.disabled = true; bacEl.textContent = '双 人 再 来（需键盘）'; }
+  var cfootEl = document.getElementById('codexFoot');
+  if (cfootEl) cfootEl.textContent = '点 ≡ 打开';
+}
 
 /* ============================================================
    主循环
@@ -6243,6 +6715,7 @@ var lastT = performance.now();
 function loop(now){
   var raw = Math.min(0.05, (now - lastT) / 1000);
   lastT = now;
+  tickTouch(raw);
 
   /* 宝箱抽奖：暂停游戏，只播动画 */
   if (G.chestAnim){
@@ -6295,6 +6768,9 @@ function loop(now){
   if (G.mode === 'menu' && thumbList.length) drawThumbs(menuT);
   render();
   if (G.trans){
+    /* save/restore 必须成对：这里以前泄漏 globalAlpha（淡出尾帧残留 ~0.04），
+       下一帧起整个 HUD 都被压到几乎透明 —— 手机上「空槽位」就是这么隐形的 */
+    ctx.save();
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     var tr = G.trans, half = tr.dur / 2;
     var aRaw = tr.t < half ? tr.t / half : 1 - (tr.t - half) / half;
@@ -6317,6 +6793,7 @@ function loop(now){
       ctx.fillStyle = 'rgba(125,232,255,0.75)';
       ctx.fillText('▼ ' + G.stage * 400 + ' m', W / 2, my + 26);
     }
+    ctx.restore();
   }
   requestAnimationFrame(loop);
 }
@@ -6327,6 +6804,11 @@ for (var bi = 0; bi < 90; bi++){
     spd: rand(12, 46), wob: rand(0, TAU), wobS: rand(0.6, 1.8), a: rand(0.1, 0.3) });
 }
 G.motes = [];
+
+/* 调试钩子：?debug=1 时才挂，方便自动化测触屏（普通访问拿不到内部状态） */
+if (/[?&]debug=1/.test(location.search)){
+  window.__DT = { G:G, TC:TC, mIn:mIn, cam:cam, relayout:function(){ layoutTouch(); } };
+}
 
 requestAnimationFrame(loop);
 })();
