@@ -26,6 +26,10 @@ plugins:
   - jekyll-paginate
   - jekyll-seo-tag
 
+# 排除源码工程（devour-tide 只发布构建产物）
+exclude:
+  - devour-tide/source
+
 # 分页设置
 paginate: 12
 paginate_path: "/page:num/"
