@@ -34,8 +34,12 @@ devour-tide/
 ```
 
 - `devour-tide/assets/` 已被 Vite 用于输出 JS/CSS（`index-*.js`），图片混入会与构建产物纠缠。
-- 素材走 `source/public/` → 构建后位于 `devour-tide/img/`，与 `assets/` 互不干扰。
-- 新增素材**无需改任何配置**，放下即可被拷贝。
+- 素材走 `source/public/img/` → `npm run build` 后**自动拷贝**到 `devour-tide/img/`，与 `assets/` 互不干扰。
+- 新增素材**无需改任何配置**，放下即可被拷贝；`npm run dev` 开发时也从同一目录提供，无路径差异。
+- 已实际验证：`source/public/img/chaser/` 构建后在 `devour-tide/img/chaser/` 生成。
+
+> **注意**：`devour-tide/img/` 是构建产物（与 `assets/` 同为入库内容），所以图片在仓库里会有「源 + 产物」两份。
+> P0+P1 全部到齐预计 15~20MB，翻倍后仍在可接受范围；若后续觉得仓库偏大，再改成 CI 构建时生成即可，不影响本清单的交付路径。
 
 ### 0.2 渲染与染色体（影响画法）
 
