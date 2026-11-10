@@ -236,6 +236,7 @@
     </div>
 
     <div class="note">
+      <b>下潜</b> 蓝鲸 / 污染 / 岩浆会从头顶缓缓压下来 —— 停下就会被追上，右上小地图看位置<br>
       <b>甜区</b> 游过去就能吃掉小鱼　<b>啃咬</b> 按 J 一口口把大鱼啃小　<b>撞击</b> 冲刺把大鱼踢开撞小<br>
       <b>器官</b> 吃什么长什么，每局 3 个槽位　<b>宝箱鱼</b> 必掉两个道具　<b>份量门槛</b> 只吃小虾米不长本事<br>
       <b>道具 29 种</b> 普通即时生效 · 稀有一小段时间换打法 · <b>史诗拾取后进封印槽，按 Q 自己挑时机放</b>
@@ -376,7 +377,19 @@ function angLerp(a, b, t){
 }
 function dist(ax, ay, bx, by){ return Math.hypot(ax - bx, ay - by); }
 
-var WORLD = { w: 3600, h: 2300 };
+/* 世界不再是一块封闭竞技场，而是一根竖直的深海柱：
+   12 段 × 2600px，从海面一路压到深渊底。
+   难度 = 深度，进度 = 你游下去多少米。 */
+var STAGE_DEPTH = 2600;
+var TOTAL_STAGES = 12;
+var WORLD = { w: 3600, h: TOTAL_STAGES * STAGE_DEPTH };
+var BOSS_STAGES = [2, 4, 6, 8, 10, 12];
+/* 追赶者形态随海域轮换：蓝鲸 / 污染云 / 岩浆锋面 */
+var CHASE_FORMS = ['whale', 'whale', 'poll', 'lava', 'poll', 'whale'];
+function stageForY(y){ return clamp(Math.floor(y / STAGE_DEPTH) + 1, 1, TOTAL_STAGES); }
+function seaIdxForStage(st){ return clamp(Math.floor((st - 1) / SEA_SPAN), 0, SEAS.length - 1); }
+/* 1px = 0.25m：单段 650m，全程约 7800m */
+function depthM(y){ return Math.round(Math.max(0, y) * 0.25); }
 
 /* ============================================================
    绝对体型刻度
@@ -889,7 +902,8 @@ function rollItem(){
    ============================================================ */
 var G = {
   mode: 'menu', coop: false,
-  stage: 1, stageT: 0, eatenStage: 0, goal: 8,
+  stage: 1, stageT: 0, eatenStage: 0,
+  chase: null, zones: [], bossDelay: 0,
   enemies: [], particles: [], floaters: [], motes: [], bubbles: [],
   inks: [], zaps: [], foods: [], items: [], hazards: [], rings: [], players: [],
   chestT: 16, hazT: 0, slowT: 0, mileIdx: 0,
@@ -902,7 +916,7 @@ var G = {
   spawnT: 0, shake: 0, time: 0,
   mutFlash: null,
   stats: { eaten:0, bestCombo:0, dmg:0, peak:18, bites:0, food:0, revives:0, chests:0, items:0 },
-  paused: false, totalStages: 12
+  paused: false, totalStages: TOTAL_STAGES
 };
 var cam = { x: WORLD.w/2, y: WORLD.h/2, zoom: 1 };
 /* 视角控制：滚轮缩放 / +- 微调 / 0 复位（对应豪华版的「视野大小」设置） */
@@ -1180,7 +1194,7 @@ function makePlayer(id, coop, fishId){
   var p = {
     id: id, dead: false, respawnT: 0,
     fishId: fish.id, fish: fish,
-    x: WORLD.w/2 + (id === 0 ? -90 : 90), y: WORLD.h/2,
+    x: WORLD.w/2 + (id === 0 ? -90 : 90), y: 320,
     vx:0, vy:0, ang:0,
     /* 基础上限只有 300：蓝鲸不是默认给你的，得靠器官一点点撬上去 */
     size: 18, maxSize: 300,
@@ -1349,7 +1363,8 @@ function spawnEnemy(forceId, forceSmall){
   /* 远处流进来：这是「生态感」的来源。但距离不能太大，
      否则玩家要干等好几秒才看见第一条鱼（实测会把首段拖到 22 秒）。 */
   var far = Math.random() < 0.60;
-  var ang0 = rand(0, TAU);
+  /* 下潜世界：七成鱼从斜下方来，迎着你的下潜方向，减少回头路 */
+  var ang0 = (Math.random() < 0.7) ? rand(-0.5, Math.PI + 0.5) : rand(0, TAU);
   var dist0 = rad + (far ? rand(230, 540) : rand(80, 180));
   /* 别把鱼堆到世界角落：超出就把距离收回来，方向不变 */
   dist0 = Math.min(dist0, Math.min(WORLD.w, WORLD.h) * 0.46);
@@ -1445,8 +1460,10 @@ function spawnFood(){
 }
 
 function updateFoods(dt){
-  for (var i = 0; i < G.foods.length; i++){
+  for (var i = G.foods.length - 1; i >= 0; i--){
     var f = G.foods[i];
+    /* 深海柱：留在身后 2000px 以外的食物直接回收 */
+    if (f.y < cam.y - 2000 || f.y > cam.y + 2800){ G.foods.splice(i, 1); continue; }
     var best = null, bestD = 1e9;
     for (var k = 0; k < G.players.length; k++){
       var p = G.players[k];
@@ -2121,7 +2138,11 @@ function killBoss(){
   codexMark('eaten', bossDrawKey(b.idx));
   floater(b.x, b.y - 40, '吞噬 Boss · 体型 +22%', '#ffd166', true);
   Audio2.mutate();
-  setTimeout(function(){ completeStage(); }, 420);
+  if (G.stage >= TOTAL_STAGES){
+    setTimeout(function(){ endRun('你们潜到了深渊之底，成为了深海霸主'); }, 500);
+  } else {
+    setTimeout(function(){ completeStage(); }, 420);
+  }
 }
 
 function updateBoss(dt){
@@ -2490,6 +2511,10 @@ function updateEnemies(dt){
   var alive = alivePlayers();
   for (var i = G.enemies.length - 1; i >= 0; i--){
     var e = G.enemies[i];
+    /* 深海柱：远离镜头的杂鱼回收（宝箱鱼/蓝鲸例外，它们有全局唯一性检查） */
+    if (!e.chest && !e.whale && (e.y < cam.y - 2100 || e.y > cam.y + 2800)){
+      G.enemies.splice(i, 1); continue;
+    }
     if (e.flash > 0) e.flash -= dt;
 
     if (e.stunT > 0){
@@ -2598,89 +2623,6 @@ function updateEnemies(dt){
 /* ============================================================
    流程
    ============================================================ */
-/* ============================================================
-   航路：每段结束后自选下一段的类型（移植自豪华版分岔地图 · 精简版）
-   ------------------------------------------------------------
-   12 段航路，每段 1~3 个节点。选路 = 选节奏：
-   ⚔️ 狩猎（普通段+取卡） 💀 精英（小 Boss，血量 62%）
-   ❓ 奇遇（三选一）      🌙 休息（+22% 体型，无战斗）
-   4/8/12 段固定 👑 Boss。
-   ============================================================ */
-var NODE_META = {
-  battle: { icon:'⚔️', name:'狩猎' },
-  elite:  { icon:'💀', name:'精英' },
-  boss:   { icon:'👑', name:'Boss' },
-  event:  { icon:'❓', name:'奇遇' },
-  rest:   { icon:'🌙', name:'休息' }
-};
-function rollNodeType(){
-  var r = Math.random();
-  if (r < 0.42) return 'battle';
-  if (r < 0.64) return 'event';
-  if (r < 0.82) return 'elite';
-  return 'rest';
-}
-function generateMap(){
-  var rows = G.totalStages, map = [];
-  for (var r = 0; r < rows; r++){
-    var count = 2 + Math.floor(Math.random() * 2), force = null;
-    if (r === 0){ count = 1; force = 'battle'; }
-    if ((r + 1) % 4 === 0){ count = 1; force = 'boss'; }
-    var nodes = [];
-    for (var i = 0; i < count; i++)
-      nodes.push({ row:r, idx:i, type: force || rollNodeType(), edges:[], done:false });
-    map.push(nodes);
-  }
-  /* 连边：每个节点至少连向下一排一个节点，下一排不允许有孤儿 */
-  for (var r2 = 0; r2 < rows - 1; r2++){
-    var cur = map[r2], next = map[r2 + 1];
-    for (var a = 0; a < cur.length; a++){
-      var set = {};
-      set[Math.min(a, next.length - 1)] = true;
-      if (Math.random() < 0.55) set[clamp(a + (Math.random() < 0.5 ? 1 : -1), 0, next.length - 1)] = true;
-      cur[a].edges = Object.keys(set).map(Number);
-    }
-    for (var b = 0; b < next.length; b++){
-      var linked = false;
-      for (var c = 0; c < cur.length; c++) if (cur[c].edges.indexOf(b) >= 0){ linked = true; break; }
-      if (!linked) cur[Math.min(b, cur.length - 1)].edges.push(b);
-    }
-  }
-  return map;
-}
-function goToMap(){
-  transTo(doGoToMap);
-}
-function doGoToMap(){
-  var n = G.node;
-  if (n && n.row >= G.map.length - 1 && n.done){ endRun('你们成为了深海霸主'); return; }
-  if (n && G.map[n.row + 1]){
-    G.availNodes = n.edges.map(function(idx){ return G.map[n.row + 1][idx]; }).filter(Boolean);
-    if (!G.availNodes.length) G.availNodes = [G.map[n.row + 1][0]];
-  } else {
-    G.availNodes = [G.map[0][0]];
-  }
-  G.mode = 'map';
-  hideAll();
-}
-function startNode(node){
-  if (G.trans && !G.trans.fired) return;
-  G.node = node; node.done = true;
-  G.curRow = node.row; G.curIdx = node.idx;
-  if (node.type === 'rest'){
-    G.stage = node.row + 1;
-    for (var i = 0; i < G.players.length; i++){
-      var p = G.players[i];
-      p.size = Math.min(p.maxSize, p.size * 1.22);
-      floater(p.x, p.y - p.size - 30, '+22% 体型 · 洋流小憩', '#8dffc8', true);
-    }
-    Audio2.revive();
-    goToMap();
-    return;
-  }
-  if (node.type === 'event'){ showEventChoices(); return; }
-  enterStage(node);
-}
 function transTo(fn){
   if (G.trans){
     if (!G.trans.fired) G.trans.cb = fn;
@@ -2689,56 +2631,6 @@ function transTo(fn){
   }
   G.trans = { t: 0, dur: 1.05, cb: fn, fired: false };
 }
-function enterStage(node){
-  transTo(function(){ doEnterStage(node); });
-}
-function doEnterStage(node){
-  var prevSea = seaOf(G.stage);
-  G.stage = node.row + 1;
-  if (G.stage > G.totalStages){ endRun('你们成为了深海霸主'); return; }
-
-  G.eatenStage = 0;
-  G.goal = goalFor(G.stage);
-  G.enemies.length = 0;
-  G.inks.length = 0;
-  G.items.length = 0;
-  G.hazards.length = 0;
-  G.hazT = 0;
-  G.chestT = rand(10, 16);
-  G.decoy = null; G.stasisT = 0; G.curseStage = 0;
-  G.boss = null;
-
-  for (var k = 0; k < G.players.length; k++){
-    var p = G.players[k];
-    p.invuln = 1.8;
-    p.stealthOn = false; p.idleT = 0;
-    p.eyeT = 0;
-    p.x = WORLD.w/2 + (k === 0 ? -90 : 90);
-    p.y = WORLD.h/2;
-    p.vx = 0; p.vy = 0;
-    if (p.dead){ p.dead = false; p.size = 26; }
-  }
-
-  G.stageStartSize = G.p.size;
-  G.stageDmg = 0; G.stageBites = 0; G.stageEvo = []; G.stageBestCombo = 0;
-
-  cam.x = WORLD.w/2; cam.y = WORLD.h/2;
-  G.mode = 'play';
-  hideAll();
-
-  var isElite = node.type === 'elite', isBoss = node.type === 'boss';
-  if (isBoss || isElite) startBoss(isElite);
-
-  var nextSea = seaOf(G.stage);
-  if (prevSea !== nextSea){
-    G.seaBanner = { name: nextSea.name, mech: nextSea.mech, tag: nextSea.tag, t: 3.8 };
-    G.slowT = 0.5;
-    Audio2.mutate();
-  } else if (!isBoss && !isElite){
-    floater(cam.x, cam.y - 80, '第 ' + G.stage + ' 段 · 下潜', '#7de8ff', true);
-  }
-}
-
 /* ---------- 奇遇三选一（复用结算面板 DOM） ---------- */
 var EVENT_POOL = [
   { name:'🌊 洋流馈赠', desc:'全队体型 +18%',
@@ -2783,115 +2675,8 @@ function resolveEvent(idx){
   var ev = (G.eventOpts || [])[idx];
   if (ev) ev.run();
   Audio2.card();
-  goToMap();
-}
-
-/* ---------- 航路图渲染 ---------- */
-function layoutMap(){
-  var out = [], map = G.map || [];
-  var cur = G.curRow < 0 ? 0 : G.curRow;
-  var r0 = clamp(cur - 2, 0, Math.max(0, map.length - 8));
-  var span = 8;
-  for (var r = r0; r < Math.min(map.length, r0 + span); r++){
-    var nodes = map[r];
-    var x = W * (0.09 + ((r - r0) / (span - 1)) * 0.82);
-    for (var i = 0; i < nodes.length; i++){
-      var n = nodes[i];
-      var y = H * (nodes.length === 1 ? 0.5 : 0.24 + i * (0.52 / (nodes.length - 1)));
-      var avail = (G.availNodes || []).indexOf(n) >= 0;
-      out.push({ node:n, x:x, y:y, r:26, available:avail, done:n.done, row:r });
-    }
-  }
-  return out;
-}
-function drawMapScreen(){
-  var g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#061426'); g.addColorStop(0.5, '#0b2947'); g.addColorStop(1, '#040d1c');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  ctx.save(); ctx.globalCompositeOperation = 'lighter';
-  for (var i = 0; i < 40; i++){
-    var sx = (Math.sin(i * 12.9898 + G.time * 0.05) * 0.5 + 0.5) * W;
-    var sy = (Math.sin(i * 78.233 + G.time * 0.03) * 0.5 + 0.5) * H;
-    ctx.beginPath(); ctx.arc(sx, sy, 1.2 + Math.sin(i + G.time) * 0.7, 0, TAU);
-    ctx.fillStyle = rgba('#7de8ff', 0.16); ctx.fill();
-  }
-  ctx.restore();
-  var layout = layoutMap(), look = {}, li;
-  for (li = 0; li < layout.length; li++) look[layout[li].row + ':' + layout[li].node.idx] = layout[li];
-  ctx.lineWidth = 2.4;
-  for (var a2 = 0; a2 < layout.length; a2++){
-    var item = layout[a2];
-    for (var e2 = 0; e2 < item.node.edges.length; e2++){
-      var target = look[(item.row + 1) + ':' + item.node.edges[e2]];
-      if (!target) continue;
-      var act = item.available || item.done;
-      ctx.strokeStyle = rgba(act ? '#4be3ff' : '#3a5f88', act ? 0.5 : 0.28);
-      ctx.beginPath(); ctx.moveTo(item.x, item.y);
-      ctx.quadraticCurveTo((item.x + target.x) / 2, (item.y + target.y) / 2 - 26, target.x, target.y);
-      ctx.stroke();
-    }
-  }
-  for (var b2 = 0; b2 < layout.length; b2++){
-    var item2 = layout[b2], n2 = item2.node;
-    var meta = NODE_META[n2.type] || NODE_META.battle;
-    var isCur = n2.done && G.curRow === n2.row && G.curIdx === n2.idx;
-    ctx.save();
-    ctx.translate(item2.x, item2.y);
-    var ring = '#3a5f88', fill = 'rgba(18,42,72,0.9)';
-    if (item2.available){ ring = '#ffd166'; fill = 'rgba(70,52,18,0.92)'; }
-    if (item2.done){ ring = '#4be3c8'; fill = 'rgba(16,52,52,0.9)'; }
-    var pulse = item2.available ? 1 + Math.sin(G.time * 4) * 0.07 : 1;
-    ctx.beginPath(); ctx.arc(0, 0, item2.r * pulse, 0, TAU);
-    ctx.fillStyle = fill; ctx.fill();
-    ctx.lineWidth = 3; ctx.strokeStyle = rgba(ring, item2.available ? 0.95 : 0.6);
-    if (item2.available){ ctx.shadowColor = rgba('#ffd166', 0.8); ctx.shadowBlur = 22; }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    ctx.font = Math.round(item2.r * 0.86) + 'px sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(meta.icon, 0, 1);
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = rgba('#cfe9ff', 0.9);
-    ctx.fillText(meta.name, 0, item2.r + 18);
-    if (isCur){
-      ctx.font = 'bold 13px sans-serif';
-      ctx.fillStyle = '#7de8ff';
-      ctx.fillText('▼ 你在这里', 0, -item2.r - 14);
-    }
-    ctx.restore();
-  }
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = 'bold ' + Math.round(Math.min(30, W * 0.04)) + 'px sans-serif';
-  ctx.fillStyle = rgba('#b7f3ff', 0.92);
-  ctx.fillText('选择你的航路', W / 2, H * 0.075);
-  ctx.font = Math.round(Math.min(16, W * 0.024)) + 'px sans-serif';
-  ctx.fillStyle = rgba('#9fc6e8', 0.9);
-  ctx.fillText('航段 ' + (G.curRow + 2) + ' / ' + G.map.length + ' · 点击金圈节点前进', W / 2, H * 0.115);
-  ctx.restore();
-}
-/* 航路图点击：只在 map 模式拦截，战斗模式不碰这个分支 */
-cv.addEventListener('pointerdown', function(e){
-  if (G.mode !== 'map' || !G.availNodes) return;
-  if (e.button !== undefined && e.button !== 0) return;
-  var rect = cv.getBoundingClientRect();
-  var mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  var layout = layoutMap(), best = null, bestD = 42 * 42;
-  for (var i = 0; i < layout.length; i++){
-    if (!layout[i].available) continue;
-    var dx = mx - layout[i].x, dy = my - layout[i].y;
-    var d2 = dx * dx + dy * dy;
-    if (d2 < bestD){ bestD = d2; best = layout[i]; }
-  }
-  if (best) startNode(best.node);
-});
-
-function goalFor(stage){
-  /* 精英/Boss 节点必须击杀头目才算过 —— 目标跟节点走，不跟段号走 */
-  var nt = G.node ? G.node.type : null;
-  if (stage % 4 === 0 || nt === 'boss' || nt === 'elite') return { kind:'boss', target:1 };
-  /* 第一段给个软开局：10 条就过关，之后每段加 2 条左右 */
-  return { kind:'eat', target: 8 + Math.round(stage * 2.2) };
+  G.mode = 'play';
+  hideAll();
 }
 
 function startRun(coop, fishA, fishB){
@@ -2899,7 +2684,7 @@ function startRun(coop, fishA, fishB){
   Audio2.init();
   G.coop = !!coop;
   G.mode = 'play';
-  G.trans = { t: 0.45, dur: 1.05, cb: null, fired: true, label: '第 1 段 · ' + seaOf(1).name };
+  G.trans = { t: 0.45, dur: 1.05, cb: null, fired: true, label: '下潜 · 珊瑚浅海' };
   G.stage = 1; G.stageT = 0; G.eatenStage = 0;
   G.enemies = []; G.particles = []; G.floaters = [];
   G.inks = []; G.zaps = []; G.foods = []; G.items = []; G.players = [];
@@ -2910,9 +2695,10 @@ function startRun(coop, fishA, fishB){
   G.boss = null; G.mutFlash = null; G.shake = 0; G.time = 0;
   G.stats = { eaten:0, bestCombo:0, dmg:0, peak:18, bites:0, food:0, revives:0, chests:0, items:0 };
 
-  G.map = generateMap();
-  G.node = G.map[0][0]; G.node.done = true;
-  G.curRow = 0; G.curIdx = 0;
+  /* 追赶者：开局悬在头顶 1400px 之外，给 40 秒左右的喘息，然后开始缓慢下压 */
+  G.chase = { y: 320 - 1400, form: CHASE_FORMS[0], hitT: 0 };
+  G.bossDelay = 0;
+  G.zones = buildZones();
 
   var n = G.coop ? 2 : 1;
   for (var i = 0; i < n; i++){
@@ -2924,17 +2710,17 @@ function startRun(coop, fishA, fishB){
   G.stageDmg = 0; G.stageBites = 0; G.stageEvo = []; G.stageSea = 0;
   G.stats.peak = G.p.size;
 
-  G.goal = goalFor(1);
-  cam.x = WORLD.w/2; cam.y = WORLD.h/2; cam.zoom = 1;
+  cam.x = WORLD.w/2; cam.y = 320; cam.zoom = 1;
 
+  /* 装饰粒子只在镜头附近维持密度 —— 31200px 深的世界不可能铺满 */
   G.bubbles = [];
   for (var b1 = 0; b1 < 130; b1++){
-    G.bubbles.push({ x: rand(0, WORLD.w), y: rand(0, WORLD.h), r: rand(1.4, 6),
+    G.bubbles.push({ x: rand(0, WORLD.w), y: rand(cam.y - 400, cam.y + 1400), r: rand(1.4, 6),
       spd: rand(12, 46), wob: rand(0, TAU), wobS: rand(0.6, 1.8), a: rand(0.1, 0.4) });
   }
   G.motes = [];
   for (var m1 = 0; m1 < 120; m1++){
-    G.motes.push({ x: rand(0, WORLD.w), y: rand(0, WORLD.h), r: rand(0.7, 2.4),
+    G.motes.push({ x: rand(0, WORLD.w), y: rand(cam.y - 400, cam.y + 1400), r: rand(0.7, 2.4),
       spd: rand(5, 16), wob: rand(0, TAU), a: rand(0.15, 0.5) });
   }
 
@@ -2954,8 +2740,9 @@ function stageRank(){
   return 'C';
 }
 
-function completeStage(){
+function completeStage(doneStage){
   if (G.mode !== 'play') return;
+  var stDone = doneStage || G.stage;
   G.mode = 'cards';
   Audio2.card();
   var pool = CARDS.slice(), opts = [];
@@ -2965,6 +2752,7 @@ function completeStage(){
   var cur = G.p.size;
   var report = {
     rank: stageRank(),
+    stage: stDone,
     from: G.stageStartSize,
     to: cur,
     grow: G.stageStartSize > 0 ? (cur / G.stageStartSize - 1) * 100 : 0,
@@ -2973,8 +2761,11 @@ function completeStage(){
     dmg: G.stageDmg,
     combo: G.stageBestCombo || 0,
     evo: (G.stageEvo || []).slice(),
-    sea: seaOf(G.stage)
+    sea: seaOf(stDone)
   };
+  /* 战报取完数立刻翻篇：下一段从这一刻重新记账 */
+  G.stageStartSize = G.p.size;
+  G.stageDmg = 0; G.stageBites = 0; G.stageEvo = []; G.stageBestCombo = 0;
   showStagePanel(report, opts);
 }
 
@@ -2982,7 +2773,9 @@ function pickCard(card){
   if (G.trans && !G.trans.fired) return;
   for (var i = 0; i < G.players.length; i++) card.apply(G.players[i]);
   Audio2.card();
-  goToMap();
+  /* 没有航路图了：选完卡，原地下潜继续 */
+  G.mode = 'play';
+  hideAll();
 }
 
 function endRun(reason){
@@ -2993,6 +2786,110 @@ function doEndRun(reason){
   G.mode = 'end';
   Audio2.over();
   showEndPanel(reason);
+}
+
+/* ============================================================
+   下潜推进：深度就是难度，追赶者就是时钟
+   ------------------------------------------------------------
+   没有航路图、没有转场重载 —— 玩家往下游，深度过线就进入下一段。
+   头顶的蓝鲸 / 污染云 / 岩浆锋面以略慢于玩家的速度持续下压，
+   停着不动就会被追上；距离拉太远它会加速兜回来，永远保持压迫感。
+   ============================================================ */
+function buildZones(){
+  /* 段界前 520px 处放一个「洋流小憩」据点；非 Boss 段随机放奇遇泡 */
+  var zs = [];
+  for (var s = 1; s < TOTAL_STAGES; s++){
+    zs.push({ type:'rest', x: WORLD.w/2, y: s * STAGE_DEPTH - 520, done:false, t0: rand(0, TAU) });
+  }
+  for (var s2 = 1; s2 <= TOTAL_STAGES; s2++){
+    if (BOSS_STAGES.indexOf(s2) >= 0) continue;
+    if (Math.random() < 0.65)
+      zs.push({ type:'event', x: rand(600, WORLD.w - 600), y: (s2 - 1) * STAGE_DEPTH + rand(900, 2000), done:false, t0: rand(0, TAU) });
+  }
+  return zs;
+}
+
+function updateDescent(dt){
+  var p0 = alivePlayers()[0];
+  if (!p0) return;
+
+  /* ── 深度过线 → 下一段 ── */
+  var st = stageForY(p0.y);
+  if (st !== G.stage){
+    var prevSea = seaIdxForStage(G.stage);
+    G.stage = st;
+    var seaIdx = seaIdxForStage(st);
+    if (seaIdx !== prevSea){
+      var sN = SEAS[seaIdx];
+      G.seaBanner = { name: sN.name, mech: sN.mech, tag: sN.tag, t: 3.8 };
+      G.slowT = 0.5;
+      Audio2.mutate();
+    } else {
+      floater(p0.x, p0.y - 90, '第 ' + st + ' 段 · ' + depthM(p0.y) + 'm', '#7de8ff', true);
+    }
+    if (G.chase) G.chase.form = CHASE_FORMS[seaIdx];
+    if (BOSS_STAGES.indexOf(st) >= 0 && !G.boss){
+      G.bossDelay = 1.1;      /* Boss 段：追赶者让位，Boss 登场 */
+    } else {
+      completeStage(st - 1);  /* 普通段边界：卡牌奖励，原地继续 */
+    }
+  }
+
+  /* ── Boss 延迟登场 ── */
+  if (G.bossDelay > 0){
+    G.bossDelay -= dt;
+    if (G.bossDelay <= 0){
+      /* 只在 Boss 段当场生效；玩家已经潜过这段了就作废 */
+      if (!G.boss && G.mode === 'play' && BOSS_STAGES.indexOf(G.stage) >= 0) startBoss(false);
+      G.bossDelay = 0;
+    }
+  }
+
+  /* ── 追赶者 ── */
+  var c = G.chase;
+  if (c){
+    c.hitT -= dt;
+    /* Boss 战期间几乎冻结：Boss 是这一段的正式考题，别让它背后偷袭 */
+    var base = (G.boss ? 3 : 26 + G.stage * 5.5);
+    var gap = p0.y - c.y;
+    /* 橡皮筋：玩家下潜神速时会追回来，但永不反超；封顶避免从远处砸回来 */
+    var spd = Math.min(420, base + (gap > 1800 ? (gap - 1800) * 0.35 : 0));
+    c.y = Math.min(c.y + spd * dt, WORLD.h - 200);
+    /* 追上：整条横向危险带，碰到就持续掉体型（走 hitPlayer 的无敌帧节奏） */
+    var band = 130;
+    for (var k = 0; k < G.players.length; k++){
+      var pk = G.players[k];
+      if (pk.dead) continue;
+      if (pk.y - c.y < band){
+        if (c.hitT <= 0){
+          hitPlayer(pk, pk.x, c.y - 40, 0.85);   /* 击退方向朝下：被赶着往下跑 */
+          c.hitT = 0.35;
+        }
+        pk.y = Math.max(pk.y, c.y - band * 0.4); /* 别让玩家嵌进带子里 */
+      }
+    }
+  }
+
+  /* ── 水下据点：休整 & 奇遇 ── */
+  for (var z = 0; z < G.zones.length; z++){
+    var zn = G.zones[z];
+    if (zn.done) continue;
+    if (dist(p0.x, p0.y, zn.x, zn.y) > 95) continue;
+    zn.done = true;
+    if (zn.type === 'rest'){
+      for (var r = 0; r < G.players.length; r++){
+        var pr = G.players[r];
+        if (pr.dead) continue;
+        pr.size = Math.min(pr.maxSize, pr.size * 1.15);
+        pr.invuln = Math.max(pr.invuln, 1.5);
+        floater(pr.x, pr.y - pr.size - 26, '+15% 体型 · 洋流小憩', '#8dffc8', true);
+      }
+      burst(zn.x, zn.y, '#8dffc8', 30, 300, 6);
+      Audio2.revive();
+    } else {
+      showEventChoices();
+    }
+  }
 }
 
 /* ============================================================
@@ -3050,7 +2947,7 @@ function update(dt){
     else G.chestT = 3;
   }
 
-  if (!G.boss && G.goal.kind === 'eat' && G.eatenStage >= G.goal.target) completeStage();
+  updateDescent(dt);
 
   /* 镜头：跟随存活玩家的重心 */
   var alive = alivePlayers();
@@ -3140,7 +3037,8 @@ function updateAmbient(dt){
     b.y -= b.spd * dt;
     b.wob += b.wobS * dt;
     b.x += Math.sin(b.wob) * 16 * dt;
-    if (b.y < -20){ b.y = WORLD.h + 20; b.x = rand(0, WORLD.w); }
+    /* 深海柱太长，粒子只在镜头附近循环：飘出视野上方就绕到视野下方 */
+    if (b.y < cam.y - H * 0.9){ b.y = cam.y + H * 0.9 + rand(0, 300); b.x = rand(0, WORLD.w); }
     if (b.x < -30) b.x = WORLD.w + 30;
     if (b.x > WORLD.w + 30) b.x = -30;
   }
@@ -3149,7 +3047,7 @@ function updateAmbient(dt){
     m.y -= m.spd * dt;
     m.wob += dt * 0.8;
     m.x += Math.sin(m.wob) * 9 * dt;
-    if (m.y < -12){ m.y = WORLD.h + 12; m.x = rand(0, WORLD.w); }
+    if (m.y < cam.y - H * 0.9){ m.y = cam.y + H * 0.9 + rand(0, 300); m.x = rand(0, WORLD.w); }
   }
 }
 
@@ -3160,7 +3058,27 @@ function showBanner(main, sub){
 /* ============================================================
    渲染
    ============================================================ */
-function stagePalette(){ return seaOf(G.stage); }
+/* 两个十六进制色按 t 插值（背景渐变专用，机制色仍取整段） */
+function mixHex(a, b, t){
+  var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  var r = Math.round(((pa >> 16) & 255) + (((pb >> 16) & 255) - ((pa >> 16) & 255)) * t);
+  var g = Math.round(((pa >> 8) & 255) + (((pb >> 8) & 255) - ((pa >> 8) & 255)) * t);
+  var bl = Math.round((pa & 255) + ((pb & 255) - (pa & 255)) * t);
+  return 'rgb(' + r + ',' + g + ',' + bl + ')';
+}
+/* 深度连续 → 调色板连续：跨过海域边界前 700px 开始渐变，
+   色值按 1/8 步进取整，让渐变缓存仍能命中（不然每帧新建渐变对象） */
+function stagePalette(){
+  var y = G.p ? G.p.y : (G.stage - 1) * STAGE_DEPTH + 100;
+  var st = stageForY(y);
+  var a = seaOf(st), b = seaOf(st + 1);
+  if (st >= TOTAL_STAGES || !b || a === b) return a;
+  var t = clamp(1 - (st * STAGE_DEPTH - y) / 700, 0, 1);
+  t = Math.round(t * 8) / 8;
+  if (t <= 0) return a;
+  return { name: a.name, mech: a.mech, tag: a.tag, mod: a.mod, zoom: a.zoom, accent: a.accent,
+    top: mixHex(a.top, b.top, t), mid: mixHex(a.mid, b.mid, t), bot: mixHex(a.bot, b.bot, t) };
+}
 
 function drawBackground(){
   var pal = stagePalette();
@@ -3206,6 +3124,221 @@ function drawBackground(){
     ctx.restore();
   }
   ctx.restore();
+}
+
+/* ============================================================
+   追赶者绘制：蓝鲸口 / 污染云 / 岩浆锋面
+   一整条横贯世界的危险带，从头顶缓慢压下来
+   ============================================================ */
+function drawChase(v){
+  var c = G.chase;
+  if (!c || c.y < v.y - 60) return;
+  var topY = Math.max(v.y - 40, c.y - 2600);
+  var botY = c.y + 30;
+  var x0 = v.x - 80, x1 = v.x + v.w + 80;
+
+  ctx.save();
+  var g = ctx.createLinearGradient(0, topY, 0, botY);
+  if (c.form === 'lava'){
+    g.addColorStop(0, 'rgba(14,3,2,0.98)'); g.addColorStop(0.72, 'rgba(66,16,6,0.95)');
+    g.addColorStop(1, 'rgba(150,52,16,0.92)');
+  } else if (c.form === 'poll'){
+    g.addColorStop(0, 'rgba(20,20,10,0.96)'); g.addColorStop(0.72, 'rgba(52,46,20,0.93)');
+    g.addColorStop(1, 'rgba(96,86,40,0.9)');
+  } else {
+    g.addColorStop(0, 'rgba(1,4,9,0.98)'); g.addColorStop(0.72, 'rgba(8,22,40,0.95)');
+    g.addColorStop(1, 'rgba(24,60,96,0.9)');
+  }
+  ctx.fillStyle = g;
+  ctx.fillRect(x0, topY, x1 - x0, botY - topY);
+
+  /* 形态细节（都用时间做相位，不产生额外状态） */
+  if (c.form === 'whale'){
+    /* 巨口弧线 + 成排的眼点 */
+    ctx.strokeStyle = 'rgba(125,168,220,0.35)';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    for (var px = x0; px <= x1; px += 90){
+      var py = botY - 26 + Math.sin(px * 0.011 + G.time * 0.8) * 9;
+      if (px === x0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(190,225,255,0.85)';
+    for (var ex = Math.floor(x0 / 460) * 460; ex <= x1; ex += 460){
+      ctx.beginPath(); ctx.arc(ex + 130, botY - 84, 9, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(ex + 330, botY - 84, 9, 0, TAU); ctx.fill();
+    }
+  } else if (c.form === 'poll'){
+    /* 污染泡： band 里缓慢上浮的浊泡 */
+    ctx.fillStyle = 'rgba(154,140,70,0.28)';
+    for (var bx2 = Math.floor(x0 / 120) * 120; bx2 <= x1; bx2 += 120){
+      var by2 = botY - 40 - ((G.time * 22 + bx2 * 0.37) % 150);
+      var br = 6 + (bx2 % 3) * 5;
+      ctx.beginPath(); ctx.arc(bx2 + 40, by2, br, 0, TAU); ctx.fill();
+    }
+  } else {
+    /* 岩浆裂纹：底缘亮橙 + 裂缝亮线 */
+    ctx.strokeStyle = 'rgba(255,154,92,0.65)';
+    ctx.lineWidth = 3;
+    for (var lx = Math.floor(x0 / 150) * 150; lx <= x1; lx += 150){
+      ctx.beginPath();
+      ctx.moveTo(lx, botY);
+      ctx.lineTo(lx + 24, botY - 34);
+      ctx.lineTo(lx + 52, botY - 10);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,120,50,0.24)';
+    for (var fx = Math.floor(x0 / 210) * 210; fx <= x1; fx += 210){
+      var fy2 = botY - 20 - ((G.time * 30 + fx * 0.61) % 170);
+      ctx.beginPath(); ctx.arc(fx + 80, fy2, 3.4, 0, TAU); ctx.fill();
+    }
+  }
+
+  /* 底缘警戒线：越近越亮 */
+  var edgeA = 0.35 + 0.4 * Math.abs(Math.sin(G.time * 2.2));
+  ctx.fillStyle = c.form === 'lava' ? 'rgba(255,154,92,' + edgeA.toFixed(3) + ')'
+    : c.form === 'poll' ? 'rgba(190,178,96,' + edgeA.toFixed(3) + ')'
+    : 'rgba(125,232,255,' + edgeA.toFixed(3) + ')';
+  ctx.fillRect(x0, botY - 2.5, x1 - x0, 2.5);
+  ctx.restore();
+}
+
+/* ============================================================
+   水下据点：洋流小憩（休整）与奇遇泡
+   ============================================================ */
+function drawZones(v){
+  for (var i = 0; i < G.zones.length; i++){
+    var z = G.zones[i];
+    if (z.done || z.y < v.y - 130 || z.y > v.y + v.h + 130) continue;
+    var col = z.type === 'rest' ? '#8dffc8' : '#c4b5fd';
+    var pulse = 1 + Math.sin(G.time * 2.4 + z.t0) * 0.1;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = rgba(col, 0.55);
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath(); ctx.arc(z.x, z.y, 86 * pulse, G.time * 0.5 + z.t0, G.time * 0.5 + z.t0 + TAU); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = rgba(col, 0.10);
+    ctx.beginPath(); ctx.arc(z.x, z.y, 86 * pulse, 0, TAU); ctx.fill();
+    ctx.font = '26px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(z.type === 'rest' ? '🌙' : '❓', z.x, z.y);
+    ctx.font = '11px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = rgba(col, 0.9);
+    ctx.fillText(z.type === 'rest' ? '洋流小憩' : '深海奇遇', z.x, z.y + 30);
+    ctx.restore();
+  }
+}
+
+/* ============================================================
+   横幅：海域变更 / 体型里程碑 / 广播
+   （v1.2 里这三类横幅只被赋值从未被绘制 —— 这里补齐）
+   ============================================================ */
+function drawBanners(){
+  var b = G.seaBanner;
+  if (b && b.t > 0){
+    var a = clamp(b.t / 0.6, 0, 1) * clamp((3.8 - b.t) / 0.4 + 1, 0, 1);
+    a = Math.min(a, 1);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = a;
+    ctx.font = '600 ' + Math.round(Math.min(34, W * 0.055)) + 'px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(183,243,255,0.96)';
+    ctx.fillText(b.name, W / 2, H * 0.22);
+    ctx.font = '13px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(125,232,255,0.85)';
+    ctx.fillText(b.tag, W / 2, H * 0.22 + 30);
+    ctx.font = '12px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(143,180,208,0.9)';
+    ctx.fillText(b.mech, W / 2, H * 0.22 + 54);
+    ctx.restore();
+  }
+  var mb = G.mileBanner;
+  if (mb && mb.t > 0){
+    var ma = Math.min(clamp(mb.t / 0.5, 0, 1), 1);
+    ctx.save();
+    ctx.globalAlpha = ma;
+    ctx.textAlign = 'center';
+    ctx.font = 'bold ' + Math.round(Math.min(26, W * 0.045)) + 'px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = '#ffd166';
+    ctx.fillText(mb.title, W / 2, H * 0.30);
+    ctx.font = '12.5px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(255,209,102,0.75)';
+    ctx.fillText(mb.sub, W / 2, H * 0.30 + 26);
+    ctx.restore();
+  }
+  var nb = G.banner;
+  if (nb && nb.t > 0){
+    var na = Math.min(clamp(nb.t / 0.4, 0, 1), 1);
+    ctx.save();
+    ctx.globalAlpha = na;
+    ctx.textAlign = 'center';
+    ctx.font = 'bold ' + Math.round(Math.min(22, W * 0.04)) + 'px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = '#fda4af';
+    ctx.fillText(nb.main, W / 2, H * 0.38);
+    ctx.font = '12px "PingFang SC",system-ui,sans-serif';
+    ctx.fillStyle = 'rgba(253,164,175,0.8)';
+    ctx.fillText(nb.sub, W / 2, H * 0.38 + 24);
+    ctx.restore();
+  }
+}
+
+/* ============================================================
+   右上角小地图：整根深海柱的纵览
+   追赶者位置（红线）、你（白点）、海域分段、Boss 段标记
+   ============================================================ */
+function drawMinimap(y0){
+  var bh = Math.min(220, H - y0 - (MOBILE ? 160 : 150));
+  if (bh < 90) return;
+  var bw = 14, bx = W - 30;
+
+  /* 海域分段底色 */
+  for (var i = 0; i < SEAS.length; i++){
+    var sy = y0 + bh * (i * SEA_SPAN / TOTAL_STAGES);
+    var sh = bh * (SEA_SPAN / TOTAL_STAGES);
+    ctx.fillStyle = rgba(SEAS[i].mid, 0.45);
+    ctx.fillRect(bx, sy, bw, sh);
+  }
+  /* 段界刻度 */
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  for (var s = 1; s < TOTAL_STAGES; s++){
+    ctx.fillRect(bx - 3, y0 + bh * s / TOTAL_STAGES, bw + 6, 1);
+  }
+  /* Boss 段标记 */
+  ctx.textAlign = 'center';
+  ctx.font = '8px sans-serif';
+  for (var b2 = 0; b2 < BOSS_STAGES.length; b2++){
+    ctx.fillStyle = 'rgba(253,164,175,0.9)';
+    ctx.fillText('☠', bx + bw / 2, y0 + bh * (BOSS_STAGES[b2] - 0.5) / TOTAL_STAGES + 3);
+  }
+  /* 深度标签：与右侧文字列对齐，避免和「蓝鲸%」打架 */
+  ctx.font = '9.5px ui-monospace,monospace';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(160,195,220,0.85)';
+  ctx.fillText(depthM(G.p.y) + 'm', W - 22, y0 - 6);
+  ctx.fillStyle = 'rgba(160,195,220,0.5)';
+  ctx.fillText(depthM(WORLD.h) + 'm', W - 22, y0 + bh + 13);
+  /* 外框 */
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(bx - 0.5, y0 - 0.5, bw + 1, bh + 1);
+
+  /* 追赶者：红色横线（压下来就越低） */
+  if (G.chase){
+    var cf = clamp(G.chase.y / WORLD.h, 0, 1);
+    var cy2 = y0 + bh * cf;
+    var danger = (G.p.y - G.chase.y) < 420;
+    ctx.fillStyle = danger ? '#fb7185' : 'rgba(251,113,133,0.75)';
+    ctx.fillRect(bx - 6, cy2 - 1.5, bw + 12, 3);
+  }
+  /* 玩家：白色亮点 + 呼吸圈 */
+  var pf = clamp(G.p.y / WORLD.h, 0, 1);
+  var py2 = y0 + bh * pf;
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.beginPath(); ctx.arc(bx + bw / 2, py2, 6.5 + Math.sin(G.time * 4) * 1.5, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(bx + bw / 2, py2, 3.6, 0, TAU); ctx.fill();
 }
 
 /* ============================================================
@@ -5434,7 +5567,6 @@ function render(){
   ctx.clearRect(0, 0, W, H);
   drawBackground();
 
-  if (G.mode === 'map'){ drawMapScreen(); return; }
   if (!G.p) return;
 
   var sh = G.shake > 0 ? G.shake : 0;
@@ -5449,6 +5581,10 @@ function render(){
 
   var v = viewRect();
   var pad = 150;
+
+  /* 追赶者与水下据点：都画在世界层，压在鱼群之下 */
+  drawChase(v);
+  drawZones(v);
 
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
@@ -5692,6 +5828,21 @@ function render(){
     vgn.addColorStop(1, 'rgba(0,0,0,' + darkA + ')');
     ctx.fillStyle = vgn; ctx.fillRect(0, 0, W, H);
   }
+
+  /* 追赶者逼近：屏幕边缘红色脉冲，离得越近跳得越快 */
+  if (G.chase && G.p && !G.p.dead){
+    var gapPx = G.p.y - G.chase.y;
+    if (gapPx < 420){
+      var wa = clamp(1 - gapPx / 420, 0, 1);
+      var pulse = 0.6 + 0.4 * Math.sin(G.time * (5 + wa * 5));
+      var rg2 = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.30, W / 2, H / 2, Math.max(W, H) * 0.62);
+      rg2.addColorStop(0, 'rgba(0,0,0,0)');
+      rg2.addColorStop(1, 'rgba(190,30,40,' + (0.30 * wa * pulse).toFixed(3) + ')');
+      ctx.fillStyle = rg2; ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  drawBanners();
 
   for (var bp = 0; bp < G.players.length; bp++){
     if (G.players[bp].chompAnim <= 0) continue;
@@ -6045,23 +6196,24 @@ function drawHUD(){
   ctx.textAlign = 'left';
   ctx.font = 'bold 15px "PingFang SC",system-ui,sans-serif';
   ctx.fillStyle = 'rgba(183,243,255,0.95)';
-  ctx.fillText('第 ' + G.stage + ' 段 / ' + G.totalStages + (G.coop ? '  ·  双人' : ''), 22, 34);
+  ctx.fillText(seaOf(G.stage).name + ' · 第 ' + G.stage + ' 段/' + G.totalStages + (G.coop ? '  ·  双人' : ''), 22, 34);
 
   ctx.font = '13px "PingFang SC",system-ui,sans-serif';
   ctx.fillStyle = 'rgba(143,180,208,0.95)';
-  if (G.goal.kind === 'boss') ctx.fillText('目标：击败 Boss', 22, 56);
-  else ctx.fillText('目标：吞食 ' + Math.min(G.eatenStage, G.goal.target) + ' / ' + G.goal.target, 22, 56);
+  ctx.fillText('深度 ' + depthM(G.p.y) + ' m' + (G.boss ? '  ·  ⚠ 击败 Boss' : ''), 22, 56);
 
-  var prog = G.goal.kind === 'boss'
-    ? (G.boss ? 1 - G.boss.hp / G.boss.maxHp : 0)
-    : Math.min(1, G.eatenStage / G.goal.target);
-  var pw = MOBILE ? Math.min(190, W * 0.46) : 240;
-  ctx.fillStyle = 'rgba(255,255,255,0.09)';
-  ctx.fillRect(22, 66, pw, 5);
-  var pg = ctx.createLinearGradient(22, 0, 22 + pw, 0);
-  pg.addColorStop(0, '#22c1ff'); pg.addColorStop(1, '#7de8ff');
-  ctx.fillStyle = pg;
-  ctx.fillRect(22, 66, pw * prog, 5);
+  /* 追击距离：这是本作唯一的「倒计时」 */
+  if (G.chase){
+    var gapM = Math.max(0, Math.round((G.p.y - G.chase.y) * 0.25));
+    ctx.font = '11.5px "PingFang SC",system-ui,sans-serif';
+    if (gapM < 25){
+      ctx.fillStyle = '#fb7185';
+      ctx.fillText('⚠ 追赶者咬到了！快下潜！', 22, 76);
+    } else {
+      ctx.fillStyle = gapM < 105 ? '#fda4af' : 'rgba(143,180,208,0.85)';
+      ctx.fillText('追击 ' + gapM + ' m' + (G.chase.form === 'whale' ? ' · 🐋 蓝鲸' : G.chase.form === 'poll' ? ' · ☣ 污染' : ' · 🌋 岩浆'), 22, 76);
+    }
+  }
 
   /* 右上：体型 */
   ctx.textAlign = 'right';
@@ -6114,12 +6266,15 @@ function drawHUD(){
     ctx.fillText(frac >= 0.985 ? '已到蓝鲸' : '蓝鲸 ' + Math.round(frac * 100) + '%', W - 22, by4 + 19);
   }
 
+  /* 右上：深海柱小地图（体型条下面，竖条总览） */
+  drawMinimap(yy + 64);
+
   /* 左下：器官槽位 */
   var bx = MOBILE ? 14 : 20;
   if (MOBILE && !G.coop){
     /* 手机：槽位挪到左上，把整个左下角让给摇杆 */
     var PM = G.players[0];
-    var ym = 84;
+    var ym = 106;
     for (var sm = 0; sm < PM.maxSlots; sm++){
       var ymr = ym + sm * 25;
       var sidm = PM.slots[sm];
@@ -6585,7 +6740,7 @@ window.addEventListener('resize', function(){
 function showStagePanel(report, opts){
   ovCards.classList.remove('hide');
 
-  document.getElementById('cardTitle').textContent = '第 ' + G.stage + ' 段 通过';
+  document.getElementById('cardTitle').textContent = '第 ' + (report.stage || G.stage) + ' 段 通过';
   var badge = document.getElementById('rankBadge');
   badge.textContent = report.rank;
   badge.className = 'rank ' + report.rank;
@@ -6757,12 +6912,10 @@ function loop(now){
       tr0.fired = true;
       if (tr0.cb){ tr0.cb(); tr0.cb = null; }
       tr0.label = G.mode === 'play' ? ('第 ' + G.stage + ' 段 · ' + seaOf(G.stage).name)
-        : G.mode === 'map' ? '海 流 航 路'
         : G.mode === 'end' ? '深 海 霸 主' : '';
     }
     if (tr0.t >= tr0.dur) G.trans = null;
   }
-  if (G.mode === 'map') G.time += dt;
   if (G.mode === 'play' && !G.paused) update(dt);
   else updateAmbient(dt);
   if (G.mode === 'menu' && thumbList.length) drawThumbs(menuT);
@@ -6807,7 +6960,8 @@ G.motes = [];
 
 /* 调试钩子：?debug=1 时才挂，方便自动化测触屏（普通访问拿不到内部状态） */
 if (/[?&]debug=1/.test(location.search)){
-  window.__DT = { G:G, TC:TC, mIn:mIn, cam:cam, relayout:function(){ layoutTouch(); } };
+  window.__DT = { G:G, TC:TC, mIn:mIn, cam:cam, WORLD:WORLD,
+    relayout:function(){ layoutTouch(); }, update: update };
 }
 
 requestAnimationFrame(loop);
