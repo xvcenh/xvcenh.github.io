@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-<title>吞噬之潮 · 物种器官原型 v0.8</title>
+<title>吞噬之潮 · 珊瑚浅海</title>
 <style>
   html,body{margin:0;height:100%;background:#02060f;overflow:hidden;
     font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
@@ -194,33 +194,81 @@
     padding-bottom:env(safe-area-inset-bottom,0px);}
   html.mobile .c-list{padding:4px;}
   html.mobile .c-item{padding:7px 8px;}
+
+/* 发光纸雕界面 */
+:root{--ink:#08162b;--cream:#faf1cf;--glow:#82f2e2;--signal:#ff805f;--line:#91d7d348;--paper:#112844}
+body{background:#051024;color:var(--cream)}
+#ovStart{align-items:flex-start;overflow:auto;padding:0;background:#06132b}
+.paper-menu{width:min(1060px,100%);margin:auto;min-height:100%;box-sizing:border-box;padding:0 30px 24px;background:#081a32}
+.paper-hero{position:relative;isolation:isolate;margin:0 -30px 20px;min-height:275px;display:flex;align-items:center;overflow:hidden;background:linear-gradient(90deg,#07152beb,#07152b15 76%),var(--escape-art) center 60%/cover no-repeat}
+.paper-hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(127deg,transparent 47%,#83f5ee24 51%,transparent 56%);animation:paper-sweep 12s ease-in-out infinite}
+@keyframes paper-sweep{0%,100%{transform:translateX(-16%);opacity:.38}50%{transform:translateX(17%);opacity:.92}}
+.paper-hero-copy{padding:34px 48px;text-shadow:0 3px 16px #000c}
+.paper-hero h1{font-family:Georgia,"Microsoft YaHei",serif;font-weight:800;color:#fff1c6;background:none;-webkit-text-fill-color:currentColor;font-size:clamp(39px,8vw,86px);letter-spacing:.04em;line-height:1.02;margin:7px 0 11px}
+.paper-kicker{font:700 12px ui-monospace,monospace;letter-spacing:.18em;color:var(--glow);margin:0}
+.paper-hero h1 + p{margin:0;color:#e8f8e9;font-size:15px}
+.paper-choose{display:flex;gap:12px;justify-content:space-between;align-items:center;margin:0 0 9px}
+.paper-choose h2{font-size:17px;margin:0;color:var(--cream)}
+.paper-choose span{font-size:12px;color:#b8d8df}
+.paper-menu .fishcard{background:#102745;border:1px solid #57858c52;border-radius:9px;box-shadow:0 4px #031023;transition:background .16s,border-color .16s,transform .16s}
+.paper-menu .fishcard:hover{transform:translateY(-2px);background:#183956}
+.paper-menu .fishcard.sel{background:#183e55;border-color:#82f2e2;box-shadow:0 4px #07152b,inset 0 0 0 1px #82f2e255}
+.paper-menu .fishcard canvas{filter:drop-shadow(0 3px 3px #020b1c)}
+.paper-menu .start-actions{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin:17px 0 5px}
+.paper-menu .btn,.story-choice{margin:0;border-radius:5px;background:#8df2dc;color:#0e2034;box-shadow:0 4px #327d82;border:0;font:700 15px system-ui,sans-serif;padding:12px 22px;cursor:pointer}
+.paper-menu .btn.coop{background:#e9e5c8;box-shadow:0 4px #878e8d}
+.paper-menu details{color:#bfd5dd;font-size:13px;margin-top:16px}
+.paper-menu summary{cursor:pointer;width:max-content}
+.paper-menu details .start-bottom{margin-top:12px}
+#ovStory{z-index:12;background:#051124b8;backdrop-filter:blur(3px)}
+.story-panel{box-sizing:border-box;position:relative;width:min(680px,100%);max-height:90dvh;overflow:auto;padding:34px 32px 29px;border:1px solid #87e5d78c;border-radius:8px;background:#102844;box-shadow:0 9px #030d20,0 24px 70px #020819bf}
+#ovStory[data-scene="prologue"] .story-panel{padding-top:125px;background:linear-gradient(0deg,#102844 46%,#10284488 100%),var(--escape-art) center 58%/cover no-repeat}
+#ovStory[data-scene="whale"] .story-panel{border-color:#97eee8}
+.story-panel h2{font-size:clamp(23px,5vw,40px);line-height:1.15;margin:7px 0 13px;color:var(--cream)}
+.story-panel #storyText{line-height:1.8;color:#e0edec;margin:0 0 20px;max-width:52ch}
+.story-actions{display:flex;flex-wrap:wrap;gap:12px}
+.story-actions button:not(:first-child){background:#e9e5c8;box-shadow:0 4px #878e8d}
+.story-choice:focus-visible,.paper-menu button:focus-visible{outline:2px solid #ffb28d;outline-offset:4px}
+.story-choice:disabled{opacity:.5;cursor:wait}
+#ovStory:not(.hide) .story-panel{animation:paper-rise .34s ease-out both}
+#ovStory.listening .story-panel:after{content:"";height:2px;display:block;margin-top:17px;background:#86f0df;transform-origin:left;animation:paper-listen 5s linear both}
+@keyframes paper-listen{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes paper-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+#ovCards .panel,#ovEnd .panel{background:linear-gradient(160deg,#183552,#0b1e39);border:1px solid #7edbca6e;border-radius:10px;box-shadow:0 7px #071122,0 18px 56px #0008}
+@media(max-width:600px){.paper-menu{padding:0 14px 20px}.paper-hero{min-height:205px;margin:0 -14px 13px;background-position:center,58% center}.paper-hero-copy{padding:22px 16px}.paper-hero h1{font-size:44px}.paper-hero h1 + p{font-size:12px}.paper-choose span{display:none}.paper-menu .fishpick{grid-template-columns:repeat(2,1fr)}.paper-menu .start-actions .btn{flex:1;padding-inline:8px;white-space:nowrap}.story-panel{padding:24px 19px}.story-actions{display:grid;gap:10px}.story-choice{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.paper-hero:after,#ovStory:not(.hide) .story-panel{animation:none}}
+
 </style>
-  <script type="module" crossorigin src="./assets/index-D1Brh7kT.js"></script>
+  <script type="module" crossorigin src="./assets/index-B3AgqzlF.js"></script>
 </head>
 <body>
 <canvas id="cv"></canvas>
 <div id="safeProbe"></div>
 
 <div class="ov" id="ovStart">
-  <div class="panel start">
-    <div class="hero">
-      <div class="hero-title">吞噬之潮</div>
-      <div class="hero-sub">D E E P &nbsp;·&nbsp; 深 海 吞 噬 进 化 &nbsp;·&nbsp; 原 型 v0.8</div>
-    </div>
-
-    <div class="sec-label">选择初始鱼<span>选鱼 = 选这局先练哪条器官线</span></div>
+  <main class="paper-menu">
+    <header class="paper-hero">
+      <div class="paper-hero-copy">
+        <p class="paper-kicker">DEVOUR TIDE</p>
+        <h1>吞噬之潮</h1>
+        <p>水槽已破裂。实验体 T-07 正在下潜。</p>
+      </div>
+    </header>
+    <div class="paper-choose"><h2>选择初始鱼</h2><span>每种鱼都有不同的游法与技能</span></div>
     <div class="fishpick" id="fishPick"></div>
+    <p class="sub">第一海域 · 吞食小鱼成长，避开追赶者，击败珊瑚浅海的守卫后继续下潜。</p>
 
     <div class="start-actions">
       <button class="btn" id="btnSingle">单 人 下 潜</button>
       <button class="btn coop" id="btnCoop">双 人 合 作</button>
     </div>
 
+    <details><summary>操作与海域</summary>
     <div class="start-bottom">
       <div class="sbox">
         <div class="sbox-t">操作</div>
         <div class="kvs">
-          <span><b>WASD</b> 游动</span>
+          <span><b>WASD</b> 游动 · 单人也可用方向键</span>
           <span><b>Shift</b> 冲刺</span>
           <span><b>J</b> 啃咬</span>
           <span><b>K</b> 技能</span>
@@ -236,13 +284,17 @@
       </div>
     </div>
 
-    <div class="note">
-      <b>下潜</b> 蓝鲸 / 污染 / 岩浆会从头顶缓缓压下来 —— 停下就会被追上，右上小地图看位置<br>
-      <b>甜区</b> 游过去就能吃掉小鱼　<b>啃咬</b> 按 J 一口口把大鱼啃小　<b>撞击</b> 冲刺把大鱼踢开撞小<br>
-      <b>器官</b> 吃什么长什么，每局 3 个槽位　<b>宝箱鱼</b> 必掉两个道具　<b>份量门槛</b> 只吃小虾米不长本事<br>
-      <b>道具 29 种</b> 普通即时生效 · 稀有一小段时间换打法 · <b>史诗拾取后进封印槽，按 Q 自己挑时机放</b>
-    </div>
-  </div>
+    </details>
+  </main>
+</div>
+
+<div class="ov hide" id="ovStory" role="dialog" aria-modal="true" aria-labelledby="storyTitle">
+  <section class="story-panel">
+    <p class="paper-kicker">截获通讯 · T-07</p>
+    <h2 id="storyTitle"></h2>
+    <p id="storyText"></p>
+    <div class="story-actions" id="storyActions"></div>
+  </section>
 </div>
 
 <div class="ov hide" id="ovCards">
@@ -279,6 +331,7 @@
   <div class="c-list" id="codexList"></div>
   <div class="c-foot" id="codexFoot">按 Tab 打开</div>
 </div>
+
 
 </body>
 </html>

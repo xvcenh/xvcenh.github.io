@@ -1,6 +1,11 @@
 import { STAGE_DEPTH, TOTAL_STAGES, WORLD, BOSS_STAGES, CHASE_FORMS, stageForY, seaIdxForStage, depthM, WHALE, SIZE_GAIN, STAGE_SCALE, ECO_CAP_MUL, ecoScale, GENE_GATE, GENE_MIN_RATIO, CHOMP_GENE_MUL, RARE_W, MAX_SLOTS, CHOMP_CD, CHOMP_RECOVER, SPECIES, SP_KEYS, SEAS, SEA_SPAN, seaOf, START_FISH, ITEM_RARITY, ITEM_TYPES, rollItem, MILESTONES, BOSS_DEFS } from './config.js';
 import { TAU, rand, pick, clamp, lerp, rgba, angLerp, dist } from './utils.js';
 import { Audio2 } from './audio.js';
+import escapeArt from './paper-escape.webp?inline';
+
+document.documentElement.style.setProperty('--escape-art', 'url("' + escapeArt + '")');
+import { drawReef, drawSpecimen } from './field-guide.js';
+import { alertBand, encounters, endingChoices, newStory, raiseAlert, transmissions } from './story.js';
 
 /* 强化卡牌：apply 引用 game 层的 gainGene，故留在本模块 */
 var CARDS = [
@@ -333,6 +338,10 @@ function inputFor(p){
   if (p.id === 0){
     ax = (keys['d'] ? 1 : 0) - (keys['a'] ? 1 : 0);
     ay = (keys['s'] ? 1 : 0) - (keys['w'] ? 1 : 0);
+    if (!G.coop){
+      ax ||= (keys.arrowright ? 1 : 0) - (keys.arrowleft ? 1 : 0);
+      ay ||= (keys.arrowdown ? 1 : 0) - (keys.arrowup ? 1 : 0);
+    }
     dash = !!(keys['shift'] || keys[' ']);
     bite = !!(keys['j'] || touch.bite);
     skill = !!keys['k'];
@@ -884,6 +893,10 @@ function autoReach(p){ return p.size * (0.92 + p.eatReach); }
 function chompArc(p){ return p.size * (0.95 + p.chompReach * 0.5) + 46; }
 
 function eatEnemy(p, e, idx, viaChomp){
+  if (G.story && e.size > p.size * .8){
+    G.story.huntedLarge = true;
+    raiseAlert(G.story, 2);
+  }
   G.enemies.splice(idx, 1);
 
   var tierMul = e.tier === 2 ? 3.2 : (e.tier === 1 ? 1.8 : 1);
@@ -1106,6 +1119,17 @@ function doChomp(p){
   p.chompRecover = CHOMP_RECOVER;
   p.chompAnim = 0.22;
 
+  const mecha = G.boss;
+  if (mecha?.idx === 5 && G.story?.whale === 'resonate'){
+    const range = mecha.size * 1.6 + p.size;
+    if (dist(mecha.x, mecha.y, p.x, p.y) > range) return;
+    mecha.hp -= mecha.maxHp / 3 + 1;
+    burst(p.x, p.y, '#8df2dc', 20, 190, 5);
+    floater(mecha.x, mecha.y - mecha.size, '鲸鸣 · 机甲收到信号', '#8df2dc', true);
+    if (mecha.hp <= 0) killBoss();
+    return;
+  }
+
   /* 前冲一小口，帮助够到目标，同时让你更难立刻后撤 */
   p.vx += Math.cos(p.ang) * 210;
   p.vy += Math.sin(p.ang) * 210;
@@ -1138,6 +1162,8 @@ function doChomp(p){
     var b = G.boss;
     if (dist(b.x, b.y, p.x, p.y) < b.size * 0.9 + p.size * 1.15){
       var bdmg = (6 + p.size * 0.10) * p.hunt * p.chompMul * (b.weakT > 0 ? 2.2 : 1);
+      if (G.story?.rageUntil > G.time) bdmg *= 1.3;
+      if (G.story?.venom) bdmg *= 1.12;
       b.hp -= bdmg; b.flash = 0.22;
       didHit = true;
       burst(b.x, b.y, b.weakT > 0 ? '#ffd166' : '#bfe9ff', 16, 280);
@@ -1307,14 +1333,17 @@ function collisions(dt){
    ============================================================ */
 
 
-function startBoss(isElite){
+function startBoss(isElite, secondRuins = false){
   /* 段 1-2→鲨 · 3-4→霜鲸 · 5-6→魟 · 7-8→鳝 · 9-10→水母后 · 11-12→熔岩 */
   var idx = clamp(Math.floor((G.stage - 1) / 2), 0, BOSS_DEFS.length - 1);
   var def = BOSS_DEFS[idx];
   var tier = clamp(Math.floor(idx / 2), 0, 2);
   var hp = Math.round((260 + idx * 120) * (isElite ? 0.62 : (G.coop ? 1.75 : 1)));
+  const band = alertBand(G.story?.alert ?? 0);
+  hp = Math.round(hp * (1 + Math.max(0, band - 1) * .2) *
+    (idx === 5 && (G.story?.ruinsBypass || G.story?.whale === 'devour') ? 1.2 : 1));
   G.boss = {
-    name: def.name, def: def, tier: tier, idx: idx,
+    name: secondRuins ? '遗迹型追猎潜航器' : (idx === 5 && G.story?.whale === 'resonate' ? '深潜机甲 · 等待应答' : def.name), def: def, tier: tier, idx: idx, secondRuins,
     x: WORLD.w/2, y: cam.y - (H / cam.zoom) * 0.34,
     size: (58 + playerRefSize() * 0.42) * def.sizeMul,
     hp: hp, maxHp: hp,
@@ -1340,10 +1369,24 @@ function killBoss(){
     p.size = Math.min(p.maxSize, p.size * 1.22);
   }
   codexMark('eaten', bossDrawKey(b.idx));
-  floater(b.x, b.y - 40, '吞噬 Boss · 体型 +22%', '#ffd166', true);
+  if (G.story) {
+    G.story.defeated.add(b.idx);
+    if (b.idx < 5) raiseAlert(G.story, 10);
+  }
+  if (b.secondRuins) G.story.ruinsSecond = true;
+  if (b.idx === 4 && !b.secondRuins) {
+    openStory('ruins');
+    return;
+  }
+  if (b.idx === 0 && !G.reefCleared) {
+    G.reefCleared = true;
+    showBanner('珊瑚浅海 · 已通过', '选择强化后继续下潜');
+  }
+  floater(b.x, b.y - 40, b.idx === 5 && G.story.whale === 'resonate'
+    ? '机甲已应答 · 武器下线' : '吞噬 Boss · 体型 +22%', '#ffd166', true);
   Audio2.mutate();
   if (G.stage >= TOTAL_STAGES){
-    setTimeout(function(){ endRun('你们潜到了深渊之底，成为了深海霸主'); }, 500);
+    openStory('ending');
   } else {
     setTimeout(function(){ completeStage(); }, 420);
   }
@@ -1890,6 +1933,9 @@ function startRun(coop, fishA, fishB){
   G.mode = 'play';
   G.trans = { t: 0.45, dur: 1.05, cb: null, fired: true, label: '下潜 · 珊瑚浅海' };
   G.stage = 1; G.stageT = 0; G.eatenStage = 0;
+  G.reefCleared = false;
+  G.story = newStory();
+  WORLD.h = TOTAL_STAGES * STAGE_DEPTH;
   G.enemies = []; G.particles = []; G.floaters = [];
   G.inks = []; G.zaps = []; G.foods = []; G.items = []; G.players = [];
   G.hazards = []; G.hazT = 0; G.slowT = 0; G.mileIdx = 0; G.mileBanner = null;
@@ -1933,7 +1979,7 @@ function startRun(coop, fishA, fishB){
   for (var k = 0; k < 22; k++) spawnEnemy(null, k < 8);
   for (var f0 = 0; f0 < 50; f0++) spawnFood();
 
-  hideAll();
+  openStory('prologue');
 }
 
 function stageRank(){
@@ -1988,6 +2034,7 @@ function endRun(reason){
 }
 function doEndRun(reason){
   G.mode = 'end';
+  if (G.story && !G.story.ending) reason = '信号消失 · ' + reason;
   Audio2.over();
   showEndPanel(reason);
 }
@@ -2018,9 +2065,37 @@ function updateDescent(dt){
   if (!p0) return;
 
   /* ── 深度过线 → 下一段 ── */
-  var st = stageForY(p0.y);
-  if (st !== G.stage){
+  // The reef's exit stays closed until its guardian falls.
+  const reefExit = 2 * STAGE_DEPTH;
+  if (!G.reefCleared && G.stage >= 2) {
+    for (const player of alivePlayers()) {
+      if (player.y < reefExit - 56) continue;
+      player.y = reefExit - 56;
+      player.vy = Math.min(0, player.vy);
+    }
+  }
+  const story = G.story;
+  if (story.endless && p0.y > WORLD.h - 1500) WORLD.h += STAGE_DEPTH;
+  const st = stageForY(p0.y);
+  if (!story.seen.has('boat') && (p0.y < 180 || p0.y > 780)) { openStory('boat'); return; }
+  if (st >= 3 && !story.seen.has('net')) { openStory('net'); return; }
+  if (st >= 6 && !story.seen.has('ice')) { openStory('ice'); return; }
+  if (st >= 7 && !story.seen.has('venom')) { openStory('venom'); return; }
+  if (G.boss?.idx === 4 && st >= 11) {
+    for (const player of alivePlayers()) {
+      player.y = Math.min(player.y, 10 * STAGE_DEPTH - 56);
+      player.vy = Math.min(player.vy, 0);
+    }
+    return;
+  }
+  if (st >= 11 && !story.seen.has('whale')) { openStory('whale'); return; }
+  if (st > G.stage){
     var prevSea = seaIdxForStage(G.stage);
+    if (st > G.stage && G.boss && (G.boss.idx === 1 || G.boss.idx === 3)
+      && seaIdxForStage(st) > prevSea) {
+      story.bypassed++;
+      G.boss = null;
+    }
     G.stage = st;
     var seaIdx = seaIdxForStage(st);
     if (seaIdx !== prevSea){
@@ -2028,14 +2103,15 @@ function updateDescent(dt){
       G.seaBanner = { name: sN.name, mech: sN.mech, tag: sN.tag, t: 3.8 };
       G.slowT = 0.5;
       Audio2.mutate();
+      if (G.time >= story.radioUntil) tellRadio(transmissions[seaIdx]);
     } else {
       floater(p0.x, p0.y - 90, '第 ' + st + ' 段 · ' + depthM(p0.y) + 'm', '#7de8ff', true);
     }
     if (G.chase) G.chase.form = CHASE_FORMS[seaIdx];
-    if (BOSS_STAGES.indexOf(st) >= 0 && !G.boss){
+    if (BOSS_STAGES.includes(st) && !G.boss && story.skipBossStage !== st && !story.endless){
       G.bossDelay = 1.1;      /* Boss 段：追赶者让位，Boss 登场 */
-    } else {
-      completeStage(st - 1);  /* 普通段边界：卡牌奖励，原地继续 */
+    } else if (!(prevSea === 0 && st === 3 && G.reefCleared)) {
+      completeStage(st - 1);  /* 已领取守卫奖励的海域出口不重复结算 */
     }
   }
 
@@ -2054,7 +2130,7 @@ function updateDescent(dt){
   if (c){
     c.hitT -= dt;
     /* Boss 战期间几乎冻结：Boss 是这一段的正式考题，别让它背后偷袭 */
-    var base = (G.boss ? 3 : 26 + G.stage * 5.5);
+    var base = G.boss ? 3 : (26 + G.stage * 5.5) * [0.8, 1, 1.3, 1.6][alertBand(story.alert)];
     var gap = p0.y - c.y;
     /* 橡皮筋：玩家下潜神速时会追回来，但永不反超；封顶避免从远处砸回来 */
     var spd = Math.min(420, base + (gap > 1800 ? (gap - 1800) * 0.35 : 0));
@@ -2102,6 +2178,9 @@ function updateDescent(dt){
 function update(dt){
   G.time += dt;
   G.stageT += dt;
+  if (G.story?.toxicityUntil > G.time) {
+    for (const player of alivePlayers()) player.size = Math.max(8, player.size * (1 - dt * .009));
+  }
 
   /* 粒子硬上限：异常爆发时也不让渲染被拖死 */
   var pcap = LOWQ ? 260 : 520;
@@ -2297,7 +2376,7 @@ function drawBackground(){
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     for (var L = 0; L < 2; L++){
-      var sp = 6 + L * 15, a = 0.05 - L * 0.021;
+      var sp = 6 + L * 15, a = 0.015 - L * 0.007;
       for (var m = 0; m < 5; m++){
         var px = ((G.time * sp + m * 262 + L * 97) % (W + 340)) - 170;
         var py = H * (0.15 + m * 0.16 + L * 0.03) + Math.sin(G.time * 0.32 + m * 1.7 + L) * 24;
@@ -2317,7 +2396,7 @@ function drawBackground(){
     var wdt = 70 + Math.sin(i) * 30;
     /* 光柱渐变只与宽度/颜色有关，坐标靠 transform 平移 —— 不再每帧新建 */
     var lg = cgLin('ray|' + i + '|' + pal.accent + '|' + Math.round(H), 0, 0, wdt, H,
-      [[0, rgba(pal.accent, 0.07)], [1, rgba(pal.accent, 0)]]);
+      [[0, rgba(pal.accent, 0.032)], [1, rgba(pal.accent, 0)]]);
     ctx.save();
     ctx.translate(sx, 0);
     ctx.fillStyle = lg;
@@ -4316,6 +4395,7 @@ function refreshCodex(){
 buildCodexPanel();
 
 function drawFishShape(x, y, ang, size, shape, color, glow, t, phase, alpha, flash){
+  if (shape?.startsWith('p_') && drawSpecimen(ctx, shape.slice(2), x, y, ang, size, t + phase, alpha ?? 1)) return;
   if (shape === 'jelly'){ drawJellyShape(x, y, size, color, glow, t, phase, alpha, flash); return; }
 
   var s = FISH_SPECS[shape] || FISH_SPECS.round;
@@ -4644,8 +4724,7 @@ function drawPlayer(p){
     ctx.restore();
   }
 
-  if (!drawCodexFish(p.fishId, p.x, p.y, p.ang, p.size, p.id * 2.1, p.id * 3.7, G.time, alpha, false))
-    drawFishShape(p.x, p.y, p.ang, p.size, 'p_' + p.fishId, p.c1, p.c2, G.time, p.id * 2.1, alpha, false);
+  drawFishShape(p.x, p.y, p.ang, p.size, 'p_' + p.fishId, p.c1, p.c2, G.time, p.id * 2.1, alpha, false);
 
   /* P2 头顶标记，避免双人时认错自己 */
   if (G.coop){
@@ -4770,6 +4849,7 @@ function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
   drawBackground();
+  drawReef(ctx, W, H, cam.y, cam.x, menuT + G.time);
 
   if (!G.p) return;
 
@@ -4789,6 +4869,22 @@ function render(){
   /* 追赶者与水下据点：都画在世界层，压在鱼群之下 */
   drawChase(v);
   drawZones(v);
+  const reefGateY = STAGE_DEPTH * 2 - 56;
+  if (!G.reefCleared && reefGateY > v.y && reefGateY < v.y + v.h){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,214,151,.6)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 9]);
+    ctx.beginPath();
+    ctx.moveTo(v.x, reefGateY);
+    ctx.lineTo(v.x + v.w, reefGateY);
+    ctx.stroke();
+    ctx.fillStyle = '#ffe2b4';
+    ctx.font = 'bold 16px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('击败珊瑚守卫后开启', cam.x, reefGateY - 15);
+    ctx.restore();
+  }
 
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
@@ -5419,6 +5515,30 @@ function drawHUD(){
     }
   }
 
+  if (G.story && G.stage > 2) {
+    const color = ['#8fefd4', '#f5da82', '#ff9c65', '#ff625e'][alertBand(G.story.alert)];
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(26, 94, 3.2, 0, TAU);
+    ctx.fill();
+    ctx.font = '11px system-ui,sans-serif';
+    ctx.fillText('信号追踪', 35, 98);
+  }
+  if (G.story?.radio && G.time < G.story.radioUntil && !G.paused && G.mode === 'play'){
+    const width = Math.min(W - 36, 370);
+    const row = MOBILE ? H - 147 : H - 90;
+    ctx.fillStyle = 'rgba(5,18,42,.88)';
+    ctx.fillRect(18, row, width, 43);
+    ctx.fillStyle = '#ff805f';
+    ctx.fillRect(18, row, 3, 43);
+    ctx.font = '10px ui-monospace,monospace';
+    ctx.fillStyle = '#8df2dc';
+    ctx.fillText('T-07  /  截获通讯', 30, row + 15);
+    ctx.font = '12px system-ui,sans-serif';
+    ctx.fillStyle = '#fbefd2';
+    ctx.fillText(G.story.radio, 30, row + 33, width - 23);
+  }
+
   /* 右上：体型 */
   ctx.textAlign = 'right';
   var yy = 36;
@@ -5726,7 +5846,8 @@ function drawHUD(){
     var chompReady = P1.chompCd <= 0 && P1.chompRecover <= 0;
     ctx.font = 'bold 12px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = chompReady ? '#ffd166' : 'rgba(160,130,70,0.6)';
-    ctx.fillText(chompReady ? '啃咬 就绪 · 按 J' : '啃咬 ' + Math.max(0, P1.chompCd).toFixed(1) + 's', cx2, dy - 18);
+    const action = G.boss?.idx === 5 && G.story?.whale === 'resonate' ? '鲸鸣' : '啃咬';
+    ctx.fillText(chompReady ? action + ' 就绪 · 按 J' : action + ' ' + Math.max(0, P1.chompCd).toFixed(1) + 's', cx2, dy - 18);
 
     if (P1.skillKind === 'inflate'){
       var sReady = P1.skillCd <= 0 && P1.inflateT <= 0;
@@ -5840,6 +5961,111 @@ function hideAll(){
   ovStart.classList.add('hide');
   ovCards.classList.add('hide');
   ovEnd.classList.add('hide');
+  document.getElementById('ovStory').classList.add('hide');
+}
+
+function tellRadio(message) {
+  if (!message) return;
+  G.story.radio = message;
+  G.story.radioUntil = G.time + 8;
+}
+
+function openStory(id) {
+  const story = G.story;
+  story.seen.add(id);
+  const encounter = id === 'ending'
+    ? { title: story.whale === 'resonate' ? '机甲停火' : '深潜机甲 · 信号中断',
+        text: '跟随你的只剩水流。现在，由你决定往哪里游。',
+        choices: endingChoices(story) }
+    : encounters[id];
+  G.mode = 'story';
+  hideAll();
+  const dialog = document.getElementById('ovStory');
+  dialog.dataset.scene = id;
+  document.getElementById('storyTitle').textContent = encounter.title;
+  document.getElementById('storyText').textContent = encounter.text;
+  const actions = document.getElementById('storyActions');
+  actions.replaceChildren();
+  const choices = encounter.choices.filter(([key]) => {
+    if (key === 'devour') return G.p.size >= WHALE * .9;
+    if (key === 'resonate') return story.alert < 40 && story.bypassed >= 3 && !story.huntedLarge;
+    return true;
+  });
+  for (const [key, label, radio] of choices) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'story-choice';
+    button.dataset.choice = key;
+    button.textContent = label;
+    button.onclick = () => {
+      if (key !== 'resonate') { chooseStory(id, key, radio); return; }
+      actions.querySelectorAll('button').forEach(option => { option.disabled = true; });
+      document.getElementById('storyText').textContent = '你没有动。鲸鸣在五秒的静默中慢慢靠近……';
+      dialog.classList.add('listening');
+      setTimeout(() => {
+        dialog.classList.remove('listening');
+        chooseStory(id, key, radio);
+      }, 5000);
+    };
+    actions.appendChild(button);
+  }
+  dialog.classList.remove('hide');
+  actions.querySelector('button')?.focus();
+}
+
+function chooseStory(id, key, radio) {
+  const story = G.story;
+  tellRadio(radio);
+  if (id === 'boat' && key === 'near') {
+    raiseAlert(story, 10);
+    G.chase.y += 300;
+  }
+  if (id === 'net' && key === 'ram') {
+    raiseAlert(story, 5);
+    for (const player of alivePlayers()) player.size = Math.max(8, player.size * .8);
+    story.rageUntil = G.time + 10;
+  }
+  if (id === 'ice' && key === 'bypass') {
+    story.bypassed++;
+    story.skipBossStage = 6;
+    raiseAlert(story, 15);
+  }
+  if (id === 'venom' && key === 'eat') {
+    story.venom = true;
+    story.toxicityUntil = G.time + 12;
+  }
+  if (id === 'whale') {
+    story.whale = key;
+    if (key === 'devour') {
+      raiseAlert(story, 30);
+      for (const player of alivePlayers()) player.size = Math.max(player.size, WHALE);
+    }
+  }
+  if (id === 'ending') {
+    story.ending = key;
+    hideAll();
+    if (key === 'endless') {
+      story.endless = true;
+      WORLD.h += STAGE_DEPTH;
+      G.mode = 'play';
+      showBanner('无尽深潜', '下方还有更深的海');
+    } else {
+      const labels = { rest: '安息', symbiosis: '共生', revenge: '复仇' };
+      doEndRun(labels[key] + ' · ' + radio);
+    }
+    return;
+  }
+  hideAll();
+  G.mode = 'play';
+  if (id === 'ruins') {
+    if (key === 'fight') startBoss(false, true);
+    else {
+      story.bypassed++;
+      story.ruinsBypass = true;
+      raiseAlert(story, 15);
+      completeStage();
+    }
+  }
 }
 
 var selFish = 'blue';
@@ -5870,10 +6096,9 @@ function drawFishThumb(cvEl, fish, t){
   try {
     ctx = g;
     var shape = FISH_SHAPE[fish.id] || 'p_blue';
-    var sz = Math.min(h * 0.26, w * 0.145);
+    var sz = Math.min(h * 0.34, w * 0.17);
     var sway = Math.sin((t || 0) * 1.6) * 0.05;
-    if (!drawCodexFish(fish.id, w * 0.46, h * 0.52, sway, sz, (t || 0) * 2.0, (t || 0) * 1.2, t || 0, 1, false))
-      drawFishShape(w * 0.46, h * 0.52, sway, sz, shape, fish.color, fish.glow, t || 0, 0, 1, false);
+    drawFishShape(w * 0.46, h * 0.52, sway, sz, shape, fish.color, fish.glow, t || 0, 0, 1, false);
   } finally {
     ctx = saved;
   }
@@ -5944,7 +6169,9 @@ window.addEventListener('resize', function(){
 function showStagePanel(report, opts){
   ovCards.classList.remove('hide');
 
-  document.getElementById('cardTitle').textContent = '第 ' + (report.stage || G.stage) + ' 段 通过';
+  document.getElementById('cardTitle').textContent = report.stage === 2 && G.reefCleared
+    ? '珊瑚浅海 · 守卫击败'
+    : '第 ' + (report.stage || G.stage) + ' 段 通过';
   var badge = document.getElementById('rankBadge');
   badge.textContent = report.rank;
   badge.className = 'rank ' + report.rank;
@@ -6071,7 +6298,9 @@ if (MOBILE){
    主循环
    ============================================================ */
 var lastT = performance.now();
-function loop(now){
+let manualClock = false;
+function loop(now, manual = false){
+  if (manualClock && !manual) return;
   var raw = Math.min(0.05, (now - lastT) / 1000);
   lastT = now;
   tickTouch(raw);
@@ -6081,7 +6310,7 @@ function loop(now){
     G.chestAnim.t += raw;
     if (G.chestAnim.t >= G.chestAnim.dur) G.chestAnim = null;
     render();
-    requestAnimationFrame(loop);
+    if (!manual) requestAnimationFrame(loop);
     return;
   }
 
@@ -6089,7 +6318,7 @@ function loop(now){
   if (G.hitStop > 0){
     G.hitStop -= raw;
     render();
-    requestAnimationFrame(loop);
+    if (!manual) requestAnimationFrame(loop);
     return;
   }
 
@@ -6152,7 +6381,7 @@ function loop(now){
     }
     ctx.restore();
   }
-  requestAnimationFrame(loop);
+  if (!manual) requestAnimationFrame(loop);
 }
 
 G.bubbles = [];
@@ -6164,6 +6393,25 @@ G.motes = [];
 
 /* 调试钩子：?debug=1 时才挂，方便自动化测触屏（普通访问拿不到内部状态） */
 if (/[?&]debug=1/.test(location.search)){
+  window.advanceTime = function(ms) {
+    manualClock = true;
+    const steps = Math.max(1, Math.round(ms / (1000 / 60)));
+    for (let i = 0; i < steps; i++) loop(lastT + 1000 / 60, true);
+  };
+  window.render_game_to_text = function() {
+    return JSON.stringify({
+      coordinates: 'x right, y down',
+      mode: G.mode,
+      paused: !!G.paused,
+      stage: G.stage,
+      reefCleared: !!G.reefCleared,
+      narrative: G.story && { scene: document.getElementById('ovStory').dataset.scene, alert: G.story.alert, ending: G.story.ending, whale: G.story.whale },
+      player: G.p && { id: G.p.fishId, x: Math.round(G.p.x), y: Math.round(G.p.y), size: +G.p.size.toFixed(2) },
+      eaten: G.stats?.eaten ?? 0,
+      food: G.stats?.food ?? 0,
+      boss: G.boss && { name: G.boss.name, hp: Math.ceil(G.boss.hp), phase: G.boss.state }
+    });
+  };
   window.__DT = { G:G, TC:TC, mIn:mIn, cam:cam, WORLD:WORLD,
     relayout:function(){ layoutTouch(); }, update: update };
 }
