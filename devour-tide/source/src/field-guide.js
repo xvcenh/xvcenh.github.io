@@ -7,14 +7,20 @@ const specimens = {
   sardine: ['#7197a4','#e5f3de','M29 65Q53 44 81 51Q104 53 114 62Q101 79 73 78Q46 76 29 70Z','M31 66L10 48L15 64L9 82L31 71Z',101,59],
   eel: ['#655684','#d7b6e5','M17 82Q37 63 58 56Q77 52 87 44Q105 36 118 48Q125 59 111 66Q90 62 75 72Q47 89 17 86Z','M21 81Q12 80 5 92Q15 92 25 86Z',110,48],
   seahorse: ['#637f68','#f1dab1','M86 24Q98 29 97 40L111 47L108 54L90 53L80 46Q74 47 73 59Q87 68 84 80Q82 93 68 96Q61 97 60 102Q59 108 66 108Q71 107 69 103Q77 105 74 113Q67 122 57 114Q48 107 52 98Q54 91 62 86Q53 72 57 59L62 49Q63 35 70 30L71 21L78 25L82 19Z','M61 64Q39 57 42 76Q48 84 62 75Z',88,36],
-  ray: ['#4d7777','#c0e7ce','M22 65Q37 60 55 36Q65 26 78 23Q86 40 107 52L113 48L112 60Q123 65 119 73L107 76L109 83Q91 81 76 102Q64 98 55 84Q40 72 22 71Z','M31 65Q16 65 6 78Q19 73 35 71Z',107,65]
+  ray: ['#4d7777','#c0e7ce','M22 65Q37 60 55 36Q65 26 78 23Q86 40 107 52L113 48L112 60Q123 65 119 73L107 76L109 83Q91 81 76 102Q64 98 55 84Q40 72 22 71Z','M31 65Q16 65 6 78Q19 73 35 71Z',107,65],
+  round: ['#497f8e','#b4e9d8','M34 64Q41 48 62 44Q92 41 113 62Q97 85 63 84Q41 80 34 70Z','M36 64L15 53L18 67L13 80L36 72Z',101,59],
+  sunfish: ['#6e7191','#e1d9b5','M43 60Q52 37 76 41Q84 20 96 16L95 43Q109 48 112 65Q109 83 91 87L85 109Q72 101 70 88Q52 85 43 71Z','M48 54L28 49L32 69L28 84L48 76Z',101,58],
+  shark: ['#47647b','#bde5dd','M24 65Q40 52 60 49L75 27Q83 30 80 48Q101 48 121 60L114 68L95 70L107 76Q84 80 70 77L66 89L55 77Q40 76 24 70Z','M28 65L8 41L12 62L18 69L7 90L28 72Z',106,58],
+  squid: ['#a65f67','#f5c5a0','M19 64L34 53L39 39L57 50Q88 50 102 60L103 72Q86 84 56 77L37 88L34 74Z','M91 57Q107 47 122 53L109 61L126 64L110 69L123 79Q107 81 91 73Z',94,61],
+  whale: ['#426694','#b2e2e3','M24 66Q40 55 62 49Q87 42 109 48Q121 53 124 62L117 73Q96 86 68 82L52 91L49 79Q33 77 24 71Z','M29 64Q14 55 4 50L13 67L4 79Q17 80 30 71Z',112,57],
+  jelly: ['#675f9d','#f0bfe5','M24 66Q27 42 47 32Q63 23 77 30Q100 40 105 66L92 72L77 69L64 75L50 70L37 73Z','M31 64L98 65L94 76L38 77Z',82,52]
 };
 
 for (const [id, [dark, light, body, fin, eyeX, eyeY]] of Object.entries(specimens)) {
   specimens[id] = { dark, light, body: new Path2D(body), fin: new Path2D(fin), eyeX, eyeY };
 }
 
-export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity) {
+export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity = 1, flash = false) {
   const fish = specimens[id];
   if (!fish) return false;
   const { dark, light, body, fin, eyeX, eyeY } = fish;
@@ -25,12 +31,13 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity) {
   if (id === 'seahorse') {
     ctx.scale(Math.cos(angle) < 0 ? -1 : 1, 1);
     ctx.rotate(Math.sin(time * 3) * 0.08);
-  } else {
+  } else if (id !== 'jelly') {
     ctx.rotate(angle + beat * 0.035);
   }
   ctx.scale(size / 34, size / 34);
   ctx.translate(-64, -64);
   ctx.globalAlpha *= opacity;
+  if (flash) ctx.filter = 'brightness(1.55)';
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.lineWidth = 2.4;
@@ -46,6 +53,19 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity) {
   ctx.stroke(fin);
   ctx.restore();
 
+  if (id === 'jelly') {
+    ctx.strokeStyle = light;
+    ctx.lineWidth = 2.4;
+    for (let i = 0; i < 6; i++) {
+      const x = 32 + i * 13;
+      const curl = Math.sin(phase * .6 + i) * 10;
+      ctx.beginPath();
+      ctx.moveTo(x, 64);
+      ctx.bezierCurveTo(x + curl, 82, x - curl, 90, x + curl, 101 + i % 3 * 6);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#18343a';
+  }
   if (id === 'ray') {
     ctx.translate(72, 66);
     ctx.scale(1, 0.91 + beat * 0.09);
@@ -89,6 +109,7 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity) {
     ctx.arc(101, 28 + beat * 3, 4.8, 0, Math.PI * 2);
     ctx.fill();
   }
+  if (id === 'jelly') { ctx.restore(); return true; }
   ctx.fillStyle = '#13282f';
   ctx.beginPath();
   ctx.arc(eyeX, eyeY, 3.9, 0, Math.PI * 2);
@@ -101,9 +122,17 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity) {
   return true;
 }
 
+const seaPaper = [
+  [['#206188','#16717b','#104759'], ['#398494','#53a49c','#dc795f']],
+  [['#183d60','#132e54','#122643'], ['#285372','#235b72','#37616e']],
+  [['#294a66','#234360','#19324c'], ['#54758c','#82aeba','#b5ded0']],
+  [['#453249','#422538','#2c1d38'], ['#8c555b','#bd6f58','#ed9a64']],
+  [['#4b425b','#38384f','#282b40'], ['#7e6874','#a78578','#dec09b']],
+  [['#182644','#15203d','#111a31'], ['#33496b','#496588','#78b8b4']]
+];
+
 export function drawReef(ctx, width, height, depth, cameraX, time) {
-  const deep = depth > 5200;
-  const colors = deep ? ['#183d60', '#132e54', '#122643'] : ['#206188', '#16717b', '#104759'];
+  const [colors, foliage] = seaPaper[Math.min(seaPaper.length - 1, Math.max(0, Math.floor(depth / 5200)))];
   ctx.save();
   if (depth < 960) {
     const escapeFade = Math.max(0, 1 - Math.max(0, depth - 370) / 590);
@@ -149,7 +178,7 @@ export function drawReef(ctx, width, height, depth, cameraX, time) {
       const tall = 30 + (Math.cos(i * 1.7 + layer) + 1) * 23;
       for (let leaf = -1; leaf <= 1; leaf++) {
         const curve = leaf * 23 + Math.sin(time * 1.35 + i + layer) * 8;
-        ctx.fillStyle = (deep ? ['#285372','#235b72','#37616e'] : ['#398494','#53a49c','#dc795f'])[layer];
+        ctx.fillStyle = foliage[layer];
         ctx.beginPath();
         ctx.moveTo(x - 4, y + 9);
         ctx.quadraticCurveTo(x + curve * .18 - 12, y - tall * .43, x + curve, y - tall);
@@ -201,5 +230,140 @@ function drawLabRemnant(ctx, width, height, fade, time) {
   ctx.stroke();
   ctx.fillStyle = Math.sin(time * 5) > -.25 ? '#ff986c' : '#8c4849';
   ctx.fillRect(-61, -46, 12, 4);
+  ctx.restore();
+}
+
+
+const guardianPlates = [
+  ['#aa5852', '#ffd398', 0],
+  ['#5d84b1', '#bbece2', 1],
+  ['#7386aa', '#cfcdf5', 2],
+  ['#4f9288', '#c0f1dd', 3],
+  ['#9f6f97', '#f9c5d4', 4],
+  ['#bc6652', '#ffd4a0', 5]
+];
+const hullCut = new Path2D('M8 4 53 3 71 10 124 5 124 21 8 28Z');
+const guardianHulls = [
+  new Path2D('M7 2 28 -12 59 -9 77 -19 74 -8 111 -3 123 7 111 18 77 17 62 26 48 19 25 15 10 26 15 12Z'),
+  new Path2D('M5 5 29 -9 37 -17 68 -17 79 -9 111 -6 124 6 115 21 32 25 7 19 19 13Z'),
+  new Path2D('M10 6 41 -2 61 -29 80 -18 92 -7 116 -7 124 5 114 14 94 15 70 32 51 17 20 16Z'),
+  new Path2D('M7 10 29 2 44 -14 65 -18 85 -12 99 -16 121 -7 124 3 112 11 94 9 75 6 61 12 46 20 24 20 7 29Z'),
+  new Path2D('M8 13 18 -6 43 -22 72 -24 100 -13 117 4 119 16 93 20 76 16 56 21 35 16Z'),
+  new Path2D('M5 -4 28 -29 42 -18 56 -25 65 -15 78 -16 93 -25 119 -9 124 17 106 31 84 22 66 28 42 22 16 31Z')
+];
+
+export function drawPaperGuardian(ctx, index, x, y, angle, size, time, opacity = 1, flash = false) {
+  const [plate, trim, id] = guardianPlates[index];
+  const beat = Math.sin(time * 6);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  const scale = size / 42;
+  ctx.scale(scale, scale);
+  ctx.translate(-63, 0);
+  ctx.globalAlpha *= opacity;
+  ctx.lineJoin = 'round';
+  if (flash) ctx.filter = 'brightness(1.6)';
+  ctx.fillStyle = trim;
+  ctx.globalAlpha *= .68;
+  ctx.beginPath();
+  ctx.moveTo(21, 7);
+  ctx.lineTo(4 - beat * 5, -1);
+  ctx.lineTo(0, 10);
+  ctx.lineTo(5 - beat * 4, 20);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha /= .68;
+
+  ctx.fillStyle = '#102c43';
+  ctx.save();
+  ctx.translate(0, 5);
+  ctx.fill(guardianHulls[id]);
+  ctx.restore();
+  ctx.fillStyle = plate;
+  ctx.strokeStyle = '#122b3d';
+  ctx.lineWidth = 2.7;
+  ctx.fill(guardianHulls[id]);
+  ctx.stroke(guardianHulls[id]);
+
+  ctx.save();
+  ctx.clip(guardianHulls[id]);
+  ctx.fillStyle = trim;
+  ctx.globalAlpha *= .44;
+  ctx.fill(hullCut);
+  ctx.restore();
+  ctx.strokeStyle = '#182e41';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 4; i++){
+    const x = 30 + 14 * i;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x - 4, 10);
+    ctx.stroke();
+  }
+  ctx.fillStyle = '#142a43';
+  ctx.fillRect(94, -3, 18, 9);
+  ctx.fillStyle = trim;
+  ctx.fillRect(98, -1, 5 + beat * 2, 5);
+  ctx.fillRect(106, -1, 3, 5);
+  ctx.restore();
+}
+
+const pickupMarks = {
+  common: new Path2D('M0 -7 5 0 0 7 -5 0Z'),
+  rare: new Path2D('M0 -8 3 -3 8 0 3 3 0 8 -3 3 -8 0 -3 -3Z'),
+  epic: new Path2D('M0 -9 7 -4 6 5 0 9 -6 5 -7 -4Z')
+};
+
+export function drawPaperPickup(ctx, x, y, size, color, rarity = 'common', angle = 0, alpha = 1) {
+  const shape = pickupMarks[rarity] || pickupMarks.common;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size / 8, size / 8);
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = '#102f43';
+  ctx.save();
+  ctx.translate(1.5, 2);
+  ctx.fill(shape);
+  ctx.restore();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = '#e1ffee';
+  ctx.lineWidth = 1;
+  ctx.fill(shape);
+  ctx.stroke(shape);
+  ctx.fillStyle = '#fff4d0';
+  ctx.fillRect(-1.5, -3, 2.5, 2.5);
+  ctx.restore();
+}
+
+export function drawPaperPursuit(ctx, view, y, type, time) {
+  const [back, mid, rim] = type === 'lava' ? ['#2c182e','#733342','#ff9b69']
+    : type === 'poll' ? ['#172a2b','#425a3c','#c8df85'] : ['#0b182f','#21516c','#83e7df'];
+  const start = Math.floor(view.x / 74) * 74 - 74, end = view.x + view.w + 76;
+  ctx.save();
+  for (let layer = 0; layer < 3; layer++) {
+    const offset = -35 + layer * 29;
+    ctx.fillStyle = [back, mid, rim][layer];
+    ctx.beginPath();
+    ctx.moveTo(start, layer === 0 ? view.y - 60 : y - 125);
+    ctx.lineTo(end, layer === 0 ? view.y - 60 : y - 125);
+    for (let x = end; x >= start - 2; x -= layer === 2 ? 16 : 27) {
+      const notch = Math.sin(x * .063 + layer) * (layer === 2 ? 3 : 7);
+      const wave = Math.sin(x * .015 + time * .92 + layer) * 11;
+      const edge = y + offset + notch + wave;
+      ctx.lineTo(x, layer === 2 ? edge : edge + 5);
+    }
+    ctx.closePath();
+    ctx.globalAlpha = layer === 0 ? .97 : layer === 1 ? .9 : .62;
+    ctx.fill();
+  }
+  ctx.globalAlpha = .84;
+  ctx.fillStyle = rim;
+  for (let x = start; x < end; x += 148) {
+    const flicker = Math.sin(time * 4 + x * .021) * 3;
+    ctx.fillRect(x + 38, y - 50, 15 + flicker, 5);
+    ctx.fillRect(x + 60, y - 50, 5, 5);
+  }
   ctx.restore();
 }

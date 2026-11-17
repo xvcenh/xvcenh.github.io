@@ -4,7 +4,7 @@ import { Audio2 } from './audio.js';
 import escapeArt from './paper-escape.webp?inline';
 
 document.documentElement.style.setProperty('--escape-art', 'url("' + escapeArt + '")');
-import { drawReef, drawSpecimen } from './field-guide.js';
+import { drawReef, drawSpecimen, drawPaperGuardian, drawPaperPickup, drawPaperPursuit } from './field-guide.js';
 import { alertBand, encounters, endingChoices, newStory, raiseAlert, transmissions } from './story.js';
 
 /* 强化卡牌：apply 引用 game 层的 gainGene，故留在本模块 */
@@ -792,7 +792,7 @@ function releaseSeal(p){
   var t = p.sealed;
   p.sealed = null;
   t.apply(p);
-  floater(p.x, p.y - p.size - 46, t.icon + ' ' + t.name + '！', t.color, true);
+  floater(p.x, p.y - p.size - 46, t.name + '！', t.color, true);
   hitImpact(p.x, p.y, t.color, 0.7, true);
   G.slowT = Math.max(G.slowT, 0.22);
   return true;
@@ -811,7 +811,7 @@ function collectItems(){
           sealItem(p, it.type);
         } else {
           it.type.apply(p);
-          floater(p.x, p.y - p.size - 34, it.type.icon + ' ' + it.type.name, it.type.color, true);
+          floater(p.x, p.y - p.size - 34, it.type.name, it.type.color, true);
           burst(it.x, it.y, it.type.color, 14, 240);
           Audio2.card();
         }
@@ -2413,77 +2413,9 @@ function drawBackground(){
    追赶者绘制：蓝鲸口 / 污染云 / 岩浆锋面
    一整条横贯世界的危险带，从头顶缓慢压下来
    ============================================================ */
-function drawChase(v){
-  var c = G.chase;
-  if (!c || c.y < v.y - 60) return;
-  var topY = Math.max(v.y - 40, c.y - 2600);
-  var botY = c.y + 30;
-  var x0 = v.x - 80, x1 = v.x + v.w + 80;
-
-  ctx.save();
-  var g = ctx.createLinearGradient(0, topY, 0, botY);
-  if (c.form === 'lava'){
-    g.addColorStop(0, 'rgba(14,3,2,0.98)'); g.addColorStop(0.72, 'rgba(66,16,6,0.95)');
-    g.addColorStop(1, 'rgba(150,52,16,0.92)');
-  } else if (c.form === 'poll'){
-    g.addColorStop(0, 'rgba(20,20,10,0.96)'); g.addColorStop(0.72, 'rgba(52,46,20,0.93)');
-    g.addColorStop(1, 'rgba(96,86,40,0.9)');
-  } else {
-    g.addColorStop(0, 'rgba(1,4,9,0.98)'); g.addColorStop(0.72, 'rgba(8,22,40,0.95)');
-    g.addColorStop(1, 'rgba(24,60,96,0.9)');
-  }
-  ctx.fillStyle = g;
-  ctx.fillRect(x0, topY, x1 - x0, botY - topY);
-
-  /* 形态细节（都用时间做相位，不产生额外状态） */
-  if (c.form === 'whale'){
-    /* 巨口弧线 + 成排的眼点 */
-    ctx.strokeStyle = 'rgba(125,168,220,0.35)';
-    ctx.lineWidth = 5;
-    ctx.beginPath();
-    for (var px = x0; px <= x1; px += 90){
-      var py = botY - 26 + Math.sin(px * 0.011 + G.time * 0.8) * 9;
-      if (px === x0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(190,225,255,0.85)';
-    for (var ex = Math.floor(x0 / 460) * 460; ex <= x1; ex += 460){
-      ctx.beginPath(); ctx.arc(ex + 130, botY - 84, 9, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(ex + 330, botY - 84, 9, 0, TAU); ctx.fill();
-    }
-  } else if (c.form === 'poll'){
-    /* 污染泡： band 里缓慢上浮的浊泡 */
-    ctx.fillStyle = 'rgba(154,140,70,0.28)';
-    for (var bx2 = Math.floor(x0 / 120) * 120; bx2 <= x1; bx2 += 120){
-      var by2 = botY - 40 - ((G.time * 22 + bx2 * 0.37) % 150);
-      var br = 6 + (bx2 % 3) * 5;
-      ctx.beginPath(); ctx.arc(bx2 + 40, by2, br, 0, TAU); ctx.fill();
-    }
-  } else {
-    /* 岩浆裂纹：底缘亮橙 + 裂缝亮线 */
-    ctx.strokeStyle = 'rgba(255,154,92,0.65)';
-    ctx.lineWidth = 3;
-    for (var lx = Math.floor(x0 / 150) * 150; lx <= x1; lx += 150){
-      ctx.beginPath();
-      ctx.moveTo(lx, botY);
-      ctx.lineTo(lx + 24, botY - 34);
-      ctx.lineTo(lx + 52, botY - 10);
-      ctx.stroke();
-    }
-    ctx.fillStyle = 'rgba(255,120,50,0.24)';
-    for (var fx = Math.floor(x0 / 210) * 210; fx <= x1; fx += 210){
-      var fy2 = botY - 20 - ((G.time * 30 + fx * 0.61) % 170);
-      ctx.beginPath(); ctx.arc(fx + 80, fy2, 3.4, 0, TAU); ctx.fill();
-    }
-  }
-
-  /* 底缘警戒线：越近越亮 */
-  var edgeA = 0.35 + 0.4 * Math.abs(Math.sin(G.time * 2.2));
-  ctx.fillStyle = c.form === 'lava' ? 'rgba(255,154,92,' + edgeA.toFixed(3) + ')'
-    : c.form === 'poll' ? 'rgba(190,178,96,' + edgeA.toFixed(3) + ')'
-    : 'rgba(125,232,255,' + edgeA.toFixed(3) + ')';
-  ctx.fillRect(x0, botY - 2.5, x1 - x0, 2.5);
-  ctx.restore();
+function drawChase(view){
+  const chase = G.chase;
+  if (chase && chase.y >= view.y - 60) drawPaperPursuit(ctx, view, chase.y + 16, chase.form, G.time);
 }
 
 /* ============================================================
@@ -2506,7 +2438,7 @@ function drawZones(v){
     ctx.beginPath(); ctx.arc(z.x, z.y, 86 * pulse, 0, TAU); ctx.fill();
     ctx.font = '26px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(z.type === 'rest' ? '🌙' : '❓', z.x, z.y);
+    drawPaperPickup(ctx, z.x, z.y, 16, col, z.type === 'rest' ? 'epic' : 'rare', G.time * .32);
     ctx.font = '11px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = rgba(col, 0.9);
     ctx.fillText(z.type === 'rest' ? '洋流小憩' : '深海奇遇', z.x, z.y + 30);
@@ -4243,6 +4175,12 @@ function cgLin(key, x0, y0, x1, y1, stops){
 /* 统一入口：按 sid 画矢量鱼。返回 false 表示该 sid 无矢量画法（回落旧画法）。
    视觉长度 ≈ 体型 × 2.55，与碰撞半径保持同一比例语义。 */
 function drawCodexFish(key, x, y, ang, size, phase, bob, t, alpha, flash){
+  const guardian = BOSS_DRAW.findIndex(entry => entry.key === key);
+  if (guardian >= 0) {
+    drawPaperGuardian(ctx, guardian, x, y, ang, size, t, alpha, flash);
+    return true;
+  }
+  if (drawSpecimen(ctx, key, x, y, ang, size, t + phase * .12, alpha, flash)) return true;
   var span = 0, fn = null, i;
   var cd = CODEX_DRAW[key];
   if (cd){ span = cd.span; fn = cd.fn; }
@@ -4758,12 +4696,7 @@ function drawEnemy(e){
     ctx.fillStyle = cg;
     ctx.beginPath(); ctx.arc(e.x, e.y, e.size * 2.6, 0, TAU); ctx.fill();
     ctx.restore();
-    ctx.save();
-    ctx.font = Math.round(Math.max(14, e.size * 0.85)) + 'px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🎁', e.x, e.y - e.size * 1.55 + Math.sin(G.time * 3) * 3);
-    ctx.restore();
+    drawPaperPickup(ctx, e.x, e.y - e.size * 1.55 + Math.sin(G.time * 3) * 3, 10, '#e8b36b', 'epic');
   }
 
   if (e.size > minA && e.size <= maxB){
@@ -4965,13 +4898,7 @@ function render(){
     ctx.beginPath(); ctx.arc(it.x, it.y + bob, it.r * 2.6, 0, TAU); ctx.fill();
     ctx.restore();
 
-    ctx.save();
-    ctx.globalAlpha = blink;
-    ctx.font = Math.round(it.r * 1.5) + 'px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(it.type.icon, it.x, it.y + bob);
-    ctx.restore();
+    drawPaperPickup(ctx, it.x, it.y + bob, it.r * .75, it.type.color, it.type.rarity, Math.sin(it.t0) * .25, blink);
   }
 
   /* 海域环境物 */
@@ -4989,8 +4916,8 @@ function render(){
         else ctx.lineTo(Math.cos(a2) * rr2, Math.sin(a2) * rr2);
       }
       ctx.closePath();
-      ctx.fillStyle = 'rgba(183,243,255,0.15)';
-      ctx.strokeStyle = 'rgba(183,243,255,0.5)';
+      ctx.fillStyle = 'rgba(102,186,211,0.31)';
+      ctx.strokeStyle = 'rgba(209,243,227,0.74)';
       ctx.lineWidth = 1.6;
       ctx.fill(); ctx.stroke();
       ctx.restore();
@@ -5086,8 +5013,14 @@ function render(){
   for (var pi = 0; pi < G.particles.length; pi++){
     var q = G.particles[pi];
     var al = q.life / q.max;
-    ctx.beginPath(); ctx.arc(q.x, q.y, q.size * al, 0, TAU);
-    ctx.fillStyle = rgba(q.color, al * 0.9); ctx.fill();
+    const shard = q.size * al;
+    ctx.beginPath();
+    ctx.moveTo(q.x - shard, q.y + shard * .28);
+    ctx.lineTo(q.x + shard * .45, q.y - shard);
+    ctx.lineTo(q.x + shard, q.y + shard * .62);
+    ctx.closePath();
+    ctx.fillStyle = rgba(q.color, al * .86);
+    ctx.fill();
   }
   ctx.restore();
 
@@ -5100,6 +5033,8 @@ function render(){
       var rl = clamp(rr3.life / rr3.maxLife, 0, 1);
       ctx.strokeStyle = rgba(rr3.color, rl * 0.85);
       ctx.lineWidth = 2 + rl * 5;
+      ctx.setLineDash([rr3.r * .19, rr3.r * .063]);
+      ctx.lineDashOffset = rr3.r * .11;
       ctx.beginPath(); ctx.arc(rr3.x, rr3.y, rr3.r, 0, TAU); ctx.stroke();
     }
     ctx.restore();
@@ -5209,9 +5144,7 @@ function drawItemCard(t, x, y, s){
   ctx.fillStyle = rgba(R.color, 0.16); ctx.fill();
   ctx.lineWidth = 1.4; ctx.strokeStyle = rgba(R.color, 0.7); ctx.stroke();
   ctx.shadowBlur = 0;
-  ctx.font = '19px sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(t.icon, -w / 2 + 30, 1);
+  drawPaperPickup(ctx, -w / 2 + 30, 1, 13, t.color, t.rarity);
   ctx.restore();
 
   /* 文案 */
@@ -5823,7 +5756,8 @@ function drawHUD(){
       ctx.font = '13px "PingFang SC",system-ui,sans-serif';
       ctx.textAlign = 'left';
       ctx.fillStyle = sT.color;
-      ctx.fillText(sT.icon + ' ' + sT.name, sxS + 12, syS + 20);
+      drawPaperPickup(ctx, sxS + 15, syS + 15, 6, sT.color, sT.rarity);
+      ctx.fillText(sT.name, sxS + 26, syS + 20);
       ctx.shadowBlur = 0;
       ctx.font = 'bold 11px "PingFang SC",system-ui,sans-serif';
       ctx.textAlign = 'right';
