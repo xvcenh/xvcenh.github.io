@@ -48,9 +48,23 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity = 1, flas
   ctx.translate(hinge, 67);
   ctx.rotate(beat * (id === 'seahorse' ? 0.34 : 0.26));
   ctx.translate(-hinge, -67);
-  ctx.fillStyle = dark;
+  const finWash = ctx.createLinearGradient(16, 47, 38, 79);
+  finWash.addColorStop(0, light);
+  finWash.addColorStop(1, dark);
+  ctx.fillStyle = finWash;
   ctx.fill(fin);
   ctx.stroke(fin);
+  ctx.save();
+  ctx.clip(fin);
+  ctx.strokeStyle = '#e7ffed88';
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(35, 67);
+    ctx.lineTo(6, 39 + i * 12);
+    ctx.stroke();
+  }
+  ctx.restore();
   ctx.restore();
 
   if (id === 'jelly') {
@@ -86,17 +100,7 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity = 1, flas
   ctx.stroke(body);
   ctx.save();
   ctx.clip(body);
-  ctx.fillStyle = light;
-  ctx.globalAlpha *= 0.52;
-  for (let i = 0; i < 5; i++) {
-    const markX = id === 'seahorse' ? 61 + (i % 2) : 41 + i * 10;
-    const markY = id === 'seahorse' ? 48 + i * 7 : 55 + Math.sin(i * 1.3) * 4;
-    ctx.beginPath();
-    ctx.moveTo(markX, markY);
-    ctx.lineTo(markX + 8, markY + 1);
-    ctx.lineTo(markX + 5, markY + 5);
-    ctx.fill();
-  }
+  drawBodyCut(ctx, id, light, dark, eyeX, eyeY, beat);
   ctx.restore();
 
   if (id === 'lantern') {
@@ -110,6 +114,10 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity = 1, flas
     ctx.fill();
   }
   if (id === 'jelly') { ctx.restore(); return true; }
+  ctx.fillStyle = '#fff1ce';
+  ctx.beginPath();
+  ctx.arc(eyeX, eyeY, 5.1, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = '#13282f';
   ctx.beginPath();
   ctx.arc(eyeX, eyeY, 3.9, 0, Math.PI * 2);
@@ -120,6 +128,55 @@ export function drawSpecimen(ctx, id, x, y, angle, size, time, opacity = 1, flas
   ctx.fill();
   ctx.restore();
   return true;
+}
+
+const cutHighlights = {
+  narrow: new Path2D('M25 64 Q56 43 99 52 L123 59 Q79 53 43 68Z'),
+  broad: new Path2D('M26 61 Q45 33 88 40 Q109 45 113 51 Q67 43 47 61Z'),
+  wing: new Path2D('M25 66 Q54 51 78 25 L98 47 Q75 41 65 67Z'),
+  horse: new Path2D('M61 72 Q60 41 74 26 L90 26 L96 33 Q72 34 68 76Z')
+};
+
+function drawBodyCut(ctx, id, light, dark, eyeX, eyeY, beat) {
+  const cut = id === 'ray' ? cutHighlights.wing : id === 'seahorse' ? cutHighlights.horse
+    : ['puffer','blue','round','jelly','sunfish','lantern'].includes(id) ? cutHighlights.broad : cutHighlights.narrow;
+  ctx.fillStyle = light;
+  ctx.globalAlpha *= .42;
+  ctx.fill(cut);
+  ctx.strokeStyle = '#e6fff0';
+  ctx.lineWidth = 1.35;
+  for (let i = 0; i < 7; i++) {
+    const x = id === 'seahorse' ? 61 : 35 + i * 7.5;
+    const y = id === 'seahorse' ? 49 + i * 6 : 58 + Math.sin(i * 1.3) * 4;
+    ctx.beginPath();
+    if (id === 'blue' || id === 'puffer'){
+      ctx.arc(x + (i % 2) * 2, y + (i % 3) * 2.5, 1.3 + i % 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + 6, y + 1, x + 3, y + 6);
+      ctx.stroke();
+    }
+  }
+  if (!['jelly','seahorse','ray','squid'].includes(id)) {
+    const x = eyeX - 19, y = eyeY + 13;
+    ctx.strokeStyle = '#092b44';
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.moveTo(x + 4, y - 8);
+    ctx.quadraticCurveTo(x + 7, y - 1, x + 2, y + 6);
+    ctx.stroke();
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.quadraticCurveTo(x - 8, y + 1, x - 20, y + 12 + beat * 5);
+    ctx.quadraticCurveTo(x - 7, y + 13, x + 1, y + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = light;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
 }
 
 const seaPaper = [
@@ -134,6 +191,8 @@ const seaPaper = [
 export function drawReef(ctx, width, height, depth, cameraX, time) {
   const [colors, foliage] = seaPaper[Math.min(seaPaper.length - 1, Math.max(0, Math.floor(depth / 5200)))];
   ctx.save();
+  drawPaperCanyon(ctx, width, height, colors, foliage, time, cameraX);
+  drawPaperFibers(ctx, width, height);
   if (depth < 960) {
     const escapeFade = Math.max(0, 1 - Math.max(0, depth - 370) / 590);
     const hullX = width * .8 + Math.sin(time * .36) * width * .11;
@@ -176,6 +235,10 @@ export function drawReef(ctx, width, height, depth, cameraX, time) {
       const x = i * 164 - offset % 164 + layer * 47;
       const y = baseline + 26;
       const tall = 30 + (Math.cos(i * 1.7 + layer) + 1) * 23;
+      if (layer === 2 && i % 2 === 0) {
+        drawCoralCut(ctx, x, y + 9, tall, foliage[layer], time + i);
+        continue;
+      }
       for (let leaf = -1; leaf <= 1; leaf++) {
         const curve = leaf * 23 + Math.sin(time * 1.35 + i + layer) * 8;
         ctx.fillStyle = foliage[layer];
@@ -185,12 +248,100 @@ export function drawReef(ctx, width, height, depth, cameraX, time) {
         ctx.quadraticCurveTo(x + curve * .75 + 13, y - tall * .58, x + 4, y + 8);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = '#d6f2c72e';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 7);
+        ctx.quadraticCurveTo(x + curve * .32, y - tall * .41, x + curve, y - tall + 4);
+        ctx.stroke();
       }
     }
   }
   ctx.restore();
 }
 
+const coralCut = new Path2D('M-9 4 -12 -16 -26 -24 -35 -43 -30 -48 -21 -38 -16 -31 -14 -45 -17 -65 -10 -69 -5 -58 -2 -44 5 -56 10 -66 16 -62 13 -47 6 -31 16 -35 24 -51 31 -49 28 -38 22 -26 11 -17 10 4Z');
+const coralVeins = new Path2D('M0 0 Q-2 -24 -11 -62 M-4 -25 Q-19 -29 -28 -43 M4 -18 Q16 -22 26 -46 M-1 -37 Q8 -45 14 -59');
+
+function drawCoralCut(ctx, x, y, size, color, time) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(Math.sin(time * .75) * .035);
+  ctx.scale(size / 71, size / 71);
+  ctx.fillStyle = color;
+  ctx.shadowColor = '#091c36';
+  ctx.shadowOffsetY = 4;
+  ctx.shadowBlur = 4;
+  ctx.fill(coralCut);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = '#ffe0ac64';
+  ctx.lineWidth = 1.6;
+  ctx.stroke(coralVeins);
+  ctx.restore();
+}
+
+let fiberPattern;
+function drawPaperFibers(ctx, width, height) {
+  if (!fiberPattern) {
+    const tile = document.createElement('canvas');
+    tile.width = tile.height = 128;
+    const ink = tile.getContext('2d');
+    for (let i = 0; i < 2150; i++) {
+      ink.fillStyle = i % 4 ? '#03152a' : '#d3f8dc';
+      ink.globalAlpha = .19 + (i % 5) * .06;
+      ink.fillRect((i * 137 + (i * i % 257)) % 128, (i * 97 + (i * i % 251)) % 128, i % 6 === 0 ? 2 : 1, 1);
+    }
+    fiberPattern = ctx.createPattern(tile, 'repeat');
+  }
+  if (!fiberPattern) return;
+  ctx.save();
+  ctx.globalAlpha = .34;
+  ctx.fillStyle = fiberPattern;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
+const shelfCut = new Path2D('M0 0 42 17 58 45 88 66 103 93 82 107 131 150 129 171 182 207 197 249 248 278 289 330 330 360 0 360Z');
+
+function drawPaperCanyon(ctx, width, height, palette, leaves, time, cameraX) {
+  ctx.save();
+  const glow = ctx.createRadialGradient(width * .57, height * .27, height * .04, width * .54, height * .31, Math.max(width, height) * .68);
+  glow.addColorStop(0, leaves[0] + '42');
+  glow.addColorStop(.55, palette[0] + '22');
+  glow.addColorStop(1, '#040e29a0');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+  for (let side = 0; side < 2; side++) {
+    for (let layer = 0; layer < 3; layer++) {
+      const span = Math.min(width * .2, 240) * (1 - .19 * layer);
+      const drift = (cameraX - 1800) * (.004 + layer * .004);
+      ctx.save();
+      ctx.translate(side === 0 ? -17 + drift : width + 17 + drift, height * (.12 + layer * .13));
+      ctx.scale((side === 0 ? 1 : -1) * span / 330, height * .83 / 360);
+      ctx.fillStyle = palette[layer];
+      ctx.globalAlpha = .26 + layer * .15;
+      ctx.fill(shelfCut);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = leaves[layer];
+      ctx.stroke(shelfCut);
+      ctx.restore();
+    }
+  }
+  for (let i = 0; i < 22; i++) {
+    const x = (((i * 263 + time * (3 + i % 3)) % (width + 80)) + width + 80) % (width + 80) - 40;
+    const y = height * (.12 + ((i * 31) % 74) / 100) + Math.sin(time * .65 + i) * 16;
+    ctx.globalAlpha = .13 + .19 * (Math.sin(time * 1.1 + i) + 1) / 2;
+    ctx.fillStyle = i % 5 ? leaves[1] : '#ffc88e';
+    ctx.beginPath();
+    ctx.moveTo(x - 2, y + 1);
+    ctx.lineTo(x, y - 3);
+    ctx.lineTo(x + 2.5, y + .7);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
 
 function drawLabRemnant(ctx, width, height, fade, time) {
   ctx.save();
@@ -306,6 +457,28 @@ export function drawPaperGuardian(ctx, index, x, y, angle, size, time, opacity =
   ctx.fillStyle = trim;
   ctx.fillRect(98, -1, 5 + beat * 2, 5);
   ctx.fillRect(106, -1, 3, 5);
+
+  ctx.save();
+  ctx.clip(guardianHulls[id]);
+  ctx.strokeStyle = trim;
+  ctx.globalAlpha *= .84;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(18, 2);
+  ctx.lineTo(32, -5);
+  ctx.lineTo(60, -4);
+  ctx.lineTo(82, 1);
+  ctx.stroke();
+  for (let i = 0; i < 4; i++){
+    ctx.fillStyle = trim;
+    ctx.fillRect(24 + 14 * i, 13, 3, 2);
+  }
+  ctx.fillStyle = '#172d40';
+  ctx.fillRect(67, 6, 14, 7);
+  ctx.fillStyle = '#f5ca88';
+  ctx.fillRect(70, 8, 3, 3);
+  ctx.fillRect(75, 8, 3, 3);
+  ctx.restore();
   ctx.restore();
 }
 

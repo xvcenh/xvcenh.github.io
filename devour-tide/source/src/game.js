@@ -5426,14 +5426,33 @@ function drawHUD(){
   ctx.globalAlpha = 1;          /* 防上游泄漏：转场/特效残留会把整个 HUD 压暗 */
   if (MOBILE && (SAFE.l || SAFE.t)) ctx.translate(SAFE.l, SAFE.t);
 
+  const hudWidth = MOBILE ? 136 : 214;
+  const hudHeight = G.stage > 2 ? 98 : 76;
+  const panel = ctx.createLinearGradient(0, 12, hudWidth, 110);
+  panel.addColorStop(0, '#0a203bf2');
+  panel.addColorStop(1, '#122e49bf');
+  ctx.fillStyle = panel;
+  ctx.strokeStyle = '#a1e4d352';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(12, 12);
+  ctx.lineTo(hudWidth, 12);
+  ctx.lineTo(hudWidth + 13, 24);
+  ctx.lineTo(hudWidth + 13, hudHeight + 12);
+  ctx.lineTo(12, hudHeight + 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#f7bf86';
+  ctx.fillRect(12, 19, 2, 21);
   ctx.textAlign = 'left';
-  ctx.font = 'bold 15px "PingFang SC",system-ui,sans-serif';
-  ctx.fillStyle = 'rgba(183,243,255,0.95)';
-  ctx.fillText(seaOf(G.stage).name + ' · 第 ' + G.stage + ' 段/' + G.totalStages + (G.coop ? '  ·  双人' : ''), 22, 34);
+  ctx.font = (MOBILE ? 'bold 12px ' : 'bold 15px ') + '"PingFang SC",system-ui,sans-serif';
+  ctx.fillStyle = '#fff0cf';
+  ctx.fillText(seaOf(G.stage).name + ' · 第 ' + G.stage + ' 段/' + G.totalStages + (G.coop ? '  ·  双人' : ''), 22, 34, hudWidth - 17);
 
   ctx.font = '13px "PingFang SC",system-ui,sans-serif';
   ctx.fillStyle = 'rgba(143,180,208,0.95)';
-  ctx.fillText('深度 ' + depthM(G.p.y) + ' m' + (G.boss ? '  ·  ⚠ 击败 Boss' : ''), 22, 56);
+  ctx.fillText('深度 ' + depthM(G.p.y) + ' m' + (G.boss ? '  ·  ⚠ 击败 Boss' : ''), 22, 56, hudWidth - 17);
 
   /* 追击距离：这是本作唯一的「倒计时」 */
   if (G.chase){

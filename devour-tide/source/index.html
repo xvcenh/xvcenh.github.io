@@ -238,6 +238,23 @@ body{background:#051024;color:var(--cream)}
 @media(max-width:600px){.paper-menu{padding:0 14px 20px}.paper-hero{min-height:205px;margin:0 -14px 13px;background-position:center,58% center}.paper-hero-copy{padding:22px 16px}.paper-hero h1{font-size:44px}.paper-hero h1 + p{font-size:12px}.paper-choose span{display:none}.paper-menu .fishpick{grid-template-columns:repeat(2,1fr)}.paper-menu .start-actions .btn{flex:1;padding-inline:8px;white-space:nowrap}.story-panel{padding:24px 19px}.story-actions{display:grid;gap:10px}.story-choice{min-height:44px}}
 @media(prefers-reduced-motion:reduce){.paper-hero:after,#ovStory:not(.hide) .story-panel{animation:none}}
 
+/* 双层纸边、烫金细线与标本卡 */
+.paper-menu{background:radial-gradient(ellipse at 72% 45%,#1b3552 0%,#0b2038 57%,#081629 96%)}
+.paper-hero{border-bottom:1px solid #8ae8d27c;box-shadow:0 7px #061528,0 8px #c09d6952}
+.paper-hero-copy{border-left:1px solid #f8d39b9c;margin-left:29px;padding-left:21px}
+.paper-hero .paper-kicker{color:#e8c58c}
+.paper-choose{padding-bottom:8px;border-bottom:1px solid #a9dacc52}
+.paper-menu .fishcard{isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#24516b 0%,#112b45 49%,#0d2239 76%);box-shadow:inset 0 0 0 2px #061c32,0 4px #051326}
+.paper-menu .fishcard:before{content:"";position:absolute;pointer-events:none;inset:7px;border:1px solid #acddd227;border-radius:5px;z-index:-1}
+.paper-menu .fishcard.sel{background:radial-gradient(ellipse at 51% 31%,#30707a,#13364a 58%,#10283e 90%);border-color:#f0c489}
+.paper-menu .fishcard.sel:before{border-color:#8bf5dd60}
+.paper-menu .fishcard b{color:#fff1cf}
+.paper-menu .fishcard i{color:#b1ccda}
+.paper-menu .btn{border:1px solid #b6f7de}
+.paper-menu .btn.coop{border-color:#f4dca8}
+.story-panel{outline:1px solid #c4dccc28;outline-offset:-8px}
+@media(max-width:600px){.paper-hero-copy{margin-left:13px;padding-left:12px}.paper-menu .fishcard:before{inset:4px}.paper-menu .fishcard i{padding-inline:3px}}
+
 </style>
 </head>
 <body>
