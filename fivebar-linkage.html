@@ -3,11 +3,58 @@ layout: default
 title: 五连杆运动学实验台
 section: 项目
 permalink: /fivebar-linkage/
-description: 调节关节角度，实时对照五连杆闭环机构与等效串联臂的正向、逆向解。
+description: 调节关节角度，对照闭环五连杆与等效串联臂，记录末端 C 的运动轨迹。
 ---
-{% include intro.html kicker="KINEMATICS LAB" heading="五连杆运动学实验台" description="拖动滑杆，观察同一末端点在闭环五连杆和等效串联臂中的位置。" %}
-<div class="wrap page-body linkage-lab"><div class="section-toolbar"><a href="{{ '/projects/' | relative_url }}">← 项目实验室</a><output id="solver-status" role="status">正在初始化</output></div>
-<div class="plot-grid"><figure><figcaption><b>闭环五连杆</b><span>A → B → C → D → E</span></figcaption><canvas id="closed-plot" width="600" height="420" aria-label="五连杆完整结构"></canvas></figure><figure><figcaption><b>等效串联臂</b><span>E → D → C</span></figcaption><canvas id="serial-plot" width="600" height="420" aria-label="串联臂与末端轮"></canvas></figure></div>
-<div class="solver-controls"><fieldset><legend>正向输入</legend><label>髋 1 · θ₁ <input type="range" id="hip1" min="-150" max="150" step=".1" value="60"><output for="hip1"></output></label><label>髋 2 · θ₂ <input type="range" id="hip2" min="-150" max="150" step=".1" value="120"><output for="hip2"></output></label></fieldset><fieldset><legend>逆向输入</legend><label>髋 2 · θ₂ <input type="range" id="inv-hip" min="-150" max="150" step=".1" value="120"><output for="inv-hip"></output></label><label>膝 2 · γ <input type="range" id="knee" min="-180" max="180" step=".1" value="0"><output for="knee"></output></label></fieldset></div>
-<div class="solver-spec"><span id="endpoint">末端 C</span><span>AB、ED = 75 mm · BC、DC = 140 mm · AE = 80 mm · 轮半径 60.3 mm</span><button class="button dark-button" id="reset-solver" type="button">复位</button></div></div>
+<link rel="stylesheet" href="{{ '/assets/css/linkage.css' | relative_url }}">
+<header class="mechanism-head">
+  <div class="wrap">
+    <a href="{{ '/projects/' | relative_url }}">← 项目实验室</a>
+    <p class="eyebrow"><i></i> KINEMATICS LAB</p>
+    <h1>五连杆运动学实验台</h1>
+    <p>调节髋、膝关节，对照两种机构中的同一个末端点。</p>
+  </div>
+</header>
+<div class="wrap page-body linkage-lab">
+  <noscript><p>开启 JavaScript 即可操作运动学实验台。机构尺寸列于本页底部。</p></noscript>
+  <div class="instrument">
+    <div class="instrument-bar">
+      <div class="instrument-label"><span aria-hidden="true">⌖</span> 运动投影</div>
+      <output id="solver-status" role="status">等待求解</output>
+    </div>
+    <div class="plot-selector" aria-label="选择机构视图">
+      <button type="button" aria-controls="closed-view" aria-pressed="true" data-view="closed">闭环五连杆</button>
+      <button type="button" aria-controls="serial-view" aria-pressed="false" data-view="serial">等效串联臂</button>
+    </div>
+    <div class="instrument-plots" data-mobile-view="closed">
+      <figure id="closed-view"><figcaption><b>闭环五连杆</b><span>A → B → C → D → E</span></figcaption><canvas id="closed-plot" width="600" height="380" role="img" aria-label="闭环五连杆运动投影"></canvas></figure>
+      <figure id="serial-view"><figcaption><b>等效串联臂</b><span>E → D → C</span></figcaption><canvas id="serial-plot" width="600" height="380" role="img" aria-label="串联机构运动投影"></canvas></figure>
+    </div>
+    <div class="instrument-foot">
+      <span id="endpoint">末端 C</span>
+      <div class="trail-tools">
+        <label><input type="checkbox" id="trail-toggle" checked> 记录轨迹</label>
+        <button type="button" id="clear-trail" disabled>清空轨迹</button>
+        <span id="trail-count">0 点</span>
+      </div>
+    </div>
+  </div>
+  <div class="pose-bar" aria-label="常用姿态">
+    <b>参考姿态</b>
+    <button type="button" data-pose="stand" aria-pressed="true">直立</button>
+    <button type="button" data-pose="crouch" aria-pressed="false">屈膝</button>
+    <button type="button" data-pose="lean" aria-pressed="false">侧摆</button>
+    <button type="button" id="reset-solver">复位</button>
+  </div>
+  <div class="solver-controls">
+    <fieldset><legend>正向输入</legend>
+      <label>髋 1 · θ₁ <input type="range" id="hip1" min="-150" max="150" step=".1" value="60"><output for="hip1"></output></label>
+      <label>髋 2 · θ₂ <input type="range" id="hip2" min="-150" max="150" step=".1" value="120"><output for="hip2"></output></label>
+    </fieldset>
+    <fieldset><legend>逆向输入</legend>
+      <label>髋 2 · θ₂ <input type="range" id="inv-hip" min="-150" max="150" step=".1" value="120"><output for="inv-hip"></output></label>
+      <label>膝 2 · γ <input type="range" id="knee" min="-180" max="180" step=".1" value="0"><output for="knee"></output></label>
+    </fieldset>
+  </div>
+  <div class="mechanism-spec"><b>机构尺寸</b><span>AB、ED <strong>75 mm</strong></span><span>BC、DC <strong>140 mm</strong></span><span>AE <strong>80 mm</strong></span><span>轮半径 <strong>60.3 mm</strong></span></div>
+</div>
 <script type="module" src="{{ '/assets/js/linkage.mjs' | relative_url }}"></script>

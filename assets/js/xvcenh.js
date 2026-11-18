@@ -1,3 +1,4 @@
+import { motionPaused, redraw, renderScene } from "./classic-motion.js";
     (function() {
         const canvas = document.getElementById('xvcenh-canvas');
         const ctx = canvas.getContext('2d');
@@ -51,12 +52,12 @@
                 'V': [{ dx: -0.18, dy: 0.05, w: 0.18, h: 1.1, angle: -22, round: 8 }, { dx: 0.18, dy: 0.05, w: 0.18, h: 1.1, angle: 22, round: 8 }],
                 'C': [{ dx: -0.38, dy: 0, w: 0.16, h: 0.85, angle: 0, round: 8 }, { dx: 0, dy: -0.38, w: 0.65, h: 0.16, angle: 0, round: 8 }, { dx: 0, dy: 0.38, w: 0.65, h: 0.16, angle: 0, round: 8 }],
                 'E': [{ dx: -0.42, dy: 0, w: 0.16, h: 1.0, angle: 0, round: 6 }, { dx: 0.05, dy: -0.42, w: 0.7, h: 0.16, angle: 0, round: 6 }, { dx: 0, dy: 0, w: 0.6, h: 0.16, angle: 0, round: 6 }, { dx: 0.05, dy: 0.42, w: 0.7, h: 0.16, angle: 0, round: 6 }],
-                'N': [{ dx: 0, dy: 0, w: 0.18, h: 1.12, angle: 57, round: 6 }, { dx: -0.42, dy: 0, w: 0.18, h: 1.0, angle: 0, round: 6 }, { dx: 0.42, dy: 0, w: 0.18, h: 1.0, angle: 0, round: 6 }],
+                'N': [{ dx: 0, dy: 0, w: 0.18, h: 1.12, angle: -57, round: 6 }, { dx: -0.42, dy: 0, w: 0.18, h: 1.0, angle: 0, round: 6 }, { dx: 0.42, dy: 0, w: 0.18, h: 1.0, angle: 0, round: 6 }],
                 'H': [{ dx: -0.4, dy: 0, w: 0.16, h: 1.0, angle: 0, round: 8 }, { dx: 0.4, dy: 0, w: 0.16, h: 1.0, angle: 0, round: 8 }, { dx: 0, dy: 0, w: 0.8, h: 0.24, angle: 0, round: 8 }],
             };
         }
 
-        let allParts = [], rawTargets = [];
+        let rawTargets = [];
 
         function computeAllTargets(letterSet) {
             const baseHeight = Math.min(H * 0.38, W * 0.09);
@@ -155,21 +156,25 @@
             });
         }
 
-        function toggle() {
-            isConverged = !isConverged;
+        const typeControl = document.getElementById("type-control");
+        function arrange(converged) {
+            isConverged = converged;
             stateTimer = 0;
-            if (isConverged) {
-                rawTargets.forEach((t, i) => { if (particles[i]) { particles[i].tx = t.tx; particles[i].ty = t.ty; } });
-                canvas.style.pointerEvents = 'none';
-            } else {
-                particles.forEach(p => p.setScatterTarget());
-                canvas.style.pointerEvents = 'auto';
-            }
+            particles.forEach((p, i) => {
+                if (converged) { p.tx = rawTargets[i].tx; p.ty = rawTargets[i].ty; }
+                else p.setScatterTarget();
+                if (motionPaused()) {
+                    p.cx = p.tx; p.cy = p.ty; p.vx = p.vy = 0;
+                    if (converged) p.angle = p.tAngle;
+                }
+            });
+            typeControl.textContent = converged ? "散开文字" : "聚合文字";
+            redraw();
         }
+        function toggle() { arrange(!isConverged); }
         function rebuildAll() {
             createParticles();
-            if (!isConverged) particles.forEach(p => p.setScatterTarget());
-            else rawTargets.forEach((t, i) => { if (particles[i]) { particles[i].tx = t.tx; particles[i].ty = t.ty; } });
+            arrange(isConverged);
         }
 
         let mouseX = -999, mouseY = -999, mouseActive = false;
@@ -204,18 +209,15 @@
             }
         }
 
-        function animate(ts) {
-            requestAnimationFrame(animate);
-            if (document.hidden) return;
-            const dt = Math.min(0.1, (ts - (animate.lastTs || ts)) / 1000);
-            animate.lastTs = ts; globalTime += dt;
+        function animate(ts, dt) {
+            globalTime += dt;
 
             stateTimer += dt;
-            if (!matchMedia("(prefers-reduced-motion: reduce)").matches && stateTimer > (isConverged ? CONV_TIME : SCAT_TIME)) toggle();
+            if (dt && stateTimer > (isConverged ? CONV_TIME : SCAT_TIME)) toggle();
 
-            for (const p of particles) p.update(dt, globalTime, isConverged);
+            if (dt) for (const p of particles) p.update(dt, globalTime, isConverged);
 
-            if (mouseActive) {
+            if (mouseActive && dt) {
                 const r = 130;
                 for (const p of particles) {
                     const dx = p.cx - mouseX, dy = p.cy - mouseY, dist = Math.sqrt(dx*dx + dy*dy);
@@ -236,16 +238,16 @@
         function init() {
             resize();
             createParticles();
-            isConverged = false; stateTimer = 0;
-            // 初始不拦截触摸，等1.5秒后toggle才启用交互
-            canvas.style.pointerEvents = 'none';
-            animate.lastTs = performance.now();
-            requestAnimationFrame(animate);
-            setTimeout(() => { if (!isConverged) toggle(); }, 1500);
+            arrange(motionPaused());
+            if (!motionPaused()) stateTimer = SCAT_TIME - 1.5;
+            canvas.style.pointerEvents = "auto";
+            typeControl.hidden = false;
+            typeControl.addEventListener("click", toggle);
+            renderScene(animate);
         }
 
         window.addEventListener('keydown', e => {
-            if ((e.key === ' ' || e.code === 'Space') && !e.target.closest('a,button,input')) { e.preventDefault(); toggle(); }
+            if ((e.key === ' ' || e.code === 'Space') && !e.target.closest('a,button,input,summary')) { e.preventDefault(); toggle(); }
         });
 
         init();

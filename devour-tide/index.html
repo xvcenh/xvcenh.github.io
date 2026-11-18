@@ -7,39 +7,48 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="game" aria-label="深海鱼群游戏场景"></canvas>
 
 <div id="ui">
   <!-- ============ 主菜单 ============ -->
   <div class="screen center" id="scr-menu">
-    <a class="lab-return" href="../projects/">← 项目实验室</a>
-    <div class="title-wrap">
-      <h1 class="game-title">吞噬之潮</h1>
-      <div class="game-sub">D E V O U R &nbsp;·&nbsp; T I D E</div>
+    <div class="tide-launch">
+      <a class="lab-return" href="../projects/">← 项目实验室</a>
+      <div class="title-wrap">
+        <div class="game-sub" lang="en">Devour Tide</div>
+        <h1 class="game-title">吞噬之潮</h1>
+        <button class="sonar" data-act="customize" type="button" aria-label="前往捏鱼工坊，自定义玩家小鱼">
+          <span class="sonar-sweep" aria-hidden="true"></span>
+          <canvas id="sonarFish" width="460" height="175" aria-hidden="true"></canvas>
+          <span class="sonar-name" id="sonarName"></span><span class="sonar-open">捏鱼工坊 ↗</span>
+        </button>
+      </div>
+      <div class="launch-options">
+        <div class="menu-grid" role="group" aria-label="选择游戏模式">
+          <button class="btn big" data-act="solo"><span class="ico" aria-hidden="true">🐟</span><b>单人远征</b><small>穿越六片海域，挑战深渊巨鲸。</small></button>
+          <button class="btn big" data-act="coop"><span class="ico" aria-hidden="true">🤝</span><b>双人合作</b><small>同屏捕食，救回倒下的队友。</small></button>
+          <button class="btn big" data-act="versus"><span class="ico" aria-hidden="true">⚔️</span><b>双人竞争</b><small>争夺进化点，进入终局撕咬。</small></button>
+          <button class="btn big" data-act="endless"><span class="ico" aria-hidden="true">🌊</span><b>无尽生存</b><small>迎战递增的鱼群，刷新纪录。</small></button>
+        </div>
+        <div class="menu-row">
+          <button class="btn" data-act="settings">游戏设置</button>
+          <button class="btn" data-act="howto">玩法说明</button>
+        </div>
+      </div>
+      <p class="hint desktop-hint">WASD 移动 · 空格冲刺 · Esc 暂停</p>
+      <p class="hint touch-hint">方向键控制 P1 · 按「冲刺」加速。双人模式可接键盘或手柄。</p>
     </div>
-    <div class="menu-grid">
-      <button class="btn big" data-act="solo"><span class="ico">🐟</span><b>单人远征</b><small>关卡模式 · 6 大场景 · 通关深渊</small></button>
-      <button class="btn big" data-act="coop"><span class="ico">🤝</span><b>双人合作</b><small>同屏并肩 · 共享进化 · 复活队友</small></button>
-      <button class="btn big" data-act="versus"><span class="ico">⚔️</span><b>双人竞争</b><small>抢食夺点 · 鱼尽之后 · 终局撕咬</small></button>
-      <button class="btn big" data-act="endless"><span class="ico">🌊</span><b>无尽生存</b><small>无限递增难度 · 本地纪录</small></button>
-    </div>
-    <div class="menu-row">
-      <button class="btn" data-act="customize">🎨 捏鱼工坊</button>
-      <button class="btn" data-act="settings">⚙️ 设置</button>
-      <button class="btn" data-act="howto">📖 玩法说明</button>
-    </div>
-    <div class="hint">P1：WASD 移动 · 空格 冲刺 · F 复活队友　|　P2：方向键 移动 · 回车 冲刺 · 右Shift 复活　|　Esc 暂停 · M 静音</div>
   </div>
 
   <!-- ============ 捏鱼工坊 ============ -->
-  <div class="screen center" id="scr-custom">
+  <div class="screen center hidden" id="scr-custom">
     <h2 class="screen-title">🎨 捏鱼工坊</h2>
     <div class="custom-wrap">
       <div class="preview-box">
         <canvas id="fishPreview" width="460" height="300"></canvas>
         <div class="tab-row">
-          <button class="tab active" data-tab="0">P1 小鱼</button>
-          <button class="tab" data-tab="1">P2 小鱼</button>
+          <button class="tab active" aria-pressed="true" data-tab="0">P1 小鱼</button>
+          <button class="tab" aria-pressed="false" data-tab="1">P2 小鱼</button>
         </div>
         <div class="preset-row">
           <button class="btn small" data-act="savePreset">💾 保存预设</button>
@@ -79,7 +88,7 @@
   </div>
 
   <!-- ============ 设置 ============ -->
-  <div class="screen center" id="scr-settings">
+  <div class="screen center hidden" id="scr-settings">
     <h2 class="screen-title">⚙️ 设置</h2>
     <div class="control-box slim">
       <label>音量 <input type="range" id="setVolume" min="0" max="1" step="0.05" value="0.7"><em id="setVolumeV">70%</em></label>
@@ -100,15 +109,15 @@
   </div>
 
   <!-- ============ 玩法说明 ============ -->
-  <div class="screen center" id="scr-howto">
+  <div class="screen center hidden" id="scr-howto">
     <h2 class="screen-title">📖 玩法说明</h2>
     <div class="howto-box">
       <p><b>🐟 核心规则</b>：吞食比自己小的鱼成长，躲开比自己大的鱼。被咬会损失体型，体型过小会被吞食。</p>
       <p><b>🃏 Rogue 进化</b>：吞食攒进化点，升级时三选一。凑齐同流派卡牌激活羁绊 —— 速度流 / 剧毒流 / 巨兽流 / 灵巧流 / 诅咒流。</p>
       <p><b>🌍 场景机制</b>：珊瑚礁 → 荧光水母（电网！）→ 沉船暗流 → 冰海浮冰白雾 → 火山喷发 → 深渊黑暗。</p>
-      <p><b>🤝 合作</b>：队友倒下后靠近按 F / 右Shift 复活（消耗自身体型）。BOSS 需要两人同时咬住弱点。</p>
+      <p><b>🤝 合作</b>：队友倒下后靠近按 F / 右Shift 复活（消耗自身体型）。两人同时咬住 BOSS 弱点可以打出额外伤害。</p>
       <p><b>⚔️ 竞争</b>：互相抢食抢进化点；当场上鱼被吃完，进入<b>终局撕咬</b> —— 互相撕咬，体型小的被吞掉。</p>
-      <p><b>🎮 操作</b>：P1 = WASD + 空格冲刺；P2 = 方向键 + 回车冲刺；支持手柄。</p>
+      <p><b>🎮 操作</b>：P1 = WASD + 空格冲刺；P2 = 方向键 + 回车冲刺；支持手柄。触屏用方向键和冲刺键操纵 P1，可在右下角暂停。</p>
     </div>
     <div class="menu-row"><button class="btn" data-act="howtoBack">← 返回</button></div>
   </div>
@@ -117,7 +126,7 @@
   <div id="hud" class="hidden">
     <div id="touch-controls" aria-label="触屏操作">
       <div class="dpad"><button data-key="KeyW" aria-label="向上">↑</button><button data-key="KeyA" aria-label="向左">←</button><button data-key="KeyS" aria-label="向下">↓</button><button data-key="KeyD" aria-label="向右">→</button></div>
-      <div><button data-key="Space">冲刺</button><button id="touch-pause">暂停</button></div>
+      <div><button data-key="KeyF" id="touch-revive" hidden>复活</button><button data-key="Space">冲刺</button><button id="touch-pause">暂停</button></div>
     </div>
     <div class="hud-top">
       <div class="player-card" id="pc0">
@@ -151,14 +160,14 @@
   </div>
 
   <!-- ============ 抽卡 ============ -->
-  <div class="screen center" id="scr-cards">
+  <div class="screen center hidden" id="scr-cards">
     <h2 class="screen-title" id="cardTitle">⬆️ 选择进化</h2>
     <div class="cards-row" id="cardRow"></div>
     <div class="hint">点击卡片选择 · 也可按 1 / 2 / 3</div>
   </div>
 
   <!-- ============ 结算 ============ -->
-  <div class="screen center" id="scr-results">
+  <div class="screen center hidden" id="scr-results">
     <h2 class="screen-title" id="resTitle">🏆 胜利</h2>
     <div class="res-body" id="resBody"></div>
     <div class="menu-row">
@@ -168,7 +177,7 @@
   </div>
 
   <!-- ============ 暂停 ============ -->
-  <div class="screen center" id="scr-pause">
+  <div class="screen center hidden" id="scr-pause">
     <h2 class="screen-title">⏸ 暂停</h2>
     <div class="menu-col">
       <button class="btn primary" data-act="resume">▶ 继续游戏</button>

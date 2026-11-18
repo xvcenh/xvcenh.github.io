@@ -256,6 +256,7 @@ body::before {
 
 /* NEON 灯管文字 */
 .neon-sign {
+  background: transparent; border: 0; padding: 0;
   position: absolute; right: clamp(10px, 5vw, 90px); top: clamp(110px, 18vh, 210px); z-index: 8;
   font-family: var(--font-title); font-weight: 900;
   font-size: clamp(34px, 6vw, 84px); letter-spacing: .18em;
@@ -521,13 +522,14 @@ footer {
 <div class="vhs-tracking" aria-hidden="true"></div>
 
 <!-- ================= 统一导航 ================= -->
-<nav class="style-nav">
-  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+<nav class="style-nav" aria-label="界面展馆">
+  <a class="gallery-return" href="../projects/">← 项目实验室</a>
+  <a class="nav-home" href="index.html">界面展馆</a>
   <a href="cyber.html">赛博霓虹</a>
   <a href="glass.html">极光玻璃</a>
   <a href="brutal.html">粗野主义</a>
   <a href="terminal.html">黑客终端</a>
-  <a class="current" href="retro.html">蒸汽波</a>
+  <a class="current" aria-current="page" href="retro.html">蒸汽波</a>
   <a href="win98.html">Win98</a>
   <a href="nature.html">水墨自然</a>
   <a href="swiss.html">瑞士排版</a>
@@ -582,7 +584,7 @@ footer {
   </svg>
 
   <!-- NEON 灯管 -->
-  <div class="neon-sign" aria-hidden="true">NEON<small>midnight city</small></div>
+  <button type="button" class="neon-sign" aria-label="轻点三下霓虹灯解锁彩蛋">NEON<small>midnight city</small></button>
 
   <!-- 文案 -->
   <div class="hero-copy">

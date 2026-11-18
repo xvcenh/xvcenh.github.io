@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>xvcenh 超级博客 · Super Blog Interface</title>
 <meta name="description" content="xvcenh(徐辰)的超级博客 — 十种风格子页面、Canvas 特效引擎、命令面板、彩蛋系统的实验性博客界面">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/gallery.css">
 <style>
 /* ================= tokens ================= */
 :root {
@@ -47,24 +46,6 @@ body {
 }
 ::selection { background: var(--ember); color: #fff; }
 a { color: inherit; }
-
-/* ================= preloader ================= */
-#preloader {
-  position: fixed; inset: 0; z-index: 200000;
-  background: var(--bg); display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 22px;
-  transition: opacity .6s ease, visibility .6s;
-}
-#preloader.done { opacity: 0; visibility: hidden; }
-.pre-logo {
-  font: 700 clamp(34px, 7vw, 64px)/1 "JetBrains Mono", monospace;
-  letter-spacing: .12em;
-  background: linear-gradient(100deg, var(--ember), var(--amber), var(--mint));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.pre-bar { width: min(320px, 64vw); height: 3px; background: var(--line); border-radius: 99px; overflow: hidden; }
-.pre-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ember), var(--mint)); transition: width .3s ease; }
-.pre-tip { font: 400 12px/1 "JetBrains Mono", monospace; color: var(--dim); letter-spacing: .18em; }
 
 /* ================= top nav ================= */
 .topbar {
@@ -392,18 +373,10 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 </head>
 <body>
 
-<!-- ================= preloader ================= -->
-<div id="preloader">
-  <div class="pre-logo" id="preLogo">XVCENH</div>
-  <div class="pre-bar"><i id="preBar"></i></div>
-  <div class="pre-tip">LOADING SUPER BLOG INTERFACE</div>
-</div>
-
 <!-- ================= topbar ================= -->
-<nav class="topbar">
+<nav class="topbar" aria-label="界面展馆">
   <a class="brand" href="index.html" id="brandLogo"><span class="brand-orb"></span>xvcenh<span style="color:var(--ember)">.</span>blog</a>
   <div class="top-links">
-    <a href="https://xvcenh.github.io/">工程手记</a>
     <a href="#tools">开源工具</a>
     <a href="#posts">最新文章</a>
     <a href="#styles">风格展馆</a>
@@ -411,9 +384,9 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
     <a href="lab.html">🧪 实验室</a>
   </div>
   <div class="top-actions">
-    <button class="kbd-btn" id="paletteBtn">⌘<span>K 命令面板</span></button>
+    <a class="gallery-return" href="../projects/">← 项目实验室</a>
+    <button class="kbd-btn" id="paletteBtn" aria-label="打开命令面板">⌘<span>K</span></button>
     <button class="icon-btn" id="themeBtn" title="切换明暗">◐</button>
-    <a class="icon-btn" href="https://github.com/xvcenh" title="GitHub" style="text-decoration:none">⌘</a>
   </div>
 </nav>
 
@@ -421,26 +394,31 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 <header class="hero">
   <canvas class="hero-aurora" id="heroAurora"></canvas>
   <canvas class="hero-stars interactive" id="heroStars"></canvas>
-  <div class="hero-inner">
-    <div class="hero-tag"><i></i>SUPER BLOG INTERFACE · v3.0 · 炫技版</div>
-    <h1 id="heroTitle"><span class="ch">X</span><span class="ch">V</span><span class="ch accent">C</span><span class="ch">E</span><span class="ch">N</span><span class="ch accent">H</span></h1>
+  <div class="hero-inner exhibit-hero">
+    <div class="exhibit-copy">
+    <div class="hero-tag"><i></i>INTERFACE GALLERY · xvcenh</div>
+    <h1 id="heroTitle"><span class="ch">界面</span><span class="ch accent">实验</span></h1>
     <p class="hero-sub"><span id="typedTarget"></span></p>
     <p class="hero-desc">
-      这是一个把「博客」当成「作品」来做的实验性界面 —— 10 种截然不同的风格子页面、
-      自研 Canvas 特效引擎、命令面板、彩蛋系统，以及从开源社区移植来的经典交互。
-      每一次滚动、悬停与点击，都应该有一点惊喜。
+      同一份工程手记，十种打开方式。在终端输入命令，在 Win98 桌面拖动窗口，或到炫技实验室点亮整片星空。
     </p>
     <div class="hero-cta">
-      <a class="btn btn-primary fx-ripple" data-magnetic href="#styles">进入风格展馆 <span>→</span></a>
+      <a class="btn btn-primary fx-ripple" data-magnetic href="#styles">浏览全部界面 <span>→</span></a>
       <a class="btn btn-ghost fx-ripple" data-magnetic href="lab.html">🧪 打开炫技实验室</a>
     </div>
     <div class="hero-meta">
-      <div><b><span class="counter" data-target="10">0</span></b><span>STYLE PAGES</span></div>
-      <div><b><span class="counter" data-target="13">0</span></b><span>CANVAS FX</span></div>
-      <div><b><span class="counter" id="journal-total" data-target="11">0</span></b><span>TECH POSTS</span></div>
-      <div><b><span class="counter" data-target="4">0</span></b><span>OSS TOOLS</span></div>
-      <div><b><span class="counter" data-target="0" data-suffix="KB">0</span></b><span>FRAMEWORK DEPS</span></div>
+      <div><b><span class="counter" data-target="10">10</span></b><span>种实验界面</span></div>
+      <div><b><span id="journal-total">11</span></b><span>篇工程手记</span></div>
+      <div><b><span class="counter" data-target="4">4</span></b><span>个开源项目</span></div>
     </div>
+    </div>
+    <figure class="mode-preview">
+      <a class="mode-open" href="cyber.html" aria-label="体验赛博霓虹界面"><img src="assets/previews/cyber.webp" width="640" height="360" alt="赛博霓虹界面预览"></a>
+      <figcaption>
+        <div class="mode-caption"><span class="mode-count">01 / 10</span><a class="mode-name" href="cyber.html">赛博霓虹 ↗</a></div>
+        <div class="mode-step" hidden><button type="button" data-step="-1" aria-label="上一个界面">←</button><button type="button" data-step="1" aria-label="下一个界面">→</button></div>
+      </figcaption>
+    </figure>
   </div>
   <div class="scroll-hint"><span>SCROLL</span><i></i></div>
 </header>
@@ -582,23 +560,23 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
     <p class="sec-note reveal">同一个博客，十种人格。点进去看看同一份内容如何在完全不同的视觉语言里重生。</p>
   </div>
   <div class="style-grid">
-    <a class="style-card reveal-scale" href="cyber.html"><div class="style-thumb thumb-cyber"></div><div class="style-badge">01 / CYBER</div><div class="style-meta"><h4>赛博霓虹</h4><p>GLITCH · MATRIX RAIN · NEON</p></div></a>
-    <a class="style-card reveal-scale" href="glass.html"><div class="style-thumb thumb-glass"></div><div class="style-badge">02 / GLASS</div><div class="style-meta"><h4>极光玻璃</h4><p>GLASSMORPHISM · BOKEH</p></div></a>
-    <a class="style-card reveal-scale" href="brutal.html"><div class="style-thumb thumb-brutal"></div><div class="style-badge">03 / BRUTAL</div><div class="style-meta"><h4>粗野主义</h4><p>NEO-BRUTALISM · RAW</p></div></a>
-    <a class="style-card reveal-scale" href="terminal.html"><div class="style-thumb thumb-terminal"></div><div class="style-badge">04 / TERM</div><div class="style-meta"><h4>黑客终端</h4><p>INTERACTIVE SHELL</p></div></a>
-    <a class="style-card reveal-scale" href="retro.html"><div class="style-thumb thumb-retro"></div><div class="style-badge">05 / RETRO</div><div class="style-meta"><h4>蒸汽波</h4><p>VAPORWAVE · SYNTHWAVE</p></div></a>
-    <a class="style-card reveal-scale" href="win98.html"><div class="style-thumb thumb-win98"></div><div class="style-badge">06 / WIN98</div><div class="style-meta"><h4>Win98 桌面</h4><p>98.CSS · DRAGGABLE WINDOWS</p></div></a>
-    <a class="style-card reveal-scale" href="nature.html"><div class="style-thumb thumb-nature"></div><div class="style-badge">07 / NATURE</div><div class="style-meta"><h4>水墨自然</h4><p>PAPER · PETALS · INK</p></div></a>
-    <a class="style-card reveal-scale" href="swiss.html"><div class="style-thumb thumb-swiss"></div><div class="style-badge">08 / SWISS</div><div class="style-meta"><h4>瑞士排版</h4><p>GRID · TYPOGRAPHY</p></div></a>
-    <a class="style-card reveal-scale" href="anime.html"><div class="style-thumb thumb-anime"></div><div class="style-badge">09 / ANIME</div><div class="style-meta"><h4>日系二次元</h4><p>SAKURA · TYPEWRITER</p></div></a>
-    <a class="style-card reveal-scale" href="lab.html"><div class="style-thumb thumb-lab"></div><div class="style-badge">10 / LAB</div><div class="style-meta"><h4>炫技实验室</h4><p>ALL FX · PLAYGROUND</p></div></a>
+    <a class="style-card reveal-scale" href="cyber.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/cyber.webp" alt=""><div class="style-badge">01 / CYBER</div><div class="style-meta"><h4>赛博霓虹</h4><p>GLITCH · MATRIX RAIN · NEON</p></div></a>
+    <a class="style-card reveal-scale" href="glass.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/glass.webp" alt=""><div class="style-badge">02 / GLASS</div><div class="style-meta"><h4>极光玻璃</h4><p>GLASSMORPHISM · BOKEH</p></div></a>
+    <a class="style-card reveal-scale" href="brutal.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/brutal.webp" alt=""><div class="style-badge">03 / BRUTAL</div><div class="style-meta"><h4>粗野主义</h4><p>NEO-BRUTALISM · RAW</p></div></a>
+    <a class="style-card reveal-scale" href="terminal.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/terminal.webp" alt=""><div class="style-badge">04 / TERM</div><div class="style-meta"><h4>黑客终端</h4><p>INTERACTIVE SHELL</p></div></a>
+    <a class="style-card reveal-scale" href="retro.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/retro.webp" alt=""><div class="style-badge">05 / RETRO</div><div class="style-meta"><h4>蒸汽波</h4><p>VAPORWAVE · SYNTHWAVE</p></div></a>
+    <a class="style-card reveal-scale" href="win98.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/win98.webp" alt=""><div class="style-badge">06 / WIN98</div><div class="style-meta"><h4>Win98 桌面</h4><p>98.CSS · DRAGGABLE WINDOWS</p></div></a>
+    <a class="style-card reveal-scale" href="nature.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/nature.webp" alt=""><div class="style-badge">07 / NATURE</div><div class="style-meta"><h4>水墨自然</h4><p>PAPER · PETALS · INK</p></div></a>
+    <a class="style-card reveal-scale" href="swiss.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/swiss.webp" alt=""><div class="style-badge">08 / SWISS</div><div class="style-meta"><h4>瑞士排版</h4><p>GRID · TYPOGRAPHY</p></div></a>
+    <a class="style-card reveal-scale" href="anime.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/anime.webp" alt=""><div class="style-badge">09 / ANIME</div><div class="style-meta"><h4>日系二次元</h4><p>SAKURA · TYPEWRITER</p></div></a>
+    <a class="style-card reveal-scale" href="lab.html"><img class="style-thumb" loading="lazy" decoding="async" width="640" height="360" src="assets/previews/lab.webp" alt=""><div class="style-badge">10 / LAB</div><div class="style-meta"><h4>炫技实验室</h4><p>ALL FX · PLAYGROUND</p></div></a>
   </div>
 </section>
 
 <!-- ================= stats ================= -->
 <section class="section" style="padding-top:0">
   <div class="stats-strip reveal-scale">
-    <div class="stat"><b><span class="counter" id="journal-topics" data-target="11">0</span></b><span>JOURNAL TOPICS</span></div>
+    <div class="stat"><b><span id="journal-topics">11</span></b><span>JOURNAL TOPICS</span></div>
     <div class="stat"><b><span class="counter" data-target="13">0</span></b><span>RENDERERS IN FX.JS</span></div>
     <div class="stat"><b><span class="counter" data-target="60">0</span><small>fps</small></b><span>TARGET FRAMERATE</span></div>
     <div class="stat"><b><span class="counter" data-target="100">0</span><small>%</small></b><span>零框架 · 原生实现</span></div>
@@ -667,18 +645,6 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 (function () {
   'use strict';
 
-  /* ---------- preloader ---------- */
-  var bar = document.getElementById('preBar'), pre = document.getElementById('preloader');
-  var p = 0;
-  var preTick = setInterval(function () {
-    p = Math.min(100, p + Math.random() * 22);
-    bar.style.width = p + '%';
-    if (p >= 100) {
-      clearInterval(preTick);
-      setTimeout(function () { pre.classList.add('done'); }, 260);
-    }
-  }, 130);
-
   /* ---------- hero letters ---------- */
   document.querySelectorAll('#heroTitle .ch').forEach(function (ch, i) {
     ch.style.animationDelay = (0.15 + i * 0.075) + 's';
@@ -699,7 +665,7 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
   });
 
   /* ---------- typed subtitle ---------- */
-  if (window.Typed) {
+  if (window.Typed && !FX.REDUCED) {
     new Typed('#typedTarget', {
       strings: [
         '把「博客」做成「作品」的人 ✦',
@@ -722,7 +688,7 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 
   /* ---------- magnetic buttons & tilt cards ---------- */
   document.querySelectorAll('[data-magnetic]').forEach(function (el) { FX.magnetic(el); });
-  if (window.VanillaTilt) {
+  if (window.VanillaTilt && !FX.REDUCED && matchMedia("(hover:hover)").matches) {
     VanillaTilt.init(document.querySelectorAll('[data-tilt]'), {
       max: 6, speed: 600, glare: true, 'max-glare': 0.16, scale: 1.015
     });
@@ -813,5 +779,6 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 })();
 </script>
 <script src="assets/journal.js" defer></script>
+<script src="assets/gallery.js" defer></script>
 </body>
 </html>

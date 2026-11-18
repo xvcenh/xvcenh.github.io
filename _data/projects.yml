@@ -3,7 +3,7 @@
   group: playground
   image: lab-linkage.webp
   preview_order: 2
-  image_alt: 网格坐标中的五连杆闭环，五个关节用彩色杆件相连
+  image_alt: 工程网格中的五连杆闭环、真实毫米标尺与末端运动轨迹
   tag: ROBOTICS
   caption: 拖动关节角度，实时对照闭环机构和等效串联臂的正向与逆向解。
   demo: /fivebar-linkage/
@@ -21,7 +21,7 @@
   group: playground
   image: lab-interface.webp
   preview_order: 4
-  image_alt: 深色粒子背景上的炫技实验室首页
+  image_alt: 展馆星空下的橙色标题与赛博霓虹界面预览
   tag: INTERACTION
   caption: 从 Win98 桌面到黑客终端，逐个体验十种可操作的界面风格。
   demo: /super-blog/

@@ -1,3 +1,4 @@
+import { renderScene } from "./classic-motion.js";
     (function() {
         // 星空粒子系统
         (function() {
@@ -21,21 +22,22 @@
                 });
             }
             window.addEventListener('resize', resize);
-            function draw() {
+            let elapsed = 0;
+            function draw(time, dt) {
+                elapsed += dt;
                 ctx.clearRect(0, 0, w, h);
                 for (const s of stars) {
-                    s.x += s.vx; s.y += s.vy;
+                    s.x += s.vx * dt * 60; s.y += s.vy * dt * 60;
                     if (s.x < 0) s.x = w; if (s.x > w) s.x = 0;
                     if (s.y < 0) s.y = h; if (s.y > h) s.y = 0;
-                    const blink = s.a + Math.sin(Date.now() * 0.001 + s.blink) * 0.2;
+                    const blink = s.a + Math.sin(elapsed + s.blink) * 0.2;
                     ctx.fillStyle = `rgba(200,220,255,${Math.max(0.1, blink)})`;
                     ctx.beginPath();
                     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
                     ctx.fill();
                 }
-                requestAnimationFrame(draw);
             }
-            draw();
+            renderScene(draw);
         })();
 
         const contentSection = document.getElementById('content-section');

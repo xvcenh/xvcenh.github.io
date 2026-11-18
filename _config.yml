@@ -23,7 +23,7 @@ exclude:
   - GITHUB_PAGES_SETUP.md
   - Gemfile
   - Gemfile.lock
-  - "*.zip"
+  - xvcenh-super-blog.zip
   - "*.sh"
   - scripts/
   - vendor/

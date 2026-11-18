@@ -75,18 +75,11 @@ xvcenh-super-blog/
 | [tsParticles](https://github.com/tsparticles/tsparticles) | 思路重写 | fx.js 粒子参数体系 |
 | text-scramble | 思路重写 | FX.scramble |
 
-## 部署到 GitHub Pages
+## 在线与离线
 
-```bash
-# 方式一：把 xvcenh-super-blog/ 的内容推到仓库根目录
-cd xvcenh-super-blog
-git init && git add . && git commit -m "super blog interface"
-git remote add origin git@github.com:xvcenh/xvcenh.github.io.git
-git push -f origin main   # 注意：会覆盖线上博客，请先备份
+在线访问 `/super-blog/`。展馆会从同一站点的 `/search-index.json` 更新首页文章列表，导航中的「项目实验室」可以回到博客。仓库的 Pages 工作流会同时发布十种界面和博客。
 
-# 方式二：放到子目录作为独立站点
-# 推到 gh-pages 分支或 /super-blog/ 路径即可，所有资源均为相对路径
-```
+将整个 `super-blog/` 目录复制到本地，直接打开 `index.html` 即可浏览十种界面。预览图、特效和脚本均随目录提供。离线时首页显示内置文章选集，文章全文和博客项目页链接需要联网访问。
 
 ## 彩蛋清单
 

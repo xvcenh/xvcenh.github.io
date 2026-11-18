@@ -199,7 +199,9 @@ body {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px; font-size: 12px; cursor: default;
 }
-.start-list li:hover { background: navy; color: #fff; }
+.start-list li:hover, .start-list li:focus-within { background: navy; color: #fff; }
+.start-list li:has(button) { padding: 0; }
+.start-list li button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; text-align: left; box-shadow: none; background: transparent; color: inherit; font: inherit; }
 .start-list li .ico { font-size: 18px; width: 22px; text-align: center; }
 .start-list li.sep {
   height: 2px; padding: 0; margin: 3px 2px;
@@ -292,7 +294,7 @@ footer .copy a { color: #0000cc; }
     position: relative !important;
     left: auto !important; top: auto !important;
     width: auto !important; height: auto !important;
-    margin-bottom: 14px;
+    margin-bottom: 14px; scroll-margin-top: calc(var(--nav-h) + 8px);
   }
   .start-menu { position: fixed; bottom: 48px; left: 6px; }
   .taskbar { position: fixed; }
@@ -311,14 +313,15 @@ footer .copy a { color: #0000cc; }
 <body>
 
 <!-- ================= 统一导航 ================= -->
-<nav class="style-nav">
-  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+<nav class="style-nav" aria-label="界面展馆">
+  <a class="gallery-return" href="../projects/">← 项目实验室</a>
+  <a class="nav-home" href="index.html">界面展馆</a>
   <a href="cyber.html">赛博霓虹</a>
   <a href="glass.html">极光玻璃</a>
   <a href="brutal.html">粗野主义</a>
   <a href="terminal.html">黑客终端</a>
   <a href="retro.html">蒸汽波</a>
-  <a class="current" href="win98.html">Win98</a>
+  <a class="current" aria-current="page" href="win98.html">Win98</a>
   <a href="nature.html">水墨自然</a>
   <a href="swiss.html">瑞士排版</a>
   <a href="anime.html">日系二次元</a>
@@ -371,7 +374,7 @@ footer .copy a { color: #0000cc; }
       <p class="welcome-mode">WINDOWS 98 MODE · 桌面版</p>
       <p class="welcome-desc">
         欢迎来到 xvcenh 98。这里是一个可以真正操作的桌面 —— 拖动标题栏移动窗口、
-        最小化/最大化/关闭、双击左侧图标、打开开始菜单，全都真实可用。
+        最小化/最大化/关闭、双击桌面图标（触屏轻点），也可以打开开始菜单，全都真实可用。
         出厂预装：8 篇技术文章、4 个开源工具、1 个 BSOD 彩蛋。
       </p>
       <div class="welcome-actions">
@@ -451,7 +454,7 @@ footer .copy a { color: #0000cc; }
           </tbody>
         </table>
       </div>
-      <div class="win-hint">单击选中，双击打开文章（新窗口）。</div>
+      <div class="win-hint">点击文章标题阅读，双击文件行可在新窗口打开。</div>
     </div>
     <div class="status-bar">
       <div class="status-bar-field">8 个对象</div>
@@ -593,22 +596,22 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
   <div class="start-menu" id="startMenu">
     <div class="start-side">xvcenh 98</div>
     <ul class="start-list">
-      <li data-open="winWelcome"><span class="ico">🖥️</span>欢迎使用 xvcenh 98</li>
-      <li data-open="winBlog"><span class="ico">📁</span>我的博客</li>
-      <li data-open="winAbout"><span class="ico">📝</span>关于我（记事本）</li>
-      <li data-open="winIE"><span class="ico">🌐</span>Internet Explorer</li>
-      <li data-open="winSaver"><span class="ico">🌀</span>3D 屏保预览</li>
+      <li data-open="winWelcome"><button type="button"><span class="ico">🖥️</span>欢迎使用 xvcenh 98</button></li>
+      <li data-open="winBlog"><button type="button"><span class="ico">📁</span>我的博客</button></li>
+      <li data-open="winAbout"><button type="button"><span class="ico">📝</span>关于我（记事本）</button></li>
+      <li data-open="winIE"><button type="button"><span class="ico">🌐</span>Internet Explorer</button></li>
+      <li data-open="winSaver"><button type="button"><span class="ico">🌀</span>3D 屏保预览</button></li>
       <li class="sep"></li>
-      <li data-href="terminal.html"><span class="ico">💾</span>切换到黑客终端</li>
-      <li data-href="retro.html"><span class="ico">📼</span>切换到蒸汽波</li>
+      <li data-href="terminal.html"><button type="button"><span class="ico">💾</span>切换到黑客终端</button></li>
+      <li data-href="retro.html"><button type="button"><span class="ico">📼</span>切换到蒸汽波</button></li>
       <li class="sep"></li>
-      <li id="shutdownItem"><span class="ico">⏻</span>关机...</li>
+      <li id="shutdownItem"><button type="button"><span class="ico">⏻</span>关机...</button></li>
     </ul>
   </div>
 
   <!-- ---------- 任务栏 ---------- -->
   <div class="taskbar">
-    <button class="start-btn" id="startBtn">🪟 开始</button>
+    <button class="start-btn" id="startBtn" aria-controls="startMenu" aria-expanded="false">🪟 开始</button>
     <div class="task-btns" id="taskBtns"></div>
     <div class="tray">
       <span title="音量">🔊</span>
@@ -716,8 +719,7 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
     b.addEventListener('click', function () {
       var w = rec.el;
       if (w.style.display === 'none') {
-        w.style.display = '';
-        focusWin(w);
+        openWin(id);
       } else if (rec.btn.classList.contains('active')) {
         /* 已激活 → 最小化 */
         w.style.display = 'none';
@@ -738,6 +740,10 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
     rec.el.classList.remove('minimized');
     makeTaskBtn(id);
     focusWin(rec.el);
+    rec.el.classList.add('in');
+    if (matchMedia('(max-width:760px)').matches) {
+      rec.el.scrollIntoView({behavior: FX.REDUCED ? 'instant' : 'smooth', block: 'start'});
+    }
   }
 
   function closeWin(win) {
@@ -770,7 +776,7 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
     var bar = win.querySelector('.title-bar');
     bar.addEventListener('pointerdown', function (e) {
       if (e.target.closest('button')) return;          /* 点击控制按钮不拖动 */
-      if (window.innerWidth < 760) return;             /* 小屏为堆叠布局，不拖动 */
+      if (window.innerWidth <= 760) return;             /* 小屏为堆叠布局，不拖动 */
       if (win.classList.contains('maximized')) return; /* 最大化时不拖动 */
       focusWin(win);
       var wr = win.getBoundingClientRect();
@@ -790,9 +796,11 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
         try { bar.releasePointerCapture(e.pointerId); } catch (err) { /* noop */ }
         bar.removeEventListener('pointermove', move);
         bar.removeEventListener('pointerup', up);
+        bar.removeEventListener('pointercancel', up);
       }
       bar.addEventListener('pointermove', move);
       bar.addEventListener('pointerup', up);
+      bar.addEventListener('pointercancel', up);
     });
     /* 双击标题栏 = 最大化/还原 */
     bar.addEventListener('dblclick', function (e) {
@@ -854,6 +862,8 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
     var open = typeof force === 'boolean' ? force : !startMenu.classList.contains('open');
     startMenu.classList.toggle('open', open);
     startBtn.classList.toggle('pressed', open);
+    startBtn.setAttribute('aria-expanded', String(open));
+    if (open) startMenu.querySelector('button').focus({preventScroll: true});
   }
   startBtn.addEventListener('click', function (e) {
     e.stopPropagation();
@@ -862,7 +872,10 @@ GitHub: <a href="https://github.com/xvcenh">https://github.com/xvcenh</a>
   document.addEventListener('click', function (e) {
     if (!e.target.closest('#startMenu') && !e.target.closest('#startBtn')) toggleStart(false);
   });
-  [].slice.call(startMenu.querySelectorAll('li')).forEach(function (li) {
+  startMenu.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { toggleStart(false); startBtn.focus(); }
+  });
+  [].slice.call(startMenu.querySelectorAll('li:not(.sep)')).forEach(function (li) {
     li.addEventListener('click', function () {
       toggleStart(false);
       if (li.id === 'shutdownItem') showBSOD();

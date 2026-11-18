@@ -8,20 +8,49 @@ permalink: /galaxy/
 {% seo %}<link rel="icon" href="{{ '/assets/icon.svg' | relative_url }}"><link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
 <style>
 body { margin:0; background:#000010; color:white; }
-.classic-nav { position:fixed; top:12px; left:12px; z-index:100; display:flex; gap:4px; padding:4px; border:1px solid #657481; border-radius:6px; background:#101523df; font:13px/1.6 system-ui,sans-serif; }
-.classic-nav a { color:#fff; padding:4px 9px; text-decoration:none; }
-.classic-nav a[aria-current] { color:#d2f59a; background:#2c3935; border-radius:3px; }
+.classic-nav,.classic-tools {position:fixed;z-index:100;display:flex;align-items:center;gap:3px;padding:4px;border:1px solid #657481;border-radius:6px;background:#101523f2;color:#fff;font:13px/1.5 system-ui,sans-serif}
+.classic-nav {top:max(10px,env(safe-area-inset-top));left:12px}
+.classic-tools {top:max(10px,env(safe-area-inset-top));right:12px}
+.classic-nav a,.classic-tools button,.classic-tools summary {display:inline-flex;align-items:center;min-height:36px;padding:3px 8px;white-space:nowrap;border:0;border-radius:3px;background:transparent;font:inherit;color:inherit;text-decoration:none;cursor:pointer}
+.classic-tools summary::after {content:"⌄";margin-left:5px}
+.classic-nav a[aria-current],.classic-tools button:hover,.classic-tools summary:hover,.classic-nav a:hover {color:#d2f59a;background:#2c3935}
+.classic-tools details[open] summary {color:#d2f59a}
+.classic-tools details div {position:absolute;right:0;top:calc(100% + 5px);width:min(360px,calc(100vw - 24px));display:grid;grid-template-columns:repeat(3,1fr);padding:8px;max-height:55dvh;overflow:auto;border:1px solid #657481;background:#101523fa;border-radius:5px}
+.classic-tools details a {padding:7px;color:#dfefd6;text-decoration:none}
+.classic-tools details a:hover {text-decoration:underline}
+.classic-nav :focus-visible,.classic-tools :focus-visible {outline:2px solid #d2f59a;outline-offset:0}
+.motion-paused #labels-layer *,.motion-paused #detail-panel {transition:none}
+@media(max-width:680px){.classic-nav,.classic-tools{max-width:calc(100vw - 20px)}.classic-tools{top:auto;bottom:max(9px,env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%)}.classic-tools details div{top:auto;bottom:calc(100% + 5px);right:50%;transform:translateX(50%);width:min(96vw,325px)}#hint-bar,#scroll-hint{bottom:66px;width:calc(100% - 24px);justify-content:center;text-align:center}.classic-nav a,.classic-tools button,.classic-tools summary{min-height:40px}}
 #galaxy-section,#xvcenh-section { height:100vh; height:100dvh; }
 #classic-message { position:absolute; top:60px; left:18px; z-index:16; color:#eaf1e0; border-radius:3px; background:#111b2c; }
-#hint-bar { pointer-events:none; }[hidden] {display:none!important}
+#canvas-container {touch-action:none} #hint-bar { pointer-events:none; }[hidden] {display:none!important}
 </style></head><body>
 <nav class="classic-nav" aria-label="星系导航"><a href="{{ '/' | relative_url }}">← 工程手记</a><a href="?scene=orbit" data-mode="orbit">星系漫游</a><a href="?scene=type" data-mode="type">霓虹拼字</a></nav>
+<div class="classic-tools" role="group" aria-label="场景控制">
+  <button id="motion-control" type="button" hidden>暂停动画</button>
+  <button id="type-control" type="button" hidden>聚合文字</button>
+  <details id="star-routes"><summary>星图目录</summary><div>
+    <a href="{{ '/issues/' | relative_url }}">文章档案</a><a href="{{ '/projects/' | relative_url }}">项目实验室</a><a href="{{ '/search/' | relative_url }}">搜索文章</a>
+    {% assign topics = site.pages | where: 'layout', 'category' | sort: 'topic' %}{% for topic in topics %}
+    <a href="{{ topic.url | relative_url }}">{{ topic.topic | escape }}</a>{% endfor %}
+  </div></details>
+</div>
 <p id="classic-message" role="status"></p>
 <div id="galaxy-section"><div id="canvas-container"></div><div id="labels-layer"></div><div id="detail-panel"><div class="panel-name"></div><div class="panel-hint"></div><div class="panel-articles"></div></div>
-<div id="hint-bar"><span>拖拽旋转 · 滚轮或双指缩放 · 点击行星聚焦，再次点击前往对应页面</span></div></div>
-<div id="xvcenh-section" hidden><canvas class="stars-bg"></canvas><canvas id="xvcenh-canvas" aria-label="霓虹笔画散开和重组"></canvas><div class="scanlines"></div><div id="scroll-hint"><span>空格切换散开与聚合</span></div></div>
+<div id="hint-bar"><span class="hint-desktop">拖拽旋转 · 滚轮缩放 · 点击行星聚焦，再点打开</span><span class="hint-mobile">拖动旋转 · 双指缩放 · 轻点聚焦，再点打开</span></div></div>
+<div id="xvcenh-section" hidden><canvas class="stars-bg"></canvas><canvas id="xvcenh-canvas" aria-label="霓虹笔画散开和重组"></canvas><div class="scanlines"></div><div id="scroll-hint"><span>按空格或使用按钮切换拼字形态</span></div></div>
 <noscript><a href="{{ '/categories/' | relative_url }}">浏览所有分类</a></noscript>
 <script type="module">
+import { motionPaused, pauseMotion } from "{{ '/assets/js/classic-motion.js' | relative_url }}";
+const motionControl = document.getElementById("motion-control");
+function updateMotionLabel() { motionControl.textContent = motionPaused() ? "播放动画" : "暂停动画"; }
+motionControl.addEventListener("click", () => pauseMotion(!motionPaused()));
+document.addEventListener("classic-motion-change", updateMotionLabel);
+updateMotionLabel();
+const routes = document.getElementById("star-routes");
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && routes.open) { routes.open = false; routes.querySelector("summary").focus(); }
+});
 const mode = new URLSearchParams(location.search).get("scene") === "type" ? "type" : "orbit";
 document.querySelector('[data-mode="'+mode+'"]').setAttribute("aria-current","page");
 document.querySelector("#xvcenh-section").hidden = mode !== "type";
@@ -29,8 +58,9 @@ document.querySelector("#galaxy-section").hidden = mode !== "orbit";
 try {
   if (mode === "type") { await import("{{ '/assets/js/stars.js' | relative_url }}"); await import("{{ '/assets/js/xvcenh.js' | relative_url }}"); }
   else await import("{{ '/assets/js/galaxy.js' | relative_url }}");
+  motionControl.hidden = false;
 } catch (error) {
-  document.querySelector("#classic-message").textContent = "三维场景暂不可用，可以切换到霓虹拼字。";
+  document.querySelector("#classic-message").textContent = "场景暂不可用，可切换模式，或通过星图目录前往文章和项目。";
   console.warn(error);
 }
 </script></body></html>

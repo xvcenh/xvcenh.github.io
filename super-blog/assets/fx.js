@@ -16,6 +16,7 @@
     tasks.forEach(function (fn) {
       try { fn(t); } catch (e) { /* isolate task errors */ }
     });
+    if (REDUCED) { running = false; return; }
     frame = requestAnimationFrame(loop);
   }
   function start() {
@@ -32,6 +33,7 @@
     hidden = document.hidden;
     if (hidden) stop(); else start();
   });
+  if (REDUCED) global.addEventListener('resize', start);
 
   /* ============================== 画布工具 ============================== */
   function fit(canvas, maxDpr) {
@@ -51,6 +53,7 @@
     if (!('IntersectionObserver' in global)) return fn(true);
     var io = new IntersectionObserver(function (es) {
       fn(es[0].isIntersecting);
+      if (REDUCED && es[0].isIntersecting) start();
     }, { rootMargin: '80px' });
     io.observe(canvas);
   }
@@ -65,7 +68,9 @@
     }, { passive: true });
     canvas.addEventListener('pointerleave', function () { p.active = false; });
     canvas.addEventListener('pointerdown', function () { p.down = true; });
-    global.addEventListener('pointerup', function () { p.down = false; });
+    function release() { p.down = false; }
+    global.addEventListener('pointerup', release);
+    global.addEventListener('pointercancel', release);
     return p;
   }
 
@@ -75,7 +80,7 @@
   function starfield(canvas, opts) {
     opts = opts || {};
     var n = opts.count || 220, speed = opts.speed || 0.22,
-        shootEvery = opts.shootEvery || 2600, parallax = opts.parallax !== false;
+        parallax = opts.parallax !== false;
     var f = fit(canvas), ctx = f.ctx, w = f.w, h = f.h, p = pointer(canvas);
     var stars = [], shots = [], last = 0, visible = true;
     for (var i = 0; i < n; i++) stars.push({
@@ -92,7 +97,7 @@
     add(function (t) {
       if (!visible) return;
       ctx.clearRect(0, 0, w, h);
-      if (t - last > shootEvery && !REDUCED) {
+      if (t - last > (opts.shootEvery || 2600) && !REDUCED) {
         last = t;
         shots.push({ x: Math.random() * w * 0.7, y: Math.random() * h * 0.45, vx: rand(6, 11), vy: rand(2.2, 4.6), life: 1 });
       }
@@ -174,18 +179,25 @@
     var glyphs = opts.glyphs || 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEF$#%&';
     var fontSize = opts.fontSize || 16, color = opts.color || '#7CFFB2', rgb = opts.rgb || '124,255,178';
     var f = fit(canvas), ctx = f.ctx, w = f.w, h = f.h, visible = true;
-    var cols = Math.ceil(w / fontSize), drops = [];
-    for (var i = 0; i < cols; i++) drops[i] = Math.random() * -h / fontSize;
+    var cols, drops;
+    function resetColumns() {
+      cols = Math.ceil(w / fontSize);
+      drops = Array.from({length: cols}, function () { return Math.random() * h / fontSize; });
+    }
+    resetColumns();
     global.addEventListener('resize', function () {
       var g = fit(canvas); ctx = g.ctx; w = g.w; h = g.h;
-      cols = Math.ceil(w / fontSize); drops = [];
-      for (var k = 0; k < cols; k++) drops[k] = Math.random() * -h / fontSize;
+      resetColumns();
     });
     inView(canvas, function (v) { visible = v; });
     ctx.textBaseline = 'top';
-    var tick = 0;
     add(function () {
-      if (!visible || REDUCED && tick++ % 6) return;
+      if (!visible) return;
+      if (fontSize !== (opts.fontSize || 16)) {
+        fontSize = opts.fontSize || 16;
+        resetColumns();
+        ctx.clearRect(0, 0, w, h);
+      }
       ctx.fillStyle = 'rgba(' + (opts.bg || '6,9,7') + ',' + (opts.fade || 0.085) + ')';
       ctx.fillRect(0, 0, w, h);
       ctx.font = fontSize + 'px "JetBrains Mono", monospace';
@@ -206,7 +218,7 @@
   /* ============================== 4. 星链 Constellation Network ============================== */
   function network(canvas, opts) {
     opts = opts || {};
-    var count = opts.count || 70, dist = opts.dist || 140, rgb = opts.rgb || '120,180,255';
+    var count = opts.count || 70, rgb = opts.rgb || '120,180,255';
     var f = fit(canvas), ctx = f.ctx, w = f.w, h = f.h, p = pointer(canvas), visible = true;
     var nodes = [];
     function seed() {
@@ -224,7 +236,8 @@
     add(function () {
       if (!visible) return;
       ctx.clearRect(0, 0, w, h);
-      var mx = (p.x || 0.5) * w, my = (p.y || 0.5) * h;
+      var dist = opts.dist || 140;
+      var mx = p.x * w, my = p.y * h;
       for (var i = 0; i < nodes.length; i++) {
         var n = nodes[i];
         n.x += n.vx; n.y += n.vy;
@@ -369,6 +382,7 @@
     inView(canvas, function (v) { visible = v; });
     add(function () {
       if (!visible) return;
+      if (count !== (opts.count || 38)) { count = opts.count || 38; seed(); }
       ctx.clearRect(0, 0, w, h);
       for (var i = 0; i < list.length; i++) {
         var q = list[i];
@@ -407,7 +421,7 @@
   function fireworks(canvas, opts) {
     opts = opts || {};
     var f = fit(canvas), ctx = f.ctx, w = f.w, h = f.h, visible = true;
-    var rockets = [], sparks = [], auto = opts.auto !== false;
+    var rockets = [], sparks = [];
     var palette = opts.palette || ['#FF6B6B', '#FFD166', '#06D6A0', '#4CC9F0', '#C77DFF', '#FFE66D'];
     global.addEventListener('resize', function () {
       var g = fit(canvas); ctx = g.ctx; w = g.w; h = g.h;
@@ -424,6 +438,19 @@
       }
     }
     function launch(x, y) {
+      if (REDUCED) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = palette[Math.floor(Math.random() * palette.length)];
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var ray = 0; ray < 24; ray++) {
+          var angle = ray * Math.PI / 12, radius = rand(15, 40);
+          ctx.moveTo(x + Math.cos(angle) * 7, y + Math.sin(angle) * 7);
+          ctx.lineTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+        }
+        ctx.stroke();
+        return;
+      }
       rockets.push({ x: x, y: h, tx: x, ty: y, vy: -rand(7.4, 10.4), vx: rand(-1, 1), c: palette[Math.random() * palette.length | 0] });
     }
     canvas.addEventListener('pointerdown', function (e) {
@@ -435,7 +462,7 @@
       if (!visible) return;
       ctx.fillStyle = 'rgba(' + (opts.bg || '8,8,18') + ',' + (opts.fade || 0.16) + ')';
       ctx.fillRect(0, 0, w, h);
-      if (auto && t - lastAuto > (opts.interval || 1700) && !REDUCED) {
+      if (opts.auto !== false && t - lastAuto > (opts.interval || 1700) && !REDUCED) {
         lastAuto = t;
         launch(rand(w * 0.18, w * 0.82), rand(h * 0.16, h * 0.58));
       }
@@ -470,6 +497,7 @@
     return {
       burst: burst, launch: launch,
       celebrate: function () {
+        if (REDUCED) { launch(w / 2, h / 2); return; }
         for (var i = 0; i < 7; i++) setTimeout(function () {
           launch(rand(w * 0.15, w * 0.85), rand(h * 0.12, h * 0.5));
         }, i * 260);
@@ -525,7 +553,12 @@
     var count = opts.count || 160, rgb = opts.rgb || '170,200,255';
     var f = fit(canvas), ctx = f.ctx, w = f.w, h = f.h, visible = true;
     var drops = [];
-    for (var i = 0; i < count; i++) drops.push({ x: Math.random() * w, y: Math.random() * h, l: rand(8, 26), v: rand(6, 15), o: rand(0.16, 0.62) });
+    function setCount() {
+      count = opts.count || 160;
+      while (drops.length < count) drops.push({ x: Math.random() * w, y: Math.random() * h, l: rand(8, 26), v: rand(6, 15), o: rand(0.16, 0.62) });
+      drops.length = count;
+    }
+    setCount();
     global.addEventListener('resize', function () {
       var g = fit(canvas); ctx = g.ctx; w = g.w; h = g.h;
     });
@@ -534,6 +567,7 @@
       if (!visible) return;
       ctx.clearRect(0, 0, w, h);
       ctx.lineCap = 'round';
+      if (count !== (opts.count || 160)) setCount();
       for (var i = 0; i < drops.length; i++) {
         var d = drops[i];
         ctx.beginPath();
@@ -553,6 +587,7 @@
     opts = opts || {};
     var text = opts.text || el.dataset.text || el.textContent.trim();
     el.dataset.text = text;
+    if (REDUCED) { el.textContent = text; return function () {}; }
     var frame = 0, queue = [], resolveFns = [], raf = 0, runningSc = false;
     function run() {
       if (runningSc) return;
@@ -647,6 +682,7 @@
 
   /* ============================== 滚动揭示 Reveal ============================== */
   function reveal(selector) {
+    document.documentElement.classList.add('fx-reveals-ready');
     var els = [].slice.call(document.querySelectorAll(selector || '.reveal'));
     if (!('IntersectionObserver' in global) || REDUCED) {
       els.forEach(function (el) { el.classList.add('in'); });
@@ -763,58 +799,97 @@
   /* ============================== 命令面板 Command Palette ============================== */
   function palette(items, opts) {
     opts = opts || {};
-    var wrap = document.createElement('div');
+    var wrap = document.createElement('dialog');
     wrap.className = 'fx-palette';
+    wrap.setAttribute('aria-label', '命令面板');
     wrap.innerHTML =
-      '<div class="fx-palette-box" role="dialog" aria-label="命令面板">' +
-      '<div class="fx-palette-search"><span class="fx-palette-k">⌘K</span>' +
-      '<input type="text" placeholder="' + (opts.placeholder || '输入命令或页面名…') + '" aria-label="搜索命令"></div>' +
-      '<ul class="fx-palette-list"></ul>' +
-      '<div class="fx-palette-foot"><span>↑↓ 导航</span><span>Enter 执行</span><span>Esc 关闭</span></div></div>';
+      '<div class="fx-palette-box"><div class="fx-palette-search"><span class="fx-palette-k">⌘K</span>' +
+      '<input type="search" aria-label="搜索命令" role="combobox" aria-expanded="true" aria-controls="fx-options" aria-autocomplete="list">' +
+      '<button class="fx-palette-close" type="button" aria-label="关闭命令面板">×</button></div>' +
+      '<ul class="fx-palette-list" id="fx-options" role="listbox" aria-label="可执行命令"></ul>' +
+      '<p class="fx-palette-empty" hidden>没有匹配的命令</p>' +
+      '<div class="fx-palette-foot"><span>↑↓ 选择</span><span>Enter 执行</span><span>Esc 关闭</span></div></div>';
     document.body.appendChild(wrap);
     var input = wrap.querySelector('input'), list = wrap.querySelector('ul');
-    var idx = 0, filtered = items.slice();
+    input.placeholder = opts.placeholder || '输入命令或页面名…';
+    var idx = 0, filtered = items.slice(), trigger;
+    var empty = wrap.querySelector('.fx-palette-empty');
 
+    function mark(index, scroll) {
+      idx = index;
+      for (var i = 0; i < list.children.length; i++) {
+        var item = list.children[i];
+        item.classList.toggle('active', i === index);
+        item.setAttribute('aria-selected', String(i === index));
+      }
+      if (list.children[index]) {
+        input.setAttribute('aria-activedescendant', list.children[index].id);
+        if (scroll) list.children[index].scrollIntoView({block: 'nearest', behavior: 'instant'});
+      } else input.removeAttribute('aria-activedescendant');
+    }
     function render() {
-      list.innerHTML = '';
+      list.replaceChildren();
       filtered.forEach(function (it, i) {
         var li = document.createElement('li');
-        li.className = 'fx-palette-item' + (i === idx ? ' active' : '');
-        li.innerHTML = '<span class="fx-palette-ico">' + (it.icon || '›') + '</span>' +
-          '<span class="fx-palette-label">' + it.label + '</span>' +
-          '<span class="fx-palette-hint">' + (it.hint || '') + '</span>';
-        li.addEventListener('click', function () { close(); it.run && it.run(); });
-        li.addEventListener('pointerenter', function () { idx = i; render(); });
+        li.className = 'fx-palette-item';
+        li.id = 'fx-option-' + i;
+        li.setAttribute('role', 'option');
+        [['ico', it.icon || '›'], ['label', it.label], ['hint', it.hint || '']].forEach(function (part) {
+          var span = document.createElement('span');
+          span.className = 'fx-palette-' + part[0];
+          span.textContent = part[1];
+          li.appendChild(span);
+        });
+        li.addEventListener('click', function () { close(); if (it.run) it.run(); });
+        li.addEventListener('pointerenter', function (event) {
+          if (event.pointerType === 'mouse') mark(i, false);
+        });
         list.appendChild(li);
       });
+      empty.hidden = filtered.length > 0;
+      mark(0, false);
     }
     function open() {
-      wrap.classList.add('open');
-      input.value = ''; filtered = items.slice(); idx = 0; render();
-      setTimeout(function () { input.focus(); }, 30);
+      if (wrap.open) return;
+      trigger = document.activeElement;
+      input.value = ''; filtered = items.slice(); render();
+      wrap.showModal();
+      input.focus();
     }
-    function close() { wrap.classList.remove('open'); }
+    function close() { wrap.close(); }
+    wrap.addEventListener('close', function () {
+      if (trigger && trigger.isConnected) trigger.focus({preventScroll: true});
+    });
+    wrap.querySelector('.fx-palette-close').addEventListener('click', close);
     input.addEventListener('input', function () {
       var q = input.value.trim().toLowerCase();
       filtered = items.filter(function (it) {
-        return (it.label + ' ' + (it.hint || '') + ' ' + (it.keywords || '')).toLowerCase().indexOf(q) >= 0;
+        return (it.label + ' ' + (it.hint || '') + ' ' + (it.keywords || '')).toLowerCase().includes(q);
       });
-      idx = 0; render();
+      render();
     });
     addEventListener('keydown', function (e) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        wrap.classList.contains('open') ? close() : open();
+        e.preventDefault(); wrap.open ? close() : open();
         return;
       }
-      if (!wrap.classList.contains('open')) return;
-      if (e.key === 'Escape') close();
-      else if (e.key === 'ArrowDown') { e.preventDefault(); idx = Math.min(filtered.length - 1, idx + 1); render(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); idx = Math.max(0, idx - 1); render(); }
-      else if (e.key === 'Enter' && filtered[idx]) { close(); filtered[idx].run && filtered[idx].run(); }
+      if (wrap.open && e.key === 'Escape') { e.preventDefault(); close(); return; }
+      if (!wrap.open || e.target !== input || e.isComposing || !filtered.length) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        mark((idx + (e.key === 'ArrowDown' ? 1 : -1) + filtered.length) % filtered.length, true);
+      } else if (e.key === 'Enter') {
+        e.preventDefault(); close(); if (filtered[idx].run) filtered[idx].run();
+      }
     });
     wrap.addEventListener('click', function (e) { if (e.target === wrap) close(); });
-    render();
+    var nav = document.querySelector('.style-nav');
+    if (nav) {
+      var button = document.createElement('button');
+      button.className = 'fx-touch-command'; button.type = 'button'; button.textContent = '命令';
+      button.setAttribute('aria-label', '打开命令面板'); button.addEventListener('click', open);
+      nav.appendChild(button);
+    }
     return { open: open, close: close };
   }
 
@@ -840,7 +915,7 @@
 
   /* ============================== confetti 桥接 ============================== */
   function confetti(x, y) {
-    if (typeof global.confetti !== 'function') return;
+    if (REDUCED || typeof global.confetti !== 'function') return;
     global.confetti({
       particleCount: 80, spread: 78, startVelocity: 38,
       origin: { x: (x || innerWidth / 2) / innerWidth, y: (y || innerHeight / 2) / innerHeight },
@@ -867,21 +942,31 @@
 
   /* ============================== 平滑锚点滚动 ============================== */
   function smoothScroll() {
-    document.addEventListener('click', function (e) {
-      var a = e.target.closest && e.target.closest('a[href^="#"]');
-      if (!a) return;
-      var id = a.getAttribute('href');
-      if (id.length < 2) return;
-      var tgt = document.querySelector(id);
-      if (!tgt) return;
-      e.preventDefault();
-      tgt.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' });
+    document.documentElement.style.scrollBehavior = REDUCED ? 'auto' : 'smooth';
+    document.documentElement.style.scrollPaddingTop = '64px';
+  }
+
+  document.querySelectorAll('.gallery-return').forEach(function (link) {
+    if (location.protocol === 'file:') link.href = 'https://xvcenh.github.io/projects/';
+  });
+
+  var styleNav = document.querySelector('.style-nav');
+  if (styleNav) {
+    var picker = document.createElement('select');
+    picker.className = 'fx-mode-picker';
+    picker.setAttribute('aria-label', '切换实验界面');
+    Array.from(styleNav.querySelectorAll('a:not(.gallery-return):not(.nav-home)')).forEach(function (link) {
+      var option = document.createElement('option');
+      option.value = link.href; option.textContent = link.textContent;
+      option.selected = link.classList.contains('current'); picker.appendChild(option);
     });
+    picker.addEventListener('change', function () { location.href = picker.value; });
+    styleNav.classList.add('has-picker'); styleNav.appendChild(picker);
   }
 
   global.FX = {
     REDUCED: REDUCED,
-    add: add, fit: fit, pointer: pointer,
+    add: add, fit: fit, pointer: pointer, redraw: start,
     starfield: starfield, aurora: aurora, matrixRain: matrixRain,
     network: network, warp: warp, globe: globe, petals: petals,
     fireworks: fireworks, bokeh: bokeh, rain: rain,

@@ -1,4 +1,5 @@
-        import * as THREE from '../vendor/three/three.module.min.js';
+import { motionPaused, redraw, renderScene } from './classic-motion.js';
+import * as THREE from '../vendor/three/three.module.min.js';
 
         // ==================== DOM 元素 ====================
         const container = document.getElementById('canvas-container');
@@ -591,13 +592,16 @@
         let isDragging = false;
         let dragStartX = 0, dragStartY = 0;
         let rotationOffsetX = 0, rotationOffsetY = 0;
-        let targetRotationOffsetX = 0, targetRotationOffsetY = 0;
+        const startingTilt = .28;
+        let targetRotationOffsetX = 0, targetRotationOffsetY = startingTilt;
         let cameraDistance = 24;
         let targetCameraDistance = 24;
         const minDistance = 10;
         const maxDistance = 50;
 
-        window.addEventListener('mousemove', (event) => {
+        const pinchDistance = touches => Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+        let previousPinch = 0;
+        container.addEventListener('mousemove', (event) => {
             targetMouseX = (event.clientX / window.innerWidth) * 2 - 1;
             targetMouseY = -(event.clientY / window.innerHeight) * 2 + 1;
             if (isDragging) {
@@ -610,7 +614,7 @@
             scheduleHover(event);
         });
 
-        window.addEventListener('mousedown', (event) => {
+        container.addEventListener('mousedown', (event) => {
             if (event.button === 0) {
                 isDragging = true;
                 document.body.classList.add('grabbing');
@@ -643,12 +647,19 @@
             detailPanel.classList.remove('visible');
         });
 
-        window.addEventListener('wheel', (event) => {
+        container.addEventListener('wheel', (event) => {
             targetCameraDistance += event.deltaY * 0.03;
             targetCameraDistance = Math.max(minDistance, Math.min(maxDistance, targetCameraDistance));
         });
 
-        window.addEventListener('touchmove', (event) => {
+        container.addEventListener('touchmove', (event) => {
+            if (event.touches.length === 2) {
+                const span = pinchDistance(event.touches);
+                if (span && previousPinch) targetCameraDistance = Math.max(minDistance, Math.min(maxDistance, targetCameraDistance * previousPinch / span));
+                previousPinch = span;
+                event.preventDefault();
+                return;
+            }
             if (event.touches.length === 1) {
                 targetMouseX = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
                 targetMouseY = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
@@ -662,17 +673,24 @@
                 scheduleHover({ clientX: event.touches[0].clientX, clientY: event.touches[0].clientY });
             }
         }, { passive: false });
-        window.addEventListener('touchstart', (event) => {
+        container.addEventListener('touchstart', (event) => {
+            if (event.touches.length === 2) {
+                previousPinch = pinchDistance(event.touches);
+                isDragging = false;
+                return;
+            }
             if (event.touches.length === 1) {
                 isDragging = true;
                 document.body.classList.add('grabbing');
                 dragStartX = event.touches[0].clientX;
                 dragStartY = event.touches[0].clientY;
+                clickStartX = dragStartX; clickStartY = dragStartY;
                 rotationOffsetX = targetRotationOffsetX;
                 rotationOffsetY = targetRotationOffsetY;
             }
         });
-        window.addEventListener('touchend', () => {
+        container.addEventListener('touchend', () => {
+            previousPinch = 0;
             isDragging = false;
             document.body.classList.remove('grabbing');
         });
@@ -683,7 +701,7 @@
         let savedRotationX = 0, savedRotationY = 0;
         let clickStartX = 0, clickStartY = 0;
 
-        window.addEventListener('click', (event) => {
+        container.addEventListener('click', (event) => {
             const dx = event.clientX - clickStartX;
             const dy = event.clientY - clickStartY;
             clickStartX = event.clientX;
@@ -764,28 +782,22 @@
                 camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(container.clientWidth, container.clientHeight);
+                redraw();
             }, 150);
         });
 
         // ==================== 动画循环 ====================
-        let lastFrame = performance.now();
-        const quiet = matchMedia("(prefers-reduced-motion: reduce)");
         let globalTime = 0;
-        let totalRotX = 0, totalRotY = 0, animFrameId = null;
+        let totalRotX = 0, totalRotY = 0;
 
-        function animate(timestamp) {
-            animFrameId = requestAnimationFrame(animate);
-
-            if (document.hidden) return;
-
-            const dt = quiet.matches ? 0 : Math.min((timestamp - lastFrame)/1000, 0.1);
-            lastFrame = timestamp;
+        function animate(timestamp, dt) {
+            const snap = motionPaused();
             globalTime += dt;
 
-            mouseX += (targetMouseX - mouseX) * 0.05;
-            mouseY += (targetMouseY - mouseY) * 0.05;
-            rotationOffsetX += (targetRotationOffsetX - rotationOffsetX) * 0.08;
-            rotationOffsetY += (targetRotationOffsetY - rotationOffsetY) * 0.08;
+            if (!snap) mouseX += (targetMouseX - mouseX) * 0.05;
+            if (!snap) mouseY += (targetMouseY - mouseY) * 0.05;
+            rotationOffsetX += (targetRotationOffsetX - rotationOffsetX) * (snap ? 1 : 0.08);
+            rotationOffsetY += (targetRotationOffsetY - rotationOffsetY) * (snap ? 1 : 0.08);
 
             const autoRotateSpeed = 0.12;
             totalRotX = globalTime * autoRotateSpeed + mouseX * 0.2 + rotationOffsetX;
@@ -795,7 +807,7 @@
                 // Follow planet mode
                 const planetPos = new THREE.Vector3();
                 selectedPlanet.group.getWorldPosition(planetPos);
-                lookTarget.lerp(planetPos, 0.06);
+                lookTarget.lerp(planetPos, snap ? 1 : 0.06);
 
                 const followDist = selectedPlanet.planetDef.size * 5 + 1.5;
                 const slowOrbit = globalTime * 0.25 + savedRotationX;
@@ -803,16 +815,16 @@
                 const targetCamY = planetPos.y + followDist * 0.5;
                 const targetCamZ = planetPos.z + Math.sin(slowOrbit) * followDist;
 
-                camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.04);
+                camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), snap ? 1 : 0.04);
                 camera.lookAt(lookTarget);
             } else {
                 // Normal orbit mode
-                lookTarget.lerp(new THREE.Vector3(0, 0, 0), 0.06);
-                cameraDistance += (targetCameraDistance - cameraDistance) * 0.06;
+                lookTarget.lerp(new THREE.Vector3(0, 0, 0), snap ? 1 : 0.06);
+                cameraDistance += (targetCameraDistance - cameraDistance) * (snap ? 1 : 0.06);
                 const camX = Math.cos(totalRotY) * Math.sin(totalRotX) * cameraDistance;
                 const camY = Math.sin(totalRotY) * cameraDistance;
                 const camZ = Math.cos(totalRotY) * Math.cos(totalRotX) * cameraDistance;
-                camera.position.lerp(new THREE.Vector3(camX, camY, camZ), 0.06);
+                camera.position.lerp(new THREE.Vector3(camX, camY, camZ), snap ? 1 : 0.06);
                 camera.lookAt(lookTarget);
             }
 
@@ -863,10 +875,10 @@
                 pObj.group.position.set(Math.cos(angle) * r, 0, Math.sin(angle) * r);
 
                 const currentScale = pObj.group.scale.x;
-                pObj.group.scale.setScalar(currentScale + (pObj.targetScale - currentScale) * 0.1);
+                pObj.group.scale.setScalar(currentScale + (pObj.targetScale - currentScale) * (snap ? 1 : 0.1));
 
                 const currentGlow = pObj.glowSprite.material.opacity;
-                pObj.glowSprite.material.opacity = currentGlow + (pObj.targetGlowOpacity - currentGlow) * 0.12;
+                pObj.glowSprite.material.opacity = currentGlow + (pObj.targetGlowOpacity - currentGlow) * (snap ? 1 : 0.12);
 
                 pObj.mesh.rotation.y += dt * 0.5;
                 if (pObj.miniRing) {
@@ -883,6 +895,7 @@
                 });
             });
 
+            camera.updateMatrixWorld();
             labelElements.forEach(({ el, pObj }) => {
                 const screenPos = getScreenPosition(pObj.group);
                 if (screenPos.visible) {
@@ -918,14 +931,19 @@
         mouseY = targetMouseY;
         cameraDistance = targetCameraDistance;
 
-        requestAnimationFrame(animate);
+        renderScene(animate);
+        for (const event of ['mousemove', 'mousedown', 'click', 'wheel', 'touchstart', 'touchmove', 'touchend']) {
+            container.addEventListener(event, redraw, {passive:true});
+        }
 
         // ==================== 键盘快捷键 ====================
         window.addEventListener('keydown', (event) => {
+            if (event.target.closest('a,button,summary,input') || event.altKey || event.ctrlKey || event.metaKey) return;
+            redraw();
             switch (event.key.toLowerCase()) {
                 case 'r':
                     targetRotationOffsetX = 0;
-                    targetRotationOffsetY = 0;
+                    targetRotationOffsetY = startingTilt;
                     targetCameraDistance = 24;
                     targetMouseX = 0;
                     targetMouseY = 0;
@@ -936,7 +954,7 @@
                     break;
                 case '0':
                     targetRotationOffsetX = 0;
-                    targetRotationOffsetY = 0;
+                    targetRotationOffsetY = startingTilt;
                     targetCameraDistance = 24;
                     break;
                 default:

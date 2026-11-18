@@ -162,6 +162,8 @@ a { color: inherit; }
   transition: transform .45s var(--bounce);
 }
 .mascot:hover { transform: translateY(-8px) rotate(1.5deg) scale(1.03); }
+.mascot-trigger { position: absolute; z-index: 5; inset: 0; width: 100%; border: 0; background: transparent; border-radius: 28%; cursor: pointer; }
+.mascot-trigger:focus-visible { outline: 3px solid var(--hot-2); outline-offset: 4px; }
 .m-head {
   position: absolute; left: 50%; top: 34px; transform: translateX(-50%);
   width: 76%; aspect-ratio: 1; border-radius: 50% 50% 47% 47%;
@@ -412,8 +414,9 @@ a { color: inherit; }
 <canvas id="sakuraFx" class="bg-fx" aria-hidden="true"></canvas>
 
 <!-- 统一导航 -->
-<nav class="style-nav">
-  <a class="nav-home" href="index.html">✦ xvcenh.blog</a>
+<nav class="style-nav" aria-label="界面展馆">
+  <a class="gallery-return" href="../projects/">← 项目实验室</a>
+  <a class="nav-home" href="index.html">界面展馆</a>
   <a href="cyber.html">赛博霓虹</a>
   <a href="glass.html">极光玻璃</a>
   <a href="brutal.html">粗野主义</a>
@@ -468,6 +471,7 @@ a { color: inherit; }
           <div class="m-mouth"></div>
         </div>
         <div class="m-bow">★</div>
+        <button class="mascot-trigger" type="button" aria-label="轻点三下角色解锁樱花彩蛋"></button>
       </div>
 
       <div class="bubble" id="bubble">

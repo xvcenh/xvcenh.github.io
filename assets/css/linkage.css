@@ -1,0 +1,71 @@
+.mechanism-head {
+  color: #f2f3df;
+  background-color: #122722;
+  background-image: radial-gradient(ellipse at 82% 90%,#31544b 0,transparent 55%),radial-gradient(#8fae9b55 1px,transparent 1px);
+  background-size: auto,25px 25px;
+}
+.mechanism-head .wrap {padding-block: 20px 32px}
+.mechanism-head a {color:#cfe5af;font-size:13px}
+.mechanism-head .eyebrow {margin:26px 0 6px;color:#d1ef9e}
+.mechanism-head h1 {margin:0 0 5px;font-size:clamp(30px,4.2vw,60px);line-height:1.12;letter-spacing:-.055em}
+.mechanism-head p:last-child {margin:0;color:#d0ddcf;font-size:clamp(14px,1.3vw,17px)}
+.linkage-lab {padding-top:24px}
+.instrument {overflow:hidden;background:#122822;border:1px solid #384e40;color:#e9f0df;border-radius:6px}
+.instrument-bar,.instrument-foot,.pose-bar,.mechanism-spec,.trail-tools {display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.instrument-bar,.instrument-foot {justify-content:space-between;padding:12px 18px}
+.instrument-label {font:600 15px var(--sans,sans-serif)}
+.instrument-label span {color:#d2ee9f;font-size:20px;vertical-align:middle;margin-right:4px}
+.instrument #solver-status {border:1px solid #688356;background:#244335;color:#dbf5b4;font:12px/1.5 var(--mono);padding:3px 8px}
+.instrument #solver-status[data-valid="false"] {border-color:#b9856a;background:#49332a;color:#ffcfac}
+.instrument-plots {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-block:1px solid #40594a}
+.instrument-plots figure {margin:0;min-width:0;position:relative;background:radial-gradient(ellipse at 49% 44%,#243d35,#122822 77%)}
+.instrument-plots figure+figure {border-left:1px solid #40594a}
+.instrument-plots figcaption {display:flex;align-items:center;justify-content:space-between;gap:7px;padding:10px 17px;background:#1e332a;border-bottom:1px solid #40594a}
+.instrument-plots figcaption b {font-size:14px}
+.instrument-plots figcaption span,.instrument-foot,.mechanism-spec {font:12px/1.5 var(--mono)}
+.instrument-plots figcaption span {color:#bacdbb}
+.instrument-plots canvas {display:block;width:100%;height:clamp(245px,28vw,350px)}
+.plot-selector {display:none}
+.instrument-foot {gap:10px 16px}
+#endpoint {color:#e4f8b8;font-weight:bold;font-variant-numeric:tabular-nums}
+.trail-tools {gap:9px;color:#cbddcb}
+.trail-tools label {display:flex;align-items:center;gap:4px;cursor:pointer}
+.trail-tools label::after {content:"";width:15px;border-top:2px solid #e7a2cf;margin-left:2px}
+.trail-tools input {accent-color:#c4ed8c;width:15px;height:15px;margin:0}
+.trail-tools button,.plot-selector button {border:1px solid #60786a;color:#e4ecda;background:transparent;border-radius:3px;padding:4px 8px;font:inherit;cursor:pointer}
+.trail-tools button:disabled {opacity:.5;cursor:default}
+#trail-count {min-width:4ch;font-variant-numeric:tabular-nums}
+.pose-bar {margin:20px 0 11px;gap:7px}
+.pose-bar b,.mechanism-spec b {font-size:13px;margin-right:6px}
+.pose-bar button {background:#f6f5eb;color:#244232;border:1px solid #a7b3a0;border-radius:3px;padding:6px 12px;cursor:pointer;font:inherit;font-size:13px}
+.pose-bar button[aria-pressed="true"],.plot-selector button[aria-pressed="true"] {background:#d6eeb5;border-color:#708b59;color:#203b2e}
+#reset-solver {margin-left:auto}
+.linkage-lab .solver-controls {margin-block:14px 18px}
+.linkage-lab .solver-controls fieldset {background:#f9f8f0;padding:8px 17px 10px}
+.linkage-lab .solver-controls input {accent-color:#416549;cursor:pointer;height:28px}
+.linkage-lab .solver-controls label {margin-block:3px}
+.mechanism-spec {border-top:1px solid #bfc8b7;padding-top:13px;gap:5px 20px;color:#4f6554}
+.mechanism-spec strong {color:#243e2e}
+.linkage-lab :focus-visible {outline:2px solid #8fa35e;outline-offset:3px}
+@media(max-width:680px){
+  .mechanism-head .wrap {padding-block:14px 22px}
+  .mechanism-head .eyebrow {margin-top:17px}
+  .linkage-lab {padding-top:16px}
+  .instrument-bar,.instrument-foot {padding:9px 12px}
+  .instrument-plots {display:block}
+  .instrument-plots figure+figure {border-left:0}
+  .instrument-plots figcaption {padding:6px 10px;justify-content:flex-end}
+  .instrument-plots figcaption b {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+  .plot-selector {display:flex;gap:6px;padding:0 12px 8px}
+  .plot-selector button {font-size:12px;min-height:34px}
+  .instrument-plots[data-mobile-view="closed"] #serial-view,.instrument-plots[data-mobile-view="serial"] #closed-view {display:none}
+  .instrument-plots canvas {height:clamp(218px,60vw,300px)}
+  .instrument-foot {gap:4px}
+  .trail-tools {width:100%;min-height:28px}
+  .trail-tools #trail-count {margin-left:auto}
+  .pose-bar {margin:15px 0 8px}
+  .pose-bar button {padding:6px 9px;min-height:36px}
+  .linkage-lab .solver-controls {gap:9px}
+  .mechanism-spec {display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .mechanism-spec b {grid-column:1/-1}
+}

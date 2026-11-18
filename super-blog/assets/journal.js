@@ -10,7 +10,6 @@
     const topics = new Set(posts.flatMap(post => post.categories));
     for (const [id,total] of [["journal-total",posts.length],["journal-topics",topics.size]]) {
       const counter = document.getElementById(id);
-      counter.dataset.target = total;
       counter.textContent = total;
     }
     const cards = document.querySelectorAll("#posts .post-card[href^='https://xvcenh.github.io/']");

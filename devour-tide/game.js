@@ -23,7 +23,8 @@
   let canvas, ctx, W = 1280, H = 720, DPR = 1;
   let darkCv = null, darkCtx = null;
   let lastT = 0, fpsAcc = 0, fpsN = 0, fps = 60;
-  let levelIdx = 0, vsScore = [0, 0], lives = 3, endTimer = 0;
+  let levelIdx = 0, vsScore = [0, 0], lives = 3;
+  let nextRound = null;
 
   const LEVELS = [
     { scene: 0, type: 'eat', target: 26, time: 110, name: '第一关 · 初入浅滩', tip: '吞食 26 条小鱼完成进化' },
@@ -119,18 +120,18 @@
     vsScore = [0, 0];
     lives = 3;
     world.time = 0;
+    world.levelTime = 0;
+    world.hitStop = 0;
+    G.diff = 1;
+    nextRound = null;
+    cardPickQueue.length = 0;
 
     const styles = DT.ui.getStyles();
     G.players = [makePlayer(0, styles[0])];
     if (mode === 'coop' || mode === 'versus') G.players.push(makePlayer(1, styles[1]));
     G.players.forEach((p) => resetMods(p));
 
-    if (mode === 'endless') {
-      loadScene(0);
-      G.diff = 1;
-    } else {
-      loadScene(LEVELS[0].scene);
-    }
+    loadScene(LEVELS[0].scene);
     world.transition = 1;
     DT.ui.screen('none');
     DT.ui.banner(
@@ -145,6 +146,7 @@
 
   G.toMenu = function () {
     G.state = 'menu';
+    nextRound = null;
     G.paused = false;
     world.boss = null;
     world.duel = null;
@@ -163,15 +165,17 @@
     world.boss = null;
     world.duel = null;
     world.eaten = 0;
+    world.levelTime = 0;
     world.wave = 0;
     world.spawnT = 0;
     world.spawnCount = 0;
-    world.spawnBudget = G.mode === 'versus' ? 58 : Infinity;
+    const finiteWave = G.state === 'playing' && G.mode !== 'endless' && LEVELS[levelIdx].type === 'clear';
+    world.spawnBudget = G.mode === 'versus' ? 58 : finiteWave ? 0 : Infinity;
     world.spawnedAll = false;
     buildHazards(idx);
     buildPlankton();
     buildKelp();
-    const target = fishTarget();
+    const target = finiteWave && G.mode !== 'versus' ? 16 : Math.min(fishTarget(), world.spawnBudget);
     for (let i = 0; i < target; i++) spawnFish(null, true);
     if (G.state === 'playing') {
       A.setScene(idx);
@@ -343,6 +347,15 @@
     // 输入
     const inp = readInput(p.id);
     p.input = inp;
+    const mate = G.players[1 - p.id];
+    if (G.mode === 'coop' && inp.act && mate?.ghost && p.size > 30 && U.dist(p.x, p.y, mate.x, mate.y) < 170) {
+      mate.ghost = false;
+      mate.size = 22;
+      mate.invuln = 2.5;
+      p.size *= .75;
+      A.sfx('revive');
+      addText(mate.x, mate.y - 50, '复活!', '#7dffb0');
+    }
     const mag = Math.hypot(inp.x, inp.y);
     if (mag > 0.08) {
       const targetAngle = Math.atan2(inp.y, inp.x);
@@ -598,7 +611,7 @@
       addText(p.x, p.y - 50, '队友倒下！靠近按 F / Shift 复活', '#ff9d9d');
       A.sfx('die');
       const mate = G.players[1 - p.id];
-      if (mate && !mate.alive) endGame(false);
+      if (!mate || mate.ghost || !mate.alive) endGame(false);
     } else if (G.mode === 'versus') {
       if (world.duel) {
         endRound(1 - p.id);
@@ -613,10 +626,8 @@
         addText(p.x, p.y - 50, '被吞食！进化点 -25%', '#ff9d9d');
       }
     } else {
-      // endless
-      if (p.size < 14) {
-        endGame(true);
-      }
+      p.alive = false;
+      endGame(false);
     }
     A.sfx('die');
   }
@@ -926,7 +937,7 @@
       world.cam.shake = 26;
       addText(b.x, b.y, '巨口鲸被击败！', '#ffd23f');
       A.sfx('win');
-      setTimeout(() => completeLevel(), 1400);
+      nextRound = {remaining: 1.4, run: completeLevel};
     }
   }
 
@@ -939,6 +950,7 @@
 
   /* ================= 关卡 / 目标 ================= */
   function updateObjective(dt) {
+    if (nextRound || G.state !== 'playing') return;
     if (G.mode === 'endless') {
       G.diff = 1 + world.time / 95;
       // 场景轮换
@@ -1035,6 +1047,7 @@
   }
 
   function endRound(winnerId) {
+    if (nextRound || G.state !== 'playing') return;
     vsScore[winnerId]++;
     const w = G.players[winnerId], l = G.players[1 - winnerId];
     const steal = l.ep * 0.5;
@@ -1047,19 +1060,19 @@
       endGame(true);
     } else {
       levelIdx++;
-      setTimeout(() => {
-        if (G.state !== 'playing') return;
+      nextRound = {remaining: 1.8, run() {
         G.players.forEach((p) => { p.size = 26; p.alive = true; p.ghost = false; p.invuln = 2.5; });
         loadScene(LEVELS[levelIdx].scene);
         if (LEVELS[levelIdx].type === 'boss') spawnBoss();
         DT.ui.banner(LEVELS[levelIdx].name, LEVELS[levelIdx].tip);
-      }, 1800);
+      }};
     }
   }
 
   /* ================= 结束 ================= */
   function endGame(win) {
     if (G.state === 'results') return;
+    nextRound = null;
     G.state = 'results';
     A.sfx(win ? 'win' : 'die');
     const data = {
@@ -1087,7 +1100,7 @@
   }
 
   function loadRecords() {
-    try { return JSON.parse(localStorage.getItem('dt_records') || '{}'); } catch (e) { return {}; }
+    try { return JSON.parse(localStorage.getItem('dt_records')) || {}; } catch (e) { return {}; }
   }
   function saveRecords() {
     try { localStorage.setItem('dt_records', JSON.stringify(G.records)); } catch (e) {}
@@ -1121,7 +1134,7 @@
 
   function bindInput() {
     window.addEventListener('keydown', (e) => {
-      if (e.target?.matches?.('input, textarea, select, [contenteditable=true]')) return;
+      if (e.defaultPrevented || e.target?.matches?.('input, textarea, select, [contenteditable=true]')) return;
       if (e.code === 'KeyM' && !e.repeat) A.toggleMute();
       if (G.state !== 'playing') return;
       if (e.code === 'Escape' && !e.repeat) {
@@ -1131,22 +1144,6 @@
       if (G.paused) return;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.code)) e.preventDefault();
       keys[e.code] = true;
-      // 合作复活
-      if (G.mode === 'coop' && G.state === 'playing') {
-        G.players.forEach((p) => {
-          if (!p.ghost) return;
-          const mate = G.players[1 - p.id];
-          const km = KEYMAP[p.id === 0 ? 1 : 0];
-          if (keys[km.act] && mate && mate.alive && U.dist(mate.x, mate.y, p.x, p.y) < 170 && mate.size > 30) {
-            p.ghost = false;
-            p.size = 22;
-            p.invuln = 2.5;
-            mate.size *= 0.75;
-            A.sfx('revive');
-            addText(p.x, p.y - 50, '复活!', '#7dffb0');
-          }
-        });
-      }
     });
     const touch = document.getElementById('touch-controls');
     for (const control of touch.querySelectorAll('[data-key]')) {
@@ -1166,20 +1163,38 @@
   }
 
   G.togglePause = function () {
-    if (G.state === 'results' || G.state === 'cardpick') return;
+    if (G.state !== 'playing') return;
     G.paused = !G.paused;
     DT.ui.screen(G.paused ? 'pause' : 'none');
     if (!G.paused) lastT = performance.now();
   };
 
   /* ================= 主循环 ================= */
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   function loop(ts) {
     const dt = Math.min(0.042, Math.max(0.0005, (ts - lastT) / 1000));
     lastT = ts;
     fpsAcc += dt; fpsN++;
     if (fpsAcc > 0.5) { fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0; }
 
+    step(dt);
+    render();
+    DT.ui.tick(fps);
+    requestAnimationFrame(loop);
+  }
+
+  function step(dt) {
     if (G.state === 'playing' && !G.paused) {
+      if (nextRound) {
+        nextRound.remaining -= dt;
+        if (nextRound.remaining <= 0) {
+          const finish = nextRound.run;
+          nextRound = null;
+          finish();
+        }
+        updateParticles(dt);
+        return;
+      }
       if (world.hitStop > 0) world.hitStop -= dt;
       else {
         world.time += dt;
@@ -1194,19 +1209,33 @@
       }
       updateParticles(dt);
       updatePlankton(dt);
-    } else if (G.state === 'menu' || G.state === 'results' || G.state === 'cardpick' || G.paused) {
-      // 菜单/卡牌时鱼群继续游动，保持画面生命力
+    } else if (G.state === 'menu' && !reducedMotion.matches) {
       world.time += dt * 0.6;
-      if (G.state === 'menu') updateFish(dt * 0.6);
+      updateFish(dt * 0.6);
       updateParticles(dt);
       updatePlankton(dt);
     }
 
     updateCamera(dt);
+  }
+
+  window.advanceTime = function (ms) {
+    if (!ctx || !Number.isFinite(ms) || ms <= 0) return;
+    const frames = Math.ceil(ms / (1000 / 60));
+    for (let i = 0; i < frames; i++) step(ms / (1000 * frames));
     render();
     DT.ui.tick(fps);
-    requestAnimationFrame(loop);
-  }
+  };
+
+  window.render_game_to_text = function () {
+    return JSON.stringify({
+      screen: DT.ui.currentScreen, state: G.state, mode: G.mode, paused: G.paused,
+      coordinates: 'World pixels, origin top-left, x right, y down',
+      scene: S[world.sceneIdx].name, elapsed: Math.floor(world.time),
+      players: G.players.map(p => ({name:p.name,x:Math.round(p.x),y:Math.round(p.y),size:Math.round(p.size),level:p.level,ep:p.ep,alive:p.alive,ghost:p.ghost})),
+      fishCount: world.fish.length, objective: G.getLevelInfo().tip
+    });
+  };
 
   function updateCamera(dt) {
     const cam = world.cam;

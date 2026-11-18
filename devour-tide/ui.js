@@ -10,20 +10,38 @@
   let settingsReturn = 'menu';
   let hudT = 0;
   let previewCanvas, previewCtx;
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let customizeDraft;
+  let lastLauncher;
 
   /* ================= 屏幕切换 ================= */
   const SCREENS = ['menu', 'custom', 'settings', 'howto', 'cards', 'results', 'pause'];
   UI.screen = function (name) {
+    const previous = UI.currentScreen;
+    UI.currentScreen = name;
+    if (previous === 'menu' && document.activeElement?.closest('#scr-menu')) lastLauncher = document.activeElement;
     SCREENS.forEach((s) => {
       const el = $('scr-' + s);
       if (el) el.classList.toggle('hidden', s !== name);
     });
     $('touch-controls').hidden = name !== 'none';
-    $('hud').classList.toggle('hidden', !(DT.game && (DT.game.state === 'playing' || DT.game.paused)));
+    $('touch-revive').hidden = DT.game.mode !== 'coop';
+    $('hud').classList.toggle('hidden', name !== 'none');
+    if (name === 'menu' && styles.length) drawSonar();
+    if (previous && previous !== name) {
+      const screen = $('scr-' + name);
+      const focusTarget = name === 'menu' ? lastLauncher : screen?.querySelector('.screen-title');
+      if (focusTarget) {
+        if (focusTarget.matches('h2')) focusTarget.tabIndex = -1;
+        focusTarget.focus({preventScroll: true});
+      }
+      if (screen) screen.scrollTop = 0;
+    }
   };
 
   /* ================= 初始化 ================= */
   UI.init = function () {
+    if (location.protocol === 'file:') document.querySelector('.lab-return').href = 'https://xvcenh.github.io/projects/';
     previewCanvas = $('fishPreview');
     previewCtx = previewCanvas.getContext('2d');
 
@@ -45,7 +63,10 @@
     document.querySelectorAll('.tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         curTab = parseInt(tab.getAttribute('data-tab'), 10);
-        document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+        document.querySelectorAll('.tab').forEach((t) => {
+          t.classList.toggle('active', t === tab);
+          t.setAttribute('aria-pressed', String(t === tab));
+        });
         loadControls();
       });
     });
@@ -136,20 +157,40 @@
   };
 
   function loadStyle(idx) {
+    const fallback = F.makeStyle(idx, {
+      name: idx === 0 ? '小蓝' : '小粉', c1: idx === 0 ? '#4facfe' : '#f472b6', c2: idx === 0 ? '#00f2fe' : '#fda4af'
+    });
     try {
-      const raw = localStorage.getItem('dt_style_' + idx);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
-    return F.makeStyle(idx, { name: idx === 0 ? '小蓝' : '小粉', c1: idx === 0 ? '#4facfe' : '#f472b6', c2: idx === 0 ? '#00f2fe' : '#fda4af' });
+      const saved = JSON.parse(localStorage.getItem('dt_style_' + idx));
+      if (!saved || !F.species[saved.sp]) return fallback;
+      const merged = Object.assign({}, fallback, saved);
+      for (const color of ['c1', 'c2']) {
+        if (!/^#[0-9a-f]{6}$/i.test(merged[color])) merged[color] = fallback[color];
+      }
+      if (typeof merged.name !== 'string') merged.name = fallback.name;
+      if (!Number.isFinite(merged.hgt)) merged.hgt = fallback.hgt;
+      return merged;
+    } catch (e) { return fallback; }
   }
   function saveStyle(idx) {
     try { localStorage.setItem('dt_style_' + idx, JSON.stringify(styles[idx])); } catch (e) {}
   }
 
+  function drawSonar() {
+    const sonar = $('sonarFish');
+    const context = sonar.getContext('2d');
+    context.clearRect(0, 0, sonar.width, sonar.height);
+    context.save();
+    context.translate(sonar.width * .5, sonar.height * .45);
+    F.draw(styles[0], context, 136, 0);
+    context.restore();
+    $('sonarName').textContent = 'P1 · ' + styles[0].name;
+  }
+
   function drawPreview() {
     const ctx = previewCtx;
     const w = previewCanvas.width, h = previewCanvas.height;
-    const t = performance.now() / 1000;
+    const t = reducedMotion.matches ? 0 : performance.now() / 1000;
     const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, '#1d5b8f');
     g.addColorStop(1, '#071b31');
@@ -197,7 +238,8 @@
     const row = $('cardRow');
     row.innerHTML = '';
     cards.forEach((card, i) => {
-      const el = document.createElement('div');
+      const el = document.createElement('button');
+      el.type = 'button';
       el.className = 'card' + (card.curse ? ' curse' : '') + (card.rarity === 3 ? ' legendary' : '');
       const school = K.schools[card.school];
       el.innerHTML =
@@ -227,6 +269,12 @@
     }
   });
 
+  document.addEventListener('keydown', (event) => {
+    if (event.code !== 'Escape' || event.repeat) return;
+    const back = {custom: 'customBack', settings: 'settingsBack', howto: 'howtoBack'}[UI.currentScreen];
+    if (back) { event.preventDefault(); action(back); }
+  });
+
   const K = DT.cards;
 
   /* ================= 结算 ================= */
@@ -238,7 +286,7 @@
       const winner = data.mode === 'versus' && data.win
         ? (data.vsScore[0] === data.vsScore[1] ? i === 0 : data.vsScore[i] > data.vsScore[1 - i])
         : true;
-      html += '<div class="res-col"><h3>' + (i === 0 ? '🐟 ' : '🐠 ') + p.name +
+      html += '<div class="res-col"><h3>' + (i === 0 ? '🐟 ' : '🐠 ') + '<span class="result-player"></span>' +
         (data.mode === 'versus' ? (winner ? ' <span style="color:#fcd34d">👑</span>' : '') : '') + '</h3>' +
         '<div class="stat"><span>进化点</span><b>' + U.fmt(p.ep) + '</b></div>' +
         '<div class="stat"><span>进化等级</span><b>Lv.' + p.level + '</b></div>' +
@@ -262,6 +310,7 @@
       '</div>';
     if (data.newRecord) html += '<div class="record">🎉 新的无尽生存纪录：' + data.time + ' 秒！</div>';
     $('resBody').innerHTML = html;
+    $('resBody').querySelectorAll('.result-player').forEach((name, i) => { name.textContent = data.players[i].name; });
   };
 
   /* ================= HUD ================= */
@@ -336,6 +385,7 @@
         DT.game.startMode(act);
         break;
       case 'customize':
+        customizeDraft = styles.map(style => ({...style}));
         UI.screen('custom');
         break;
       case 'settings':
@@ -345,7 +395,11 @@
       case 'howto':
         UI.screen('howto');
         break;
-      case 'howtoBack': case 'customBack':
+      case 'customBack':
+        if (customizeDraft) { styles = customizeDraft; loadControls(); }
+        UI.screen('menu');
+        break;
+      case 'howtoBack':
         UI.screen('menu');
         break;
       case 'customSave':
@@ -359,6 +413,7 @@
       case 'savePreset':
         collectControls();
         saveStyle(curTab);
+        if (customizeDraft) customizeDraft[curTab] = {...styles[curTab]};
         UI.banner('💾 已保存', '预设已写入本地存档');
         break;
       case 'loadPreset':
