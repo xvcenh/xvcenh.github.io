@@ -8,7 +8,7 @@ using Microsoft.Web.WebView2.WinForms;
 
 [assembly: AssemblyTitle("吞噬之潮")]
 [assembly: AssemblyProduct("Devour Tide")]
-[assembly: AssemblyVersion("0.1.1.0")]
+[assembly: AssemblyVersion("0.2.0.0")]
 
 sealed class DiveWindow : Form
 {

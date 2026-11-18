@@ -97,10 +97,15 @@ export function followSlipstreams(G, dt, complete) {
     const centerX=school.x-school.heading*(school.wakeOffset || 86);
     const rider=G.players.find(p=>!p.dead && !(p.dashT>0) &&
       ((p.x-centerX)/54)**2+((p.y-school.y)/34)**2<1 &&
-      p.vx*school.heading>7 && p.vx*school.heading<175);
-    school.follow=Math.max(0,school.follow+dt*(rider?1:-.55));
+      p.vx*school.heading>7);
+    if(rider){
+      rider.draftTime=.14;rider.draftHeading=school.heading;rider.draftCenter=centerX;
+    }
+    const matched=rider && rider.vx*school.heading<175;
+    school.follow=Math.max(0,school.follow+dt*(matched?1:-.55));
+    if(matched)rider.schoolCoverT=.30;
     if (school.follow>=1.5 && rider) {
-      school.wakeLeft=0;complete(rider,school);
+      school.wakeLeft=0;rider.schoolCoverT=1.25;complete(rider,school);
     }
   }
 }
@@ -126,23 +131,3 @@ export function tickShoals(G, spawnEnemy, dt) {
   data.shoals = data.shoals.filter(s => s.age < 28 && Math.abs(s.y - player.y) < 1400);
 }
 
-export function schoolVelocity(fish, school, neighbours) {
-  const tx = school.x + fish.slotX + Math.cos(school.age * 2 + fish.phase) * 5;
-  const ty = school.y + fish.slotY + Math.sin(school.age * 1.6 + fish.phase) * 7;
-  let separateX=0, separateY=0, alignX=0, alignY=0, count=0;
-  for (const other of neighbours) {
-    if (other===fish || other.schoolId!==school.id || other.stunT>0) continue;
-    const dx=fish.x-other.x, dy=fish.y-other.y, d2=dx*dx+dy*dy;
-    if (d2>85*85 || d2<.01) continue;
-    alignX+=other.vx; alignY+=other.vy; count++;
-    const spacing=Math.max(17,fish.size+other.size);
-    if (d2<spacing*spacing) {
-      const dist=Math.sqrt(d2), push=(spacing-dist)*3.2/dist;
-      separateX+=dx*push; separateY+=dy*push;
-    }
-  }
-  const vx=school.heading*36+(tx-fish.x)*1.5+separateX;
-  const vy=(ty-fish.y)*1.5+separateY;
-  return {x:clamp(vx+(count?(alignX/count-fish.vx)*.26:0),-155,155),
-    y:clamp(vy+(count?(alignY/count-fish.vy)*.26:0),-120,120)};
-}

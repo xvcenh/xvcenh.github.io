@@ -98,10 +98,12 @@ def main():
                 archive.write(f, f.relative_to(classes))
         run(java, "-cp", bt/"lib"/"d8.jar", "com.android.tools.r8.D8", "--min-api", "26",
             "--lib", platform, "--output", dex, tmp/"classes.jar")
-        with zipfile.ZipFile(tmp/"base.apk", "a") as archive:
+        with zipfile.ZipFile(tmp/"base.apk") as resources, zipfile.ZipFile(tmp/"compiled.apk","w") as archive:
+            for entry in resources.infolist():
+                archive.writestr(entry.filename,resources.read(entry),compress_type=entry.compress_type)
             for f in dex.glob("*.dex"):
                 archive.write(f, f.name, zipfile.ZIP_DEFLATED)
-        run(bt/("zipalign"+ext), "-f", "-p", "4", tmp/"base.apk", tmp/"aligned.apk")
+        run(bt/("zipalign"+ext), "-f", "-p", "4", tmp/"compiled.apk", tmp/"aligned.apk")
         signer = bt/"lib"/"apksigner.jar"
         run(java, "-jar", signer, "sign", "--ks", store, "--ks-key-alias", alias,
             "--ks-pass", "env:DT_STORE_PASS", "--key-pass", "env:DT_STORE_PASS",

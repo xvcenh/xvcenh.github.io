@@ -1,4 +1,4 @@
-# 动漫版 0.1.1 构建
+# 动漫版 0.2.0 构建
 
 网页版、Android 和 Windows 使用同一份 Phaser 3 游戏代码。Android 应用的游戏文件随 APK 安装，Windows 版使用本机 WebView2 Runtime 读取随包文件。进度保存在每个应用自己的本地存储中。
 
@@ -14,7 +14,7 @@ node scripts/standalone.mjs PATH_TO_OFFLINE_HTML
 在本文件所在目录打包。
 
 ```shell
-python android/package.py Devour-Tide-0.1.1.apk
+python android/package.py Devour-Tide-0.2.0.apk
 python windows/package.py Devour-Tide-Windows-x64.zip
 ```
 
@@ -25,3 +25,5 @@ Windows 构建使用系统 .NET Framework 4.x 编译器和固定版本的 Micros
 有关游戏的源图、导出规格、游动模型和设计出处，见[美术与动作](source/art/README.md)。
 
 回归测试在 `source/` 运行 `npx playwright install chromium`，启动开发服务器后执行 `npm run test:game`。要测试已部署的构建，可以用 `DT_URL` 指向带有 `?debug=1` 的游戏地址。
+
+运行 `npm run test:physics` 可离线验证脊柱、多更新频率、鱼群、扑击、碰撞和存档，并测量 80、320、1000 条鱼的转向耗时。

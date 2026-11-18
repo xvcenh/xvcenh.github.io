@@ -4,6 +4,16 @@ const keys = [
   'stageBestCombo','chase','zones','bossDelay','stasisT','decoy','curseStage','enemies','hazards','foods',
   'inks','stats','chestT','spawnT','hazT','mileIdx','reefCleared','expedition'
 ];
+const savedArrays=['zones','hazards','foods','inks','stageEvo'];
+const point=entity=>entity && Number.isFinite(entity.x) && Number.isFinite(entity.y);
+
+function validExpedition(expedition) {
+  if(!expedition || !Array.isArray(expedition.shoals) || !expedition.shoals.every(point))return false;
+  const site=expedition.site;
+  return !site || (point(site) && ['net','relay','cache'].includes(site.kind) &&
+    Array.isArray(site.hits) && Array.isArray(site.points) && site.points.length>0 && site.points.every(point) &&
+    Number.isInteger(site.cursor) && site.cursor>=0 && (site.done || site.cursor<site.points.length));
+}
 
 export function readCheckpoint(){
   try {
@@ -12,8 +22,11 @@ export function readCheckpoint(){
         data.state.stage < 1 || data.state.stage > 12 || !Number.isFinite(data.player?.size) ||
         !Number.isFinite(data.player.y) || !Number.isFinite(data.player.x) ||
         !Array.isArray(data.story?.seen) || !Array.isArray(data.story.defeated) ||
-        !Array.isArray(data.state.enemies) || !Array.isArray(data.state.expedition?.shoals) ||
-        !Array.isArray(data.items) || !Number.isFinite(data.height)) return null;
+        !Array.isArray(data.player.slots) || !data.player.levels || !data.state.stats ||
+        !Number.isFinite(data.state.time) || !savedArrays.every(k=>Array.isArray(data.state[k])) ||
+        !Array.isArray(data.state.enemies) || !data.state.enemies.every(point) ||
+        !validExpedition(data.state.expedition) || !Array.isArray(data.items) ||
+        !data.items.every(point) || !Number.isFinite(data.height)) return null;
     return data;
   } catch { return null; }
 }
@@ -24,12 +37,15 @@ export function clearCheckpoint(){
 
 export function writeCheckpoint(G,height){
   if (G.coop || G.mode !== 'play' || !G.p || G.p.dead || (G.trans && !G.trans.fired) || G.chestAnim) return;
-  const { fish, sealed, ...player } = G.p;
+  const { fish, sealed, swim, ...player } = G.p;
   const state = {};
   for (const key of keys) state[key]=G[key];
+  // Poses are regenerated from physical state on the next tick. Excluding joints and
+  // trails keeps synchronous mobile storage writes small as the ecosystem fills.
+  state.enemies=G.enemies.map(({swim,...enemy})=>enemy);
   const story = { ...G.story, seen:[...G.story.seen], defeated:[...G.story.defeated] };
   const items = G.items.map(({type,...item}) => ({ ...item, type:type.id }));
-  const boss = G.boss ? { ...G.boss, def:undefined } : null;
+  const boss = G.boss ? { ...G.boss, def:undefined, swim:undefined } : null;
   try {
     localStorage.setItem(slot,JSON.stringify({
       version:1,height,state,story,player,items,boss,sealed:sealed?.id ?? null

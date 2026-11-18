@@ -1,4 +1,5 @@
 import heroes from './illustrations/fish.webp';
+import {paintSkin} from './swim-spine.js';
 import fauna from './illustrations/wild.webp';
 import guardians from './illustrations/guardians.webp';
 import props from './illustrations/props.webp';
@@ -11,6 +12,7 @@ const banks = {
   fauna:{ url:fauna, ids:'round sunfish shark squid whale jelly anchovy chromis anthias wrasse needle cardinal'.split(' ') },
   guardians:{ url:guardians, ids:'boss_shark boss_whale boss_ray boss_eel boss_jelly boss_lava'.split(' ') }
 };
+export const guardianIds=banks.guardians.ids;
 export const propsList = 'coral fan sponge anemone kelp grass polyps seafern vent crystal valve fossil buoy relay cache ampoule'.split(' ');
 
 export function loadPaintings(scene) {
@@ -61,18 +63,9 @@ export function paintAnimal(ctx, art, id, x, y, angle, size, time, alpha=1, flas
   ctx.scale((left?-1:1)*turnWidth*(1+kick*.06),1-kick*.035);
   ctx.globalAlpha *= alpha;
   if (flash) ctx.filter='brightness(1.65)';
-  if (motion && !upright && size>=13 && (Math.abs(motion.bend)>.018 || kick>.08)) {
-    // Fit adjacent affine strips to one spine. The eye and jaw remain anchored.
-    const segments=6, sw=f.cutWidth/segments, dw=width/segments;
-    const tailAt=u=>Math.max(0,(.78-u)/.78)**1.8 *
-      (motion.bend*height*.54 + Math.sin(phase-u*3)*kick*height*.075);
-    for (let i=0;i<segments;i++) {
-      const start=tailAt(i/segments), end=tailAt((i+1)/segments);
-      ctx.save();ctx.translate(-width/2+i*dw,start);
-      ctx.transform(1,(end-start)/dw,0,1,0,0);
-      ctx.drawImage(f.source.image,f.cutX+i*sw,f.cutY,sw,f.cutHeight,0,-height/2,dw+.16,height);
-      ctx.restore();
-    }
+  if (motion?.spine && size>=13) {
+    if (motion.form==='wing')ctx.scale(1,1+Math.sin(phase)*(.028+.048*effort));
+    paintSkin(ctx,f,width,height,motion);
   } else {
     const bob=upright ? Math.sin(phase)*height*.018 : 0;
     ctx.drawImage(f.source.image,f.cutX,f.cutY,f.cutWidth,f.cutHeight,-width/2,-height/2+bob,width,height);

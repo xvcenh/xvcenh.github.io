@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="io.github.xvcenh.devourtide" android:versionCode="2" android:versionName="0.1.1">
+    package="io.github.xvcenh.devourtide" android:versionCode="3" android:versionName="0.2.0">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36"/>
     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
     <application android:label="吞噬之潮" android:icon="@drawable/tide_icon"

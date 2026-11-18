@@ -1,12 +1,13 @@
 {
   "name": "devour-tide",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test:game": "node scripts/regression.cjs"
+    "test:game": "node scripts/regression.cjs",
+    "test:physics": "node --test scripts/simulation.test.mjs"
   },
   "devDependencies": {
     "playwright": "1.58.2",

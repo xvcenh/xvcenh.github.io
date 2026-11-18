@@ -1,3 +1,4 @@
+import {flexSpine} from './swim-spine.js';
 // Cycles per second, turn response and tail excursion for each swimming gait.
 const cruise = { rest:.52, beat:1.9, response:7.5, flex:.10 };
 const fast = { rest:.58, beat:2.6, response:9, flex:.075 };
@@ -24,7 +25,8 @@ export function sampleWake(fish,dt) {
   if (m.trail.length>11) m.trail.pop();
 }
 
-export function stepSwim(fish,id,dt,referenceSpeed,thrust=false) {
+export function stepSwim(fish,id,dt,referenceSpeed,thrust=false,detailed=true) {
+  if (!(dt>0)) return;
   const profile = gait[id] || cruise;
   const m = fish.swim ||= { phase:(fish.phase || 0) % tau, facing:Math.cos(fish.ang)<0?-1:1,
     heading:fish.ang, bend:0, effort:0, pulse:0 };
@@ -40,4 +42,5 @@ export function stepSwim(fish,id,dt,referenceSpeed,thrust=false) {
   const horizontal = Math.cos(fish.ang);
   if (Math.abs(horizontal)>.22) m.side = Math.sign(horizontal);
   m.facing += ((m.side || Math.sign(m.facing) || 1)-m.facing) * (1-Math.exp(-dt*13));
+  if (detailed) flexSpine(m,id,dt);
 }

@@ -22,3 +22,10 @@
 | 《潜水员戴夫》 | 这款由 MINTROCKET 开发的作品让探索不断引出有用的新目标。 | 救援、回声航道、黑匣分别考验冲撞、路线和停留位置，并把奖品带回吞噬与逃生循环。[PC Gamer 评论](https://www.pcgamer.com/dave-the-diver-review/) |
 
 鱼群的转向参考了邻近个体的避让与速度对齐，另加迁徙目标来控制关卡位置。运行时采用固定步长更新，再绘制插画与特效。[Craig Reynolds 的 Boids](https://www.red3d.com/cwr/boids/) · [Sebastian Lague 的开源实现](https://github.com/SebLague/Boids) · [Game Studio 的 Phaser 2D 开发技能](https://github.com/openai/plugins/blob/main/plugins/game-studio/skills/phaser-2d-game/SKILL.md)
+
+
+## 0.2 游动与追猎
+
+脊柱由七个控制点组成。每节受到前一节的转角、随速度变化的行波和水中阻尼影响。头部固定，海马沿身体竖轴弯尾，鳗鱼的波幅最大。近景用六条连续贴片把同一幅插画贴在脊柱上。远处的小鱼使用八相位图集。
+
+鱼群每步读取一次邻居快照，用局部网格求避让、对齐和聚集。鲨鱼会预判主角的位置，蓄势时显示琥珀色的虚线，扑击开始后方向锁定。玩家可以横穿攻击线或钻进青色尾流。标准键盘长按和触屏摇杆都能在尾流中匹配群速。
