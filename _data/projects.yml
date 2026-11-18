@@ -1,3 +1,13 @@
+- name: 声纹沙盘
+  id: resonance-atlas
+  group: playground
+  image: lab-resonance.webp
+  preview_order: 0
+  image_alt: 铜色沙粒在深色方板上聚成对称的克拉尼声纹
+  tag: CANVAS / WEB AUDIO
+  caption: 拨散铜沙、调节振动模态，在四张声纹之间切换，试听参考音并导出带参数的图案。
+  demo: https://xvcenh.github.io/resonance-atlas/
+  repo: https://github.com/xvcenh/resonance-atlas
 - name: 五连杆运动学
   id: linkage
   group: playground

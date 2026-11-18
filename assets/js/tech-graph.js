@@ -33,6 +33,7 @@ const NODES = [
   { id: 'ghpages',    label: 'GitHub Pages', cat: 'platform', size: 15 },
   { id: 'terminal',   label: 'Terminal',    cat: 'platform', size: 14 },
   { id: 'linux',      label: 'Linux',       cat: 'platform', size: 14 },
+  { id: 'web-audio', label: 'Web Audio', cat: 'framework', size: 14 },
   { id: 'ros2', label: 'ROS 2', cat: 'framework', size: 18 },
   { id: 'stm32', label: 'STM32', cat: 'platform', size: 16 },
   { id: 'can', label: 'CAN', cat: 'concept', size: 13 },
@@ -47,6 +48,7 @@ const NODES = [
 ];
 
 const EDGES = [
+  ['web-audio','javascript'], ['web-audio','canvas'],
   ['ros2','python'], ['ros2','linux'], ['ros2','c-cpp'],
   ['stm32','c-cpp'], ['stm32','can'], ['ros2','can'],
   // 语言间
@@ -94,6 +96,7 @@ const EDGES = [
 ];
 
 const PROJECTS = {
+  'resonance-atlas': { color: '#eca571', techs: ['javascript','html','canvas','web-audio','animation'] },
   'wheel-leg': { color: '#c7e9ae', techs: ['python','linux','ros2','stm32','can','c-cpp','javascript'] },
   'svg-scene-engine': { color: '#8b5cf6', techs: ['html', 'javascript', 'svg', 'ai', 'scene', 'animation', 'canvas'] },
   'svg-asset-library': { color: '#ec4899', techs: ['svg', 'html', 'smil', 'game', 'animation'] },

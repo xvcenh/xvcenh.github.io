@@ -6,7 +6,7 @@ permalink: /projects/
 ---
 <link rel="stylesheet" href="{{ '/assets/css/laboratory.css' | relative_url }}">
 {% assign experiments = site.data.projects | where: "group", "playground" %}
-{% assign repositories = site.data.projects | where: "group", "repositories" %}
+{% assign repositories = site.data.projects | where_exp: "project", "project.repo" %}
 {% assign previews = site.data.projects | where_exp: "project", "project.image" | sort: "preview_order" %}
 <section class="lab-hero" aria-labelledby="lab-title">
   <div class="wrap lab-hero-inner">
@@ -46,7 +46,7 @@ permalink: /projects/
   <div class="lab-index-grid">
     {% for project in site.data.projects %}
       {% if project.demo contains '://' %}{% assign target = project.demo %}{% elsif project.demo %}{% assign target = project.demo | relative_url %}{% else %}{% assign target = project.repo %}{% endif %}
-      <article class="lab-item" id="project-{{ project.id }}" data-kind="{{ project.group }}">
+      <article class="lab-item" id="project-{{ project.id }}" data-kind="{{ project.group }}" {% if project.repo %}data-repository{% endif %}>
         <div class="lab-item-visual" aria-hidden="true">
           {% if project.image %}<img src="{{ '/assets/img/' | append: project.image | relative_url }}" width="700" height="360" loading="lazy" alt="">
           {% else %}<span class="lab-monogram lab-monogram-{{ project.id }}">{{ project.mark }}</span>{% endif %}

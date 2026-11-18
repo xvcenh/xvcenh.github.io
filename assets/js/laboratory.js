@@ -43,7 +43,8 @@ function initializeDirectory(directory) {
     for (const button of buttons) button.setAttribute("aria-pressed", String(button === chosen));
     let count = 0;
     for (const project of projects) {
-      project.hidden = chosen.dataset.group !== "all" && project.dataset.kind !== chosen.dataset.group;
+      const included = chosen.dataset.group === "repositories" ? project.hasAttribute("data-repository") : project.dataset.kind === chosen.dataset.group;
+      project.hidden = chosen.dataset.group !== "all" && !included;
       if (!project.hidden) count++;
     }
     status.textContent = "显示 " + count + " 个项目";
