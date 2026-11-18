@@ -18,7 +18,7 @@ import {stepSwim} from './locomotion.js';
 import {drawHuntTell} from './predator.js';
 import {updateFauna} from './fauna-simulation.js';
 import {createContactSystem} from './contacts.js';
-import { drawDiveSite, drawSiteLabel, drawTideEffects, drawTideGarden, drawSlipstreams, drawWake } from './expedition-art.js';
+import { drawDiveSite, drawSiteLabel, drawTideEffects, drawSlipstreams, drawWake } from './expedition-art.js';
 import { clearCheckpoint, hydrateCheckpoint, readCheckpoint, writeCheckpoint } from './checkpoint.js';
 
 (function(){
@@ -422,13 +422,13 @@ function floater(x, y, text, color, big){
    顿帧（hit-stop）是性价比最高的一招：命中瞬间把时间停住几十毫秒，
    玩家的手和眼睛会同时「感觉到」这一下是硬的。
    ------------------------------------------------------------ */
-function hitImpact(x, y, color, shake, big){
-  tideEffect(x,y,big ? 'blast' : 'impact',big ? 95 : 52);
-  G.hitStop = Math.max(G.hitStop, big ? 0.075 : 0.032);
-  G.shake = Math.max(G.shake, shake || 0.4);
-  G.punch = Math.max(G.punch, big ? 1 : 0.45);
-  G.rings.push({ x:x, y:y, r:6, max: big ? 165 : 82, color: color || '#fff', life:0.34, maxLife:0.34 });
-  if (big) G.flashT = Math.max(G.flashT, 0.10);
+function hitImpact(x, y, color, shake, big, strength = 1){
+  tideEffect(x,y,big ? 'blast' : 'impact',(big ? 95 : 52)*strength);
+  G.hitStop = Math.max(G.hitStop, strength < .4 ? 0 : (big ? .075 : .032)*strength);
+  G.shake = Math.max(G.shake, shake);
+  G.punch = Math.max(G.punch, (big ? 1 : .45)*strength);
+  G.rings.push({ x:x, y:y, r:6, max: (big ? 165 : 82)*strength, color: color || '#fff', life:0.34, maxLife:0.34 });
+  if (big) G.flashT = Math.max(G.flashT, .1*strength);
 }
 
 function tideEffect(x,y,frame,radius){
@@ -1019,7 +1019,9 @@ function eatEnemy(p, e, idx, viaChomp){
 
   burst(e.x, e.y, e.c2, e.tier ? 20 : 10, e.tier ? 300 : 200, e.tier ? 6 : 4);
   floater(e.x, e.y - e.size - 12, '+' + gained, viaChomp ? '#ffd166' : '#bfe9ff');
-  hitImpact(e.x, e.y, e.c2, e.tier ? 0.7 : 0.28, e.tier >= 1 || e.chest);
+  const weight = clamp((rel - .25) / .8, 0, 1);
+  const shake = lerp(.10, .56, weight * weight);
+  hitImpact(e.x, e.y, e.c2, shake, rel >= .9, lerp(.22, .8, weight));
   Audio2.eat(p.combo);
 }
 
@@ -3143,8 +3145,7 @@ function render(){
   ctx.clearRect(0, 0, W, H);
   if (paintings) {
     const sea = seaIdxForStage(G.stage);
-    paintSea(ctx,paintings,W,H,cam,sea,menuT);
-    if (G.p) drawTideGarden(ctx,paintings,W,H,cam,sea,G.time);
+    paintSea(ctx,paintings,W,H,cam,sea);
   } else {
     drawBackground();
     drawReef(ctx,W,H,cam.y,cam.x,menuT);

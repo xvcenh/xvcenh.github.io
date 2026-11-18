@@ -7,28 +7,6 @@ function stamp(ctx, texture, name, x, y, width, height) {
     x - width / 2, y - height / 2, width, height);
 }
 
-const garden = [
-  ['coral','fan','sponge','polyps'], ['anemone','seafern','kelp','fossil'],
-  ['crystal','grass','crystal','valve'], ['vent','sponge','vent','polyps'],
-  ['valve','kelp','fossil','fan'], ['fossil','anemone','seafern','fossil']
-];
-export function drawTideGarden(ctx, art, w, h, camera, sea, time) {
-  const offset = camera.x * 0.23 + camera.y * 0.05;
-  const first = Math.floor(offset / 180);
-  ctx.save();
-  ctx.globalAlpha = 0.84;
-  for (let i = -1; i < w / 180 + 1; i++) {
-    const seed = Math.abs(i + first + sea * 13);
-    const x = i * 180 - offset % 180;
-    const size = 51 + (seed * 29) % 74;
-    const y = h + 5 + Math.sin(seed * 4.8) * 8;
-    ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(time * 1.2 + seed) * 0.027);
-    stamp(ctx,art.props,garden[sea][seed % 4],0,-size*0.43,size,size);
-    ctx.restore();
-  }
-  ctx.restore();
-}
-
 function circle(ctx, x, y, r, fill, stroke) {
   ctx.beginPath(); ctx.arc(x,y,r,0,TAU);
   if (fill) { ctx.fillStyle = fill; ctx.fill(); }

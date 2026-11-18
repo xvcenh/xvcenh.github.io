@@ -1,5 +1,6 @@
 import heroes from './illustrations/fish.webp';
 import {paintSkin} from './swim-spine.js';
+import { SEA_SPAN, STAGE_DEPTH, WORLD } from './config.js';
 import fauna from './illustrations/wild.webp';
 import guardians from './illustrations/guardians.webp';
 import props from './illustrations/props.webp';
@@ -74,7 +75,7 @@ export function paintAnimal(ctx, art, id, x, y, angle, size, time, alpha=1, flas
   return true;
 }
 
-export function paintSea(ctx,art,w,h,cam,sea,time) {
+export function paintSea(ctx,art,w,h,cam,sea) {
   const frame = art.biomes.get('sea'+sea);
   if (art.landscape?.index !== sea) {
     const image = new Image();
@@ -86,11 +87,18 @@ export function paintSea(ctx,art,w,h,cam,sea,time) {
   const source=full ? image : frame.source.image;
   const srcW=full ? image.naturalWidth : frame.cutWidth;
   const srcH=full ? image.naturalHeight : frame.cutHeight;
-  const scale = Math.max(w/srcW,h/srcH)*1.055;
+  // Reserve image beyond the viewport so the camera can pan in both axes,
+  // including tall displays and the low-resolution atlas used during loading.
+  const travelX = w * .54;
+  const travelY = h * .8;
+  const scale = Math.max((w + travelX)/srcW,(h + travelY)/srcH);
   const width = srcW*scale, height = srcH*scale;
-  const shift = Math.sin(cam.x*0.0008 + cam.y*0.00022)*Math.min(45,(width-w)*0.48);
+  const seaDepth = SEA_SPAN * STAGE_DEPTH;
+  const across = Math.max(0, Math.min(1, cam.x / WORLD.w));
+  const depth = Math.max(0, Math.min(1, (cam.y - sea * seaDepth) / seaDepth));
   ctx.drawImage(source,full ? 0 : frame.cutX,full ? 0 : frame.cutY,srcW,srcH,
-    (w-width)/2+shift,(h-height)/2+Math.sin(time*0.06)*Math.min(5,(height-h)/2),width,height);
+    (w-width)/2 + (.5-across)*travelX,
+    (h-height)/2 + (.5-depth)*travelY,width,height);
   ctx.fillStyle=sea===0 ? 'rgba(5,28,39,.15)' : 'rgba(4,13,24,.14)';
   ctx.fillRect(0,0,w,h);
 }
