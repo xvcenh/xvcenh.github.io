@@ -266,3 +266,26 @@ img,svg { display: block; }
 .project-photo { display:block; aspect-ratio:2.8; overflow:hidden; margin:calc(-1 * clamp(18px,2.35vw,34px)) calc(-1 * clamp(18px,2.35vw,34px)) 18px; }
 .project-photo img { width:100%; height:100%; object-fit:cover; transition:transform .25s; }.project-photo:hover img { transform:scale(1.025); }
 .project:has(.project-photo) { overflow:hidden; }
+
+.novel-feature {
+  display: grid;
+  grid-template-columns: 1fr .92fr;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  background: var(--pale);
+}
+.novel-copy { padding: clamp(22px, 3.4vw, 45px); }
+.novel-copy h2 { margin: 8px 0; font-size: clamp(38px, 4.5vw, 63px); line-height: 1.12; letter-spacing: -.06em; }
+.novel-summary { max-width: 30em; color: var(--ink); }
+.novel-switch { margin-top: 6px; color: var(--muted); font-size: 13px; }
+.novel-entries { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 19px; }
+.novel-second { border-color: var(--rule); background: var(--paper); color: var(--pine); }
+.novel-second:hover { border-color: var(--pine); }
+.novel-cover { width: 100%; height: 100%; max-height: 360px; object-fit: cover; align-self: center; }
+@media (max-width: 680px) {
+  .novel-feature { grid-template-columns: 1fr; }
+  .novel-cover { aspect-ratio: 2.7; height: auto; }
+  .novel-entries .button { padding-inline: 12px; gap: 7px; }
+}
