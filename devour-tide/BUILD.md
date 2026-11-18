@@ -27,3 +27,5 @@ Windows 构建使用系统 .NET Framework 4.x 编译器和固定版本的 Micros
 回归测试在 `source/` 运行 `npx playwright install chromium`，启动开发服务器后执行 `npm run test:game`。要测试已部署的构建，可以用 `DT_URL` 指向带有 `?debug=1` 的游戏地址。
 
 运行 `npm run test:physics` 可离线验证脊柱、多更新频率、鱼群、扑击、碰撞和存档，并测量 80、320、1000 条鱼的转向耗时。
+
+运行 `npm run test:endings` 可用同一游戏地址验证蓝鲸选项、最终守卫和四个结局。测试用预设的后期进度进入场景，再通过页面选项和键盘输入完成最后一击与结局选择。

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "test:game": "node scripts/regression.cjs",
+    "test:endings": "node scripts/endings.mjs",
     "test:physics": "node --test scripts/simulation.test.mjs"
   },
   "devDependencies": {
