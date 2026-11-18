@@ -26,7 +26,7 @@ python scripts/check_site.py
 
 - **文章**存放于 `_posts/YYYY-MM-DD-slug.md`。设置 `title`、`date`、`author`、`categories` 和可选的 `keywords`。文章档案、分类总表、全文搜索和 RSS 随构建更新。
 - **项目**由 `_data/projects.yml` 维护。每项可包含在线演示与 GitHub 仓库。精选文章的顺序和封面在 `_data/features.yml` 中设置。
-- **前端**使用共享的 Jekyll 布局和原生 JavaScript。首页的 Canvas 场景支持暂停、拖动与减少动态效果。经典星系单独加载随仓库提供的 Three.js。
+- **前端**使用共享的 Jekyll 布局和原生 JavaScript。首页的 Canvas 星环在后台线程绘制行星表面，支持暂停、拖动与减少动态效果。经典星系单独加载随仓库提供的 Three.js。文章日历、阅读进度、项目实机预览和可键盘操作的技术星图均可从主导航访问。
 - **发布**由 GitHub Actions 完成。详见[发布说明](GITHUB_PAGES_SETUP.md)。
 
 ## 设计参考与素材

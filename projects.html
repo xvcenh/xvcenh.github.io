@@ -53,7 +53,7 @@ permalink: /projects/
         </div>
         <div class="lab-item-copy">
           <small>{{ project.tag }}</small><h3><a href="{{ target }}">{{ project.name | escape }}</a></h3><p>{{ project.caption }}</p>
-          <div class="lab-links">{% if project.demo %}<a href="{{ target }}">打开实验 <span aria-hidden="true">↗</span></a>{% endif %}{% if project.repo %}<a href="{{ project.repo }}">GitHub 源码 <span aria-hidden="true">↗</span></a>{% endif %}</div>
+          <div class="lab-links">{% if project.demo %}<a href="{{ target }}">打开实验 <span aria-hidden="true">↗</span></a>{% endif %}{% if project.edition %}<a href="{{ project.edition.url | relative_url }}">{{ project.edition.title }} <span aria-hidden="true">↗</span></a>{% endif %}{% if project.repo %}<a href="{{ project.repo }}">GitHub 源码 <span aria-hidden="true">↗</span></a>{% endif %}</div>
         </div>
       </article>
     {% endfor %}

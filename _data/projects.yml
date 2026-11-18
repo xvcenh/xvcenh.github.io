@@ -16,6 +16,7 @@
   tag: CANVAS GAME
   caption: 在六个海域觅食和进化，支持单人远征与双人同屏。
   demo: /devour-tide/
+  edition: {title: 动漫版与下载, url: /devour-tide/anime/}
 - name: 十种界面实验
   id: interface
   group: playground
