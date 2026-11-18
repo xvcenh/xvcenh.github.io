@@ -396,3 +396,13 @@ body :is(button, a, select, input):focus-visible { outline: 3px solid #b8f5bb; o
 @media(prefers-reduced-motion:reduce) {
  *,*::before,*::after {animation:none!important;transition:none!important}
 }
+
+.anime-launch {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 8px; padding: 9px 14px; color: #edffe6;
+  background: linear-gradient(110deg,#1f4746ed,#133436de); border: 1px solid #588e7c;
+  border-radius: 4px; text-decoration: none;
+}
+.anime-launch strong,.anime-launch small { display:block; }
+.anime-launch strong { font-size: 16px; }.anime-launch small { color:#b7d7ce; font-size:12px; }
+.anime-launch:hover,.anime-launch:focus-visible { border-color:#caee96; color:#dbf9a9; }
