@@ -1,0 +1,12 @@
+- slug: web-performance-optimization
+  cover: performance
+  subject: WEB PERFORMANCE
+  summary: 从 Lighthouse 报告入手，逐项拆解加载、渲染与缓存。
+- slug: github-actions-cicd
+  cover: workflow
+  subject: AUTOMATION
+  summary: 把测试、镜像构建和发布串成可复用的流水线。
+- slug: open-source-growth
+  cover: opensource
+  subject: OPEN SOURCE
+  summary: 从第一份 README 到第一次贡献，记录独立项目的生长过程。

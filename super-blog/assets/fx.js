@@ -6,30 +6,27 @@
 (function (global) {
   'use strict';
 
-  var REDUCED = global.matchMedia && global.mediaMatches !== undefined
-    ? global.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
-  try { REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+  var REDUCED = !!(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   /* ============================== 核心调度 ============================== */
-  var tasks = new Set(), running = false, hidden = false;
+  var tasks = new Set(), running = false, hidden = document.hidden, frame = 0;
 
   function loop(t) {
     if (!running) return;
     tasks.forEach(function (fn) {
       try { fn(t); } catch (e) { /* isolate task errors */ }
     });
-    requestAnimationFrame(loop);
+    frame = requestAnimationFrame(loop);
   }
   function start() {
-    if (running || hidden) return;
+    if (running || hidden || !tasks.size) return;
     running = true;
-    requestAnimationFrame(loop);
+    frame = requestAnimationFrame(loop);
   }
-  function stop() { running = false; }
+  function stop() { running = false; cancelAnimationFrame(frame); }
   function add(fn) {
     tasks.add(fn); start();
-    return function () { tasks.delete(fn); };
+    return function () { tasks.delete(fn); if (!tasks.size) stop(); };
   }
   document.addEventListener('visibilitychange', function () {
     hidden = document.hidden;

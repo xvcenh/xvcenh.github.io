@@ -94,8 +94,8 @@ permalink: /tech-graph/
 <body>
 
 <div class="top-bar">
-  <a href="/" class="back">← 返回首页</a>
-  <h1>🕸 技术图谱</h1>
+  <a href="{{ '/projects/' | relative_url }}" class="back">← 项目实验室</a>
+  <h1>技术图谱</h1>
   <div style="width:80px;"></div>
 </div>
 
@@ -207,11 +207,12 @@ const EDGES = [
 ];
 
 const PROJECTS = {
+  'wheel-leg': { color: '#c7e9ae', techs: ['python','linux','simulation','javascript'] },
   'svg-scene-engine': { color: '#8b5cf6', techs: ['html', 'javascript', 'svg', 'ai', 'scene', 'animation', 'canvas'] },
   'svg-asset-library': { color: '#ec4899', techs: ['svg', 'html', 'smil', 'game', 'animation'] },
   'claudescan':        { color: '#f59e0b', techs: ['python', 'cli', 'ai', 'devtools', 'git'] },
   'liltown':           { color: '#10b981', techs: ['python', 'terminal', 'ai', 'simulation', 'cli'] },
-  'xvcenh.github.io':  { color: '#60a5fa', techs: ['html', 'javascript', 'jekyll', 'ghpages', 'vue', 'threejs', 'canvas', 'seo', 'animation'] },
+  'xvcenh.github.io':  { color: '#60a5fa', techs: ['html', 'javascript', 'jekyll', 'ghpages', 'canvas', 'seo', 'animation'] },
 };
 
 // ══════════════════════════════════════════════
@@ -233,7 +234,7 @@ let panStartX, panStartY, viewStartX, viewStartY;
 let lastTouchDist = 0;
 
 function resize() {
-  dpr = window.devicePixelRatio || 1;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth;
   H = window.innerHeight;
   canvas.width = W * dpr;
@@ -353,7 +354,7 @@ function draw() {
     ctx.stroke();
 
     // 连线上的小粒子动画
-    if (isHl) {
+    if (isHl && !reducedMotion.matches) {
       const t = (Date.now() % 2000) / 2000;
       const px = e.source.x + (e.target.x - e.source.x) * t;
       const py = e.source.y + (e.target.y - e.source.y) * t;
@@ -404,13 +405,25 @@ function draw() {
 
 // ── 主循环 ──
 let simSteps = 0;
-function loop() {
-  if (document.hidden) { requestAnimationFrame(loop); return; }
-  if (simSteps < 180) { simulate(); simSteps++; }
-  draw();
-  requestAnimationFrame(loop);
+let scheduled = 0;
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+function wake() {
+  if (!scheduled && !document.hidden) scheduled = requestAnimationFrame(loop);
 }
-loop();
+function loop() {
+  scheduled = 0;
+  if (document.hidden) return;
+  const steps = reducedMotion.matches ? 12 : 1;
+  for (let i = 0; i < steps && simSteps < 180; i++, simSteps++) simulate();
+  draw();
+  if (simSteps < 180 || (hoveredNode && !reducedMotion.matches)) wake();
+}
+for (const event of ['mousemove','mousedown','mouseup','mouseleave','wheel','touchstart','touchmove','touchend']) {
+  canvas.addEventListener(event, wake, {passive:true});
+}
+window.addEventListener('resize', () => { simSteps = 0; wake(); });
+document.addEventListener('visibilitychange', wake);
+wake();
 
 // ══════════════════════════════════════════════
 // 交互
@@ -453,7 +466,7 @@ canvas.addEventListener('mousemove', (e) => {
     draggedNode.y = y;
     draggedNode.vx = 0;
     draggedNode.vy = 0;
-    simSteps = Math.min(simSteps, 280); // 重新激活模拟
+    simSteps = 0; // 重新激活模拟
     showTooltip(draggedNode, e.clientX, e.clientY);
     return;
   }
@@ -473,7 +486,7 @@ canvas.addEventListener('mousedown', (e) => {
   const n = findNode(e.clientX, e.clientY);
   if (n) {
     draggedNode = n;
-    simSteps = 280;
+    simSteps = 0;
   } else {
     isPanning = true;
     panStartX = e.clientX; panStartY = e.clientY;
@@ -512,7 +525,7 @@ canvas.addEventListener('touchstart', (e) => {
     const n = findNode(t.clientX, t.clientY);
     if (n) {
       draggedNode = n;
-      simSteps = 280;
+      simSteps = 0;
       showTooltip(n, t.clientX, t.clientY);
     } else {
       isPanning = true;
@@ -534,7 +547,7 @@ canvas.addEventListener('touchmove', (e) => {
       const { x, y } = screenToWorld(t.clientX, t.clientY);
       draggedNode.x = x; draggedNode.y = y;
       draggedNode.vx = 0; draggedNode.vy = 0;
-      simSteps = Math.min(simSteps, 280);
+      simSteps = 0;
     } else if (isPanning) {
       viewX = viewStartX + (t.clientX - panStartX);
       viewY = viewStartY + (t.clientY - panStartY);

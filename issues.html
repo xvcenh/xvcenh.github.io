@@ -1,0 +1,8 @@
+---
+layout: default
+title: 文章档案
+permalink: /issues/
+---
+{% include intro.html kicker="ARTICLE ARCHIVE" heading="文章档案" description="按时间翻阅工程手记，或从一个具体问题开始。" %}
+<div class="wrap page-body"><div class="section-toolbar"><p>{{ site.posts.size }} 篇文章</p><div><a class="text-link" href="{{ '/categories/' | relative_url }}">主题分类 ↗</a><a class="text-link" href="{{ '/search/' | relative_url }}">搜索文章 ↗</a></div></div>
+{% assign months = site.posts | group_by_exp: 'post', "post.date | date: '%Y.%m'" %}{% for month in months %}<section class="archive-group"><h2>{{ month.name }}</h2><ul class="post-list">{% for post in month.items %}{% include post-row.html post=post %}{% endfor %}</ul></section>{% endfor %}</div>

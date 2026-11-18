@@ -9,7 +9,7 @@
 
 **方式一（最简单）**：双击 `index.html` 即可游玩（推荐 Chrome / Edge）。
 
-**方式二**：双击 `启动游戏.bat`（Windows），或在本目录运行：
+**方式二**：在本目录运行本地 HTTP 服务，或[直接在线游玩](https://xvcenh.github.io/devour-tide/)：
 
 ```bash
 python3 -m http.server 8000   # 然后浏览器打开 http://localhost:8000
@@ -46,32 +46,7 @@ python3 -m http.server 8000   # 然后浏览器打开 http://localhost:8000
 
 ## 📦 打包成 exe（发给其他人双击即玩）
 
-### 方案 A：Electron（简单，约 180MB）
-
-需要 Node.js 18+：
-
-```bash
-cd packaging/electron
-npm install
-npm run dist        # 产出 dist/吞噬之潮-win32-x64/吞噬之潮.exe
-```
-
-想生成单文件安装包：`npm run dist -- --win nsis`（需要网络下载 NSIS 模板）。
-
-### 方案 B：Tauri（轻量，约 8MB，推荐）
-
-需要 Node.js 18+ 与 Rust 工具链（`rustup`）：
-
-```bash
-cd packaging/tauri
-npm install
-npm run build       # 产出 src-tauri/target/release/吞噬之潮.exe
-```
-
-### 方案 C：免安装绿色包
-
-直接把整个 `devour-tide` 文件夹压缩发给对方，解压后双击 `index.html`
-（或 `启动游戏.bat`）即可玩，无需安装任何东西。
+直接分发整个 `devour-tide/` 目录或部署到静态服务器即可。在触屏设备上可使用方向键、冲刺与暂停按钮操纵 P1。
 
 ## ⚙️ 性能
 
@@ -91,6 +66,5 @@ devour-tide/
 ├── data.js         6 大场景定义 + 35 张卡牌数据
 ├── game.js         游戏循环 / 模式 / 难度 / 双人 / BOSS
 ├── ui.js           菜单 / 捏鱼工坊 / HUD / 抽卡 / 结算
-├── main.js         启动引导
-└── packaging/      exe 打包工程（Electron / Tauri）
+└── main.js         启动引导
 ```

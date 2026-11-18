@@ -1,0 +1,6 @@
+---
+layout: default
+section: 文章
+---
+{% include intro.html kicker="SUBJECT INDEX" heading=page.title %}
+<div class="wrap page-body"><div class="section-toolbar"><p>{{ site.categories[page.topic].size }} 篇文章</p><a href="{{ '/categories/' | relative_url }}">所有主题 ↗</a></div><ul class="post-list">{% for post in site.categories[page.topic] %}{% include post-row.html post=post %}{% endfor %}</ul></div>

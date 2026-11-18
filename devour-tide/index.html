@@ -12,6 +12,7 @@
 <div id="ui">
   <!-- ============ 主菜单 ============ -->
   <div class="screen center" id="scr-menu">
+    <a class="lab-return" href="../projects/">← 项目实验室</a>
     <div class="title-wrap">
       <h1 class="game-title">吞噬之潮</h1>
       <div class="game-sub">D E V O U R &nbsp;·&nbsp; T I D E</div>
@@ -114,6 +115,10 @@
 
   <!-- ============ HUD ============ -->
   <div id="hud" class="hidden">
+    <div id="touch-controls" aria-label="触屏操作">
+      <div class="dpad"><button data-key="KeyW" aria-label="向上">↑</button><button data-key="KeyA" aria-label="向左">←</button><button data-key="KeyS" aria-label="向下">↓</button><button data-key="KeyD" aria-label="向右">→</button></div>
+      <div><button data-key="Space">冲刺</button><button id="touch-pause">暂停</button></div>
+    </div>
     <div class="hud-top">
       <div class="player-card" id="pc0">
         <div class="pc-name"><i class="dot p1"></i><span>P1</span></div>

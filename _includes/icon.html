@@ -1,0 +1,12 @@
+<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{% case include.name %}
+{% when 'arrow' %}<path d="M4 12h15m-6-6 6 6-6 6"/>
+{% when 'external' %}<path d="M6 18 18 6M7 6h11v11"/>
+{% when 'search' %}<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>
+{% when 'terminal' %}<path d="m4 5 6 6-6 6m9 0h7"/>
+{% when 'book' %}<path d="M3 4h5c2 0 4 1 4 3 0-2 2-3 4-3h5v14h-5c-2 0-4 1-4 3 0-2-2-3-4-3H3zM12 7v14"/>
+{% when 'layers' %}<path d="m12 3 10 5-10 5L2 8zm-9 9 9 5 9-5M3 16l9 5 9-5"/>
+{% when 'menu' %}<path d="M3 6h18M3 12h18M3 18h18"/>
+{% when 'close' %}<path d="m6 6 12 12M18 6 6 18"/>
+{% when 'folder' %}<path d="M3 6h6l3 3h9v11H3z"/>
+{% endcase %}</svg>

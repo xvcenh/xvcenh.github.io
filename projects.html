@@ -1,0 +1,15 @@
+---
+layout: default
+title: 项目实验室
+permalink: /projects/
+---
+{% include intro.html kicker="PROJECT LAB" heading="项目实验室" description="从运动学模拟到终端里的 AI 村庄，在浏览器里动手试，或到 GitHub 阅读源码。" %}
+<div class="wrap page-body">
+{% assign sections = "playground,repositories" | split: "," %}{% for section in sections %}
+<div class="section-head{% unless forloop.first %} separated{% endunless %}"><div>
+{% if section == "playground" %}<p class="section-code"><span></span> PLAYGROUND</p><h2>在线实验</h2>{% else %}<p class="section-code"><span></span> OPEN SOURCE</p><h2>开源项目</h2>{% endif %}
+</div></div><div class="project-grid">
+{% assign projects = site.data.projects | where: "group", section %}{% for project in projects %}
+{% if project.demo contains '://' %}{% assign demo = project.demo %}{% else %}{% assign demo = project.demo | relative_url %}{% endif %}
+<article class="project">{% if project.image %}<a class="project-photo" href="{{ demo }}" aria-label="打开 {{ project.name }} 演示"><img src="{{ '/assets/img/' | append: project.image | relative_url }}" width="700" height="360" loading="lazy" alt="{{ project.name }} 运行画面"></a>{% endif %}<div class="project-folio"><span>{{ project.tag }}</span><span>/ 0{{ forloop.index }}</span></div><h3>{{ project.name }}</h3><p>{{ project.caption }}</p><div class="project-links">{% if project.demo %}<a href="{{ demo }}">打开实验 ↗</a>{% endif %}{% if project.repo %}<a href="{{ project.repo }}">GitHub 源码 ↗</a>{% endif %}</div></article>
+{% endfor %}</div>{% endfor %}</div>

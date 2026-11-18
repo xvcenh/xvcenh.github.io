@@ -403,6 +403,7 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 <nav class="topbar">
   <a class="brand" href="index.html" id="brandLogo"><span class="brand-orb"></span>xvcenh<span style="color:var(--ember)">.</span>blog</a>
   <div class="top-links">
+    <a href="https://xvcenh.github.io/">工程手记</a>
     <a href="#tools">开源工具</a>
     <a href="#posts">最新文章</a>
     <a href="#styles">风格展馆</a>
@@ -436,7 +437,7 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
     <div class="hero-meta">
       <div><b><span class="counter" data-target="10">0</span></b><span>STYLE PAGES</span></div>
       <div><b><span class="counter" data-target="13">0</span></b><span>CANVAS FX</span></div>
-      <div><b><span class="counter" data-target="42">0</span></b><span>TECH POSTS</span></div>
+      <div><b><span class="counter" id="journal-total" data-target="11">0</span></b><span>TECH POSTS</span></div>
       <div><b><span class="counter" data-target="4">0</span></b><span>OSS TOOLS</span></div>
       <div><b><span class="counter" data-target="0" data-suffix="KB">0</span></b><span>FRAMEWORK DEPS</span></div>
     </div>
@@ -597,7 +598,7 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
 <!-- ================= stats ================= -->
 <section class="section" style="padding-top:0">
   <div class="stats-strip reveal-scale">
-    <div class="stat"><b><span class="counter" data-target="128">0</span>+</b><span>COMMITS THIS YEAR</span></div>
+    <div class="stat"><b><span class="counter" id="journal-topics" data-target="11">0</span></b><span>JOURNAL TOPICS</span></div>
     <div class="stat"><b><span class="counter" data-target="13">0</span></b><span>RENDERERS IN FX.JS</span></div>
     <div class="stat"><b><span class="counter" data-target="60">0</span><small>fps</small></b><span>TARGET FRAMERATE</span></div>
     <div class="stat"><b><span class="counter" data-target="100">0</span><small>%</small></b><span>零框架 · 原生实现</span></div>
@@ -811,5 +812,6 @@ body.party .hero h1 .ch { animation: party-jump .8s ease infinite alternate; }
   });
 })();
 </script>
+<script src="assets/journal.js" defer></script>
 </body>
 </html>

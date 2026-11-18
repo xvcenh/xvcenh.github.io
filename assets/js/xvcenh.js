@@ -211,7 +211,7 @@
             animate.lastTs = ts; globalTime += dt;
 
             stateTimer += dt;
-            if (stateTimer > (isConverged ? CONV_TIME : SCAT_TIME)) toggle();
+            if (!matchMedia("(prefers-reduced-motion: reduce)").matches && stateTimer > (isConverged ? CONV_TIME : SCAT_TIME)) toggle();
 
             for (const p of particles) p.update(dt, globalTime, isConverged);
 
@@ -245,7 +245,7 @@
         }
 
         window.addEventListener('keydown', e => {
-            if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); toggle(); }
+            if ((e.key === ' ' || e.code === 'Space') && !e.target.closest('a,button,input')) { e.preventDefault(); toggle(); }
         });
 
         init();

@@ -1,0 +1,69 @@
+- name: 五连杆运动学
+  id: linkage
+  group: playground
+  image: lab-linkage.webp
+  tag: ROBOTICS
+  caption: 拖动关节角度，实时对照闭环机构和等效串联臂的正向与逆向解。
+  demo: /fivebar-linkage/
+- name: 吞噬之潮
+  id: tide
+  group: playground
+  image: lab-tide.webp
+  tag: CANVAS GAME
+  caption: 在六个海域觅食和进化，支持单人远征与双人同屏。
+  demo: /devour-tide/
+- name: 十种界面实验
+  id: interface
+  group: playground
+  image: lab-interface.webp
+  tag: INTERACTION
+  caption: 从 Win98 桌面到黑客终端，逐个体验十种可操作的界面风格。
+  demo: /super-blog/
+- name: 技术图谱
+  id: graph
+  group: playground
+  image: lab-graph.webp
+  tag: VISUALIZATION
+  caption: 在可拖动的关系图上探索语言、工具以及它们共同支撑的项目。
+  demo: /tech-graph/
+- name: 经典 3D 星系
+  id: galaxy
+  group: playground
+  image: lab-galaxy.webp
+  tag: THREE.JS / PARTICLES
+  caption: 进入旧版首页的三维轨道，聚焦行星或重放 XVCENH 霓虹拼字动画。
+  demo: /galaxy/
+- name: SVG Scene Engine
+  id: scene
+  group: repositories
+  image: lab-scene.webp
+  tag: JAVASCRIPT / SVG
+  caption: 免密钥体验 12 个场景模板，或接入模型，将描述转换成动画和分层场景。
+  demo: https://xvcenh.github.io/svg-scene-engine/
+  repo: https://github.com/xvcenh/svg-scene-engine
+- name: ClaudeScan
+  id: scan
+  group: repositories
+  tag: PYTHON / CLI
+  caption: 扫描仓库中的语言、框架与工具，生成项目专用的 AI 编程助手配置。
+  repo: https://github.com/xvcenh/claudescan
+- name: SVG Asset Library
+  id: assets
+  group: repositories
+  tag: SVG / SMIL
+  caption: 按图层与关键词检索 200 个奇幻 SVG，预览角色、下载素材，分享筛选结果。
+  demo: https://xvcenh.github.io/svg-asset-library/
+  repo: https://github.com/xvcenh/svg-asset-library
+- name: LilTown
+  id: town
+  group: repositories
+  tag: PYTHON / TERMINAL
+  caption: 在终端观察多个 AI 角色生活、互动与对话的村庄模拟器。
+  repo: https://github.com/xvcenh/liltown
+
+- name: WheelLeg
+  id: wheel-leg
+  group: repositories
+  tag: ROBOTICS / ROS 2
+  caption: 轮腿机器人的全栈遥测系统，从 STM32 和 CAN 总线到 ROS 2 与实时 Web 仪表盘。
+  repo: https://github.com/xvcenh/wheel-leg

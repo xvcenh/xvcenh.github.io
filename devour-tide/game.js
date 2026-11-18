@@ -1121,13 +1121,16 @@
 
   function bindInput() {
     window.addEventListener('keydown', (e) => {
+      if (e.target?.matches?.('input, textarea, select, [contenteditable=true]')) return;
+      if (e.code === 'KeyM' && !e.repeat) A.toggleMute();
+      if (G.state !== 'playing') return;
+      if (e.code === 'Escape' && !e.repeat) {
+        G.togglePause();
+        return;
+      }
+      if (G.paused) return;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter'].includes(e.code)) e.preventDefault();
       keys[e.code] = true;
-      if (e.code === 'Escape') {
-        if (G.state === 'playing') G.togglePause();
-        else if (G.paused) G.togglePause();
-      }
-      if (e.code === 'KeyM') A.toggleMute();
       // 合作复活
       if (G.mode === 'coop' && G.state === 'playing') {
         G.players.forEach((p) => {
@@ -1145,6 +1148,17 @@
         });
       }
     });
+    const touch = document.getElementById('touch-controls');
+    for (const control of touch.querySelectorAll('[data-key]')) {
+      const key = control.dataset.key;
+      control.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        control.setPointerCapture(event.pointerId);
+        keys[key] = true;
+      });
+      control.addEventListener('lostpointercapture', () => { keys[key] = false; });
+    }
+    document.getElementById('touch-pause').addEventListener('click', () => G.togglePause());
     window.addEventListener('keyup', (e) => { keys[e.code] = false; });
     window.addEventListener('blur', () => {
       for (const k in keys) keys[k] = false;

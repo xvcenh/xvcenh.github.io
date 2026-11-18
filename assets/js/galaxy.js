@@ -1,4 +1,4 @@
-        import * as THREE from 'three';
+        import * as THREE from '../vendor/three/three.module.min.js';
 
         // ==================== DOM 元素 ====================
         const container = document.getElementById('canvas-container');
@@ -325,7 +325,7 @@
             planets: [
                 { name: '部署', hue: 25, size: 0.50, speed: 0.16, angleOffset: 0.8, articles: ['CI/CD', '容器化', '运维监控'], link: '/categories/部署/' },
                 { name: '工具', hue: 35, size: 0.48, speed: 0.14, angleOffset: 3.0, articles: ['效率工具', '命令行', 'IDE配置'], link: '/categories/工具/' },
-                { name: '全部文章', hue: 18, size: 0.46, speed: 0.17, angleOffset: 5.0, articles: ['浏览所有', '问题记录', '知识库'], link: '/categories/' },
+                { name: '全部文章', hue: 18, size: 0.46, speed: 0.17, angleOffset: 5.0, articles: ['浏览所有', '问题记录', '知识库'], link: '/issues/' },
             ],
         }, {
             name: '探索发现',
@@ -336,8 +336,8 @@
             ringTex: null,
             planets: [
                 { name: '搜索', hue: 150, size: 0.47, speed: 0.12, angleOffset: 1.5, articles: ['全文检索', '关键词', '标签筛选'], link: '/search/' },
-                { name: '新文章', hue: 160, size: 0.43, speed: 0.11, angleOffset: 3.8, articles: ['最新问题', '近期更新', '热点内容'], link: '/categories/' },
-                { name: '归档', hue: 140, size: 0.42, speed: 0.13, angleOffset: 5.6, articles: ['历史记录', '时间线', '全部文章'], link: '/categories/' },
+                { name: '新文章', hue: 160, size: 0.43, speed: 0.11, angleOffset: 3.8, articles: ['最新问题', '近期更新', '热点内容'], link: '/issues/' },
+                { name: '归档', hue: 140, size: 0.42, speed: 0.13, angleOffset: 5.6, articles: ['历史记录', '时间线', '全部文章'], link: '/issues/' },
             ],
         }, {
             name: '关于',
@@ -768,7 +768,8 @@
         });
 
         // ==================== 动画循环 ====================
-        const clock = new THREE.Clock();
+        let lastFrame = performance.now();
+        const quiet = matchMedia("(prefers-reduced-motion: reduce)");
         let globalTime = 0;
         let totalRotX = 0, totalRotY = 0, animFrameId = null;
 
@@ -777,7 +778,8 @@
 
             if (document.hidden) return;
 
-            const dt = Math.min(clock.getDelta(), 0.1);
+            const dt = quiet.matches ? 0 : Math.min((timestamp - lastFrame)/1000, 0.1);
+            lastFrame = timestamp;
             globalTime += dt;
 
             mouseX += (targetMouseX - mouseX) * 0.05;

@@ -1,0 +1,36 @@
+---
+layout: null
+title: 经典星系
+description: 漫游徐辰博客的三维星系，点击行星进入对应的文章分类。
+permalink: /galaxy/
+---
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+{% seo %}<link rel="icon" href="{{ '/assets/icon.svg' | relative_url }}"><link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+<style>
+body { margin:0; background:#000010; color:white; }
+.classic-nav { position:fixed; top:12px; left:12px; z-index:100; display:flex; gap:4px; padding:4px; border:1px solid #657481; border-radius:6px; background:#101523df; font:13px/1.6 system-ui,sans-serif; }
+.classic-nav a { color:#fff; padding:4px 9px; text-decoration:none; }
+.classic-nav a[aria-current] { color:#d2f59a; background:#2c3935; border-radius:3px; }
+#galaxy-section,#xvcenh-section { height:100vh; height:100dvh; }
+#classic-message { position:absolute; top:60px; left:18px; z-index:16; color:#eaf1e0; border-radius:3px; background:#111b2c; }
+#hint-bar { pointer-events:none; }[hidden] {display:none!important}
+</style></head><body>
+<nav class="classic-nav" aria-label="星系导航"><a href="{{ '/' | relative_url }}">← 工程手记</a><a href="?scene=orbit" data-mode="orbit">星系漫游</a><a href="?scene=type" data-mode="type">霓虹拼字</a></nav>
+<p id="classic-message" role="status"></p>
+<div id="galaxy-section"><div id="canvas-container"></div><div id="labels-layer"></div><div id="detail-panel"><div class="panel-name"></div><div class="panel-hint"></div><div class="panel-articles"></div></div>
+<div id="hint-bar"><span>拖拽旋转 · 滚轮或双指缩放 · 点击行星聚焦，再次点击前往对应页面</span></div></div>
+<div id="xvcenh-section" hidden><canvas class="stars-bg"></canvas><canvas id="xvcenh-canvas" aria-label="霓虹笔画散开和重组"></canvas><div class="scanlines"></div><div id="scroll-hint"><span>空格切换散开与聚合</span></div></div>
+<noscript><a href="{{ '/categories/' | relative_url }}">浏览所有分类</a></noscript>
+<script type="module">
+const mode = new URLSearchParams(location.search).get("scene") === "type" ? "type" : "orbit";
+document.querySelector('[data-mode="'+mode+'"]').setAttribute("aria-current","page");
+document.querySelector("#xvcenh-section").hidden = mode !== "type";
+document.querySelector("#galaxy-section").hidden = mode !== "orbit";
+try {
+  if (mode === "type") { await import("{{ '/assets/js/stars.js' | relative_url }}"); await import("{{ '/assets/js/xvcenh.js' | relative_url }}"); }
+  else await import("{{ '/assets/js/galaxy.js' | relative_url }}");
+} catch (error) {
+  document.querySelector("#classic-message").textContent = "三维场景暂不可用，可以切换到霓虹拼字。";
+  console.warn(error);
+}
+</script></body></html>

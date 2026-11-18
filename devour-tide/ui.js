@@ -18,6 +18,7 @@
       const el = $('scr-' + s);
       if (el) el.classList.toggle('hidden', s !== name);
     });
+    $('touch-controls').hidden = name !== 'none';
     $('hud').classList.toggle('hidden', !(DT.game && (DT.game.state === 'playing' || DT.game.paused)));
   };
 
