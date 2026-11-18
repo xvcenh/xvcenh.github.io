@@ -1902,7 +1902,12 @@ function enterRift(route){
   G.expedition.shoals = []; G.expedition.nextShoal = 1;
   G.expedition.site = isGuardRoute(route) || route.id === 'survive'
     ? null : diveSite(G.stage,p.x,p.y,route.id);
-  if (G.expedition.site) G.expedition.site.scale = clamp(playerRefSize()/125,1.2,3.4);
+  if (G.expedition.site) {
+    const site = G.expedition.site;
+    site.scale = clamp(playerRefSize()/125,1.2,3.4);
+    const margin = WHALE + 100*site.scale;
+    site.x = clamp(site.x,margin,WORLD.w-margin);
+  }
   G.chase.form = CHASE_FORMS[route.sea];
   G.chase.y = p.y - (route.id === 'survive' ? 570 : 1150);
   G.stageStartSize = p.size; G.eatenStage = 0;

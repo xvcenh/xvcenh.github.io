@@ -20,7 +20,7 @@ try {
     G.story.endless = true;
     G.story.ending = 'endless';
     WORLD.h = 130000;
-    Object.assign(G.p,{x:1800,y:124000,size:389,maxSize:389});
+    Object.assign(G.p,{x:65,y:124000,size:389,maxSize:389});
     cam.y = G.p.y;
     dispatchEvent(new Event('devour-suspend'));
   });
@@ -48,14 +48,15 @@ try {
   assert.equal((await state()).rift.floor,1);
   assert.equal((await state()).rift.start,124000);
   await page.evaluate(() => {
-    const { G } = __DT;
+    const { G, update } = __DT;
     G.p.y = G.story.rift.start+1500;
-    advanceTime(17);
+    update(1/60);
     if(G.p.y > G.story.rift.start+1400) throw Error('unfinished route exit opened');
     const site = G.expedition.site;
+    if (site.x + site.points[0].x*site.scale < G.p.size) throw Error('left net clasp outside the world');
     for (const pt of site.points) {
       Object.assign(G.p,{x:site.x+pt.x*site.scale,y:site.y,dashT:.1,dashAng:0,vx:0,vy:0});
-      advanceTime(17);
+      update(1/60);
     }
   });
   assert.equal((await state()).rift.done,true);
