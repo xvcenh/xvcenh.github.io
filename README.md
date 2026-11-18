@@ -8,7 +8,7 @@
 
 ## 本地运行
 
-需要 Ruby 3.3 与 Bundler。使用 Python 3 运行构建检查。
+需要 Ruby 3.3 与 Bundler。使用 Python 3 验证页面与资源链接，使用 Node.js 验证五连杆几何。
 
 ```sh
 bundle install
@@ -20,6 +20,7 @@ bundle exec jekyll serve
 ```sh
 bundle exec jekyll build --strict_front_matter
 python scripts/check_site.py
+node scripts/check_kinematics.mjs
 ```
 
 ## 更新内容

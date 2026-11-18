@@ -23,6 +23,8 @@ jobs:
           JEKYLL_ENV: production
       - name: Check published routes and search index
         run: python3 scripts/check_site.py
+      - name: Check five-bar geometry
+        run: node scripts/check_kinematics.mjs
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request'
         with:
