@@ -11,8 +11,8 @@ export function endlessUnlocked() {
 
 const routes = [
   { id:'net', name:'礁脊救援', sea:0, goal:'撞断两个网扣', reward:'立刻获得一层护盾' },
-  { id:'relay', name:'裂冰航道', sea:2, goal:'避开浮冰，连续穿过三个亮环', reward:'冲刺冷却缩短 8%' },
-  { id:'cache', name:'遗迹黑匣', sea:4, goal:'避开扫描，下载黑匣记录', reward:'啃咬伤害提高 12%' },
+  { id:'relay', name:'裂冰航道', sea:2, goal:'避开浮冰，连续穿过三个亮环', reward:'获得裂浪鳍 · 冲刺冷却缩短 8%' },
+  { id:'cache', name:'遗迹黑匣', sea:4, goal:'避开扫描，下载黑匣记录', reward:'获得链电咬 · 啃咬伤害提高 12%' },
   { id:'survive', name:'热泉围猎', sea:3, goal:'在熔岩和猎群中存活 18 秒', reward:'恢复 20% 体型' },
   { id:'guard', name:'幽沟守卫', sea:1, boss:1, goal:'击败霜鲸守卫', reward:'对守卫伤害提高 15%' },
 ];

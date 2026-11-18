@@ -15,7 +15,7 @@ import { createAnimeFilter } from './anime-filter.js';
 import { diveSite, tickSite, newExpedition, spawnShoal, tickShoals, lightSlipstream, followSlipstreams } from './expedition.js';
 import {beginDash,movePlayer} from './player-motion.js';
 import {stepSwim} from './locomotion.js';
-import {drawHuntTell} from './predator.js';
+import {drawAttackTell,drawHuntTell} from './predator.js';
 import {updateFauna} from './fauna-simulation.js';
 import {createContactSystem} from './contacts.js';
 import { drawDiveSite, drawSiteLabel, drawTideEffects, drawSlipstreams, drawWake } from './expedition-art.js';
@@ -30,11 +30,16 @@ var CARDS = [
   { name:'流线鱼身', desc:'移动速度 +12%',                    apply:function(p){ p.spdMul *= 1.12; } },
   { name:'猎手本能', desc:'对 Boss 伤害 +30%',                 apply:function(p){ p.hunt *= 1.30; } },
   { name:'暴食者',   desc:'啃咬吃下的猎物体型收益 +45%',            apply:function(p){ p.chompGain *= 1.45; } },
-  { name:'铁胃',     desc:'受伤减免 +15%',                     apply:function(p){ p.dr += 0.15; } },
-  { name:'连击本能', desc:'连击持续 +0.7 秒，连击加分 +40%',      apply:function(p){ p.comboWin += 0.7; p.comboScore *= 1.40; } },
-  { name:'疾风冲刺', desc:'冲刺冷却 -25%',                     apply:function(p){ p.dashCdMul *= 0.75; } },
-  { name:'电流共鸣', desc:'放电与雷暴冷却 -30%',                apply:function(p){ p.zapCdMul *= 0.70; } },
-  { name:'逆流而上', desc:'受伤后 3 秒内速度 +35%',             apply:function(p){ p.venge = true; } },
+  { name:'反冲毒刺', trait:'thorns', color:'#a4fb8b',
+    desc:'受击时爆开绿色毒刺，弹飞并麻痹近处敌鱼。', apply(p){ p.thorns=true; } },
+  { name:'血潮连击', trait:'comboBoost', color:'#ff988e',
+    desc:'每连吞 3 条鱼，游速提高 35%，持续 2 秒。', apply(p){ p.comboBoost=true; } },
+  { name:'裂浪鳍', trait:'wideWake', color:'#54e5ff',
+    desc:'冲刺卷出蓝色冲击波，冲散鱼群的范围扩大 65%。', apply(p){ p.wideWake=true; } },
+  { name:'链电咬', trait:'arcBite', color:'#cfb1ff',
+    desc:'按下啃咬时放电，麻痹前方最多两条敌鱼。', apply(p){ p.arcBite=true; } },
+  { name:'诱饵分身', trait:'echoDash', color:'#ffe0a4',
+    desc:'冲刺留下分身，吸引附近捕食者 2.4 秒。每 4 秒可用一次。', apply(p){ p.echoDash=true; } },
   { name:'深潜体质', desc:'体型 +8%，受伤减免 +8%',             apply:function(p){ p.maxSize = Math.min(WHALE, p.maxSize * 1.08); p.size *= 1.08; p.dr += 0.08; } },
   { name:'深渊巨口', desc:'吞食判定 +15%',                     apply:function(p){ p.eatReach += 0.15; } },
   { name:'海神贡品', desc:'立即获得 10 点可用物种基因',           apply:function(p){
@@ -1025,6 +1030,11 @@ function eatEnemy(p, e, idx, viaChomp){
   }
 
   if (p.bloodrage && p.combo > 0 && p.combo % 4 === 0) p.rageT = 3;
+  if (p.comboBoost && p.combo % 3 === 0){
+    p.itemSpdT = Math.max(p.itemSpdT,2);
+    tideEffect(p.x,p.y,'wake',p.size+50);
+    floater(p.x,p.y-p.size-20,'血潮 · 加速','#ff988e',true);
+  }
 
   burst(e.x, e.y, e.c2, e.tier ? 20 : 10, e.tier ? 300 : 200, e.tier ? 6 : 4);
   floater(e.x, e.y - e.size - 12, '+' + gained, viaChomp ? '#ffd166' : '#bfe9ff');
@@ -1068,15 +1078,18 @@ function hitPlayer(p, srcX, srcY, mulBite){
   }
 
   if (p.thorns){
+    const radius = Math.max(260,p.size*1.4);
     for (var j = 0; j < G.enemies.length; j++){
       var e2 = G.enemies[j];
-      if (dist(e2.x, e2.y, p.x, p.y) < 260){
+      if (!e2.whale && dist(e2.x, e2.y, p.x, p.y) < radius){
         var d2 = dist(e2.x, e2.y, p.x, p.y) || 1;
         e2.vx += (e2.x - p.x)/d2 * 520; e2.vy += (e2.y - p.y)/d2 * 520;
         e2.stunT = Math.max(e2.stunT, 1.2);
       }
     }
-    burst(p.x, p.y, '#fcd34d', 20, 300);
+    burst(p.x, p.y, '#a4fb8b', 20, 300);
+    G.rings.push({x:p.x,y:p.y,r:12,max:radius,life:.45,maxLife:.45,color:'#a4fb8b'});
+    floater(p.x,p.y-p.size-38,'尖刺反击','#a4fb8b',true);
   }
 
   var lost = Math.max(1.5, p.size * (0.10 + rand(0, 0.05)) * dmgMul * p.biteLoss);
@@ -1187,6 +1200,21 @@ function doChomp(p){
   var reach = chompArc(p);
   var halfArc = 1.15;
   var didHit = false;
+
+  if(p.arcBite){
+    const fx=Math.cos(p.ang),fy=Math.sin(p.ang);
+    const targets = G.enemies.filter(e=>{
+      const dx=e.x-p.x,dy=e.y-p.y,d=Math.hypot(dx,dy);
+      return !e.whale && !e.chest && d<reach+96 && dx*fx+dy*fy>d*.35;
+    }).sort((a,b)=>dist(p.x,p.y,a.x,a.y)-dist(p.x,p.y,b.x,b.y)).slice(0,2);
+    let from=p;
+    for(const e of targets){
+      G.zaps.push({x1:from.x,y1:from.y,x2:e.x,y2:e.y,life:.22});
+      e.stunT=Math.max(e.stunT,.72);
+      from=e;
+    }
+    if(targets.length) Audio2.zap();
+  }
 
   for (var i = G.enemies.length - 1; i >= 0; i--){
     var e = G.enemies[i];
@@ -1354,13 +1382,18 @@ function updateBoss(dt){
     if (b.timer <= 0){
       var roll = Math.random();
       if (b.def.g === 'ghost' && roll < 0.30){ b.state = 'phase'; b.timer = 0.9; }
-      else if (roll < 0.55){ b.state = 'charge'; b.timer = 0.8; }
+      else if (roll < 0.55){
+        const px=dx+target.vx*.28,py=dy+target.vy*.28;
+        const length=Math.hypot(px,py)||1;
+        b.cx=px/length; b.cy=py/length;
+        b.state = 'charge'; b.timer = 0.8; b.chargeTell=.8;
+      }
       else { b.state = 'burst'; b.timer = 0.9; }
     }
   } else if (b.state === 'charge'){
     b.timer -= dt;
     if (b.timer <= 0){
-      b.cx = dx/d; b.cy = dy/d;
+      if (!b.chargeTell) { b.cx=dx/d; b.cy=dy/d; }
       b.state = 'charging'; b.timer = 0.85;
       Audio2.dash();
     }
@@ -1381,7 +1414,7 @@ function updateBoss(dt){
       Audio2.dash();
       var gd = Math.hypot(target.x - b.x, target.y - b.y) || 1;
       b.cx = (target.x - b.x) / gd; b.cy = (target.y - b.y) / gd;
-      b.state = 'charging'; b.timer = 0.75;
+      b.state = 'charge'; b.timer = .46; b.chargeTell=.46;
     }
   } else if (b.state === 'burst'){
     b.timer -= dt;
@@ -1601,6 +1634,15 @@ function updatePlayer(p, dt){
   if (inp.dash && beginDash(p,ax,ay)){
     Audio2.dash();
     burst(p.x,p.y,'#a5f3fc',10,200,3);
+    if (p.wideWake) {
+      const radius=clamp(38+p.size*.8,48,105)*1.65*1.4;
+      G.rings.push({x:p.x,y:p.y,r:12,max:radius,life:.34,maxLife:.34,color:'#54e5ff'});
+    }
+    if (p.echoDash && G.time>=(p.echoReadyAt || 0)){
+      p.echoReadyAt=G.time+4;
+      G.decoy={x:p.x,y:p.y,phase:0,t:2.4,max:2.4,fishId:p.fishId,size:p.size,ang:p.dashAng};
+      tideEffect(p.x,p.y,'reward',p.size+45);
+    }
     if (p.ink) G.inks.push({x:p.x,y:p.y,r:30,life:2.2,max:2.2});
   }
   movePlayer(p,ax,ay,dt,WORLD);
@@ -1611,7 +1653,7 @@ function updatePlayer(p, dt){
   }
 
   if (p.zap > 0){
-    p.zapT -= dt * p.zapCdMul;
+    p.zapT -= dt / Math.max(.25,p.zapCdMul);
     if (p.zapT <= 0){
       p.zapT = 2.6;
       var pool = G.enemies.slice().sort(function(a, b){
@@ -1629,7 +1671,7 @@ function updatePlayer(p, dt){
   }
 
   if (p.stormField){
-    p.stormT -= dt * p.zapCdMul;
+    p.stormT -= dt / Math.max(.25,p.zapCdMul);
     if (p.stormT <= 0){
       p.stormT = 9;
       for (var q = 0; q < G.enemies.length; q++) G.enemies[q].stunT = Math.max(G.enemies[q].stunT, 1.5);
@@ -1801,8 +1843,14 @@ function completeStage(doneStage){
   var stDone = doneStage || G.stage;
   G.mode = 'cards';
   Audio2.card();
-  var pool = CARDS.slice(), opts = [];
-  for (var i = 0; i < 3 && pool.length; i++){
+  var pool = CARDS.filter(card=>!card.trait || G.players.some(p=>!p[card.trait])), opts = [];
+  const signatures=pool.filter(card=>card.trait);
+  if (signatures.length) {
+    const signature=pick(signatures);
+    opts.push(signature);
+    pool.splice(pool.indexOf(signature),1);
+  }
+  for (; opts.length < 3 && pool.length; ){
     opts.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
   var cur = G.p.size;
@@ -1828,11 +1876,16 @@ function completeStage(doneStage){
 function pickCard(card){
   if (G.trans && !G.trans.fired) return;
   if (card.route) { enterRift(card.route); return; }
-  for (var i = 0; i < G.players.length; i++) card.apply(G.players[i]);
+  for (const p of G.players) card.apply(p);
+  for (const p of alivePlayers()) {
+    tideEffect(p.x,p.y,'reward',Math.max(65,p.size+30));
+    floater(p.x,p.y-p.size-33,card.name,card.color || '#e2faff',true);
+  }
   Audio2.card();
   /* 没有航路图了：选完卡，原地下潜继续 */
   G.mode = 'play';
   hideAll();
+  writeCheckpoint(G,WORLD.h);
 }
 
 function endRun(reason){
@@ -1931,8 +1984,13 @@ function finishRift(){
   rift.done = true;
   for (const p of alivePlayers()) {
     if (rift.id === 'net') p.shield = Math.min(5,p.shield+1);
-    else if (rift.id === 'relay') p.dashCdMul = Math.min(p.dashCdMul,Math.max(.30,p.dashCdMul*.92));
-    else if (rift.id === 'cache') p.chompMul = Math.max(p.chompMul,Math.min(3,p.chompMul*1.12));
+    else if (rift.id === 'relay') {
+      p.wideWake=true;
+      p.dashCdMul = Math.min(p.dashCdMul,Math.max(.30,p.dashCdMul*.92));
+    } else if (rift.id === 'cache') {
+      p.arcBite=true;
+      p.chompMul = Math.max(p.chompMul,Math.min(3,p.chompMul*1.12));
+    }
     else if (rift.id === 'survive') p.size = Math.min(p.maxSize,p.size*1.20);
     else p.hunt = Math.max(p.hunt,Math.min(4,p.hunt*1.15));
     p.score += 600 + rift.floor*120;
@@ -2452,7 +2510,7 @@ function drawBanners(){
     ctx.fillText(nb.main, W / 2, H * 0.38);
     ctx.font = '12px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = 'rgba(253,164,175,0.8)';
-    ctx.fillText(nb.sub, W / 2, H * 0.38 + 24);
+    ctx.fillText(nb.sub, W / 2, H * 0.38 + 24, W * .88);
     ctx.restore();
   }
 }
@@ -3115,8 +3173,8 @@ function drawPlayer(p){
   if (p.dashT > 0){
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = rgba('#a5f3fc', 0.5);
-    ctx.lineWidth = p.size * 0.6;
+    ctx.strokeStyle = rgba(p.wideWake ? '#54e5ff' : '#a5f3fc', 0.5);
+    ctx.lineWidth = p.size * (p.wideWake ? .95 : .6);
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
@@ -3124,6 +3182,7 @@ function drawPlayer(p){
     ctx.stroke();
     ctx.restore();
   }
+
 
   var alpha = 1;
   if (p.invuln > 0) alpha = 0.86 + Math.sin(G.time * 15) * 0.12;
@@ -3264,6 +3323,10 @@ function drawBoss(){
   var tx = alive.length ? alive[0].x : WORLD.w/2;
   var ty = alive.length ? alive[0].y : WORLD.h/2;
   var ang = b.def.g === 'venom' ? (tx >= b.x ? 0 : Math.PI) : Math.atan2(ty - b.y, tx - b.x);
+  if ((b.state==='charge' || b.state==='charging') && b.chargeTell) ang=Math.atan2(b.cy,b.cx);
+  if (b.state==='charge' && b.chargeTell){
+    drawAttackTell(ctx,b,b.cx,b.cy,1-b.timer/b.chargeTell,(470+b.tier*70)*.85);
+  }
   var gA = (b.def.g === 'ghost') ? b.ghostA : 1;
   ctx.save();
   ctx.globalAlpha = gA;
@@ -3374,6 +3437,7 @@ function render(){
   if (G.decoy){
     var dc = G.decoy;
     var dpul = 0.62 + Math.sin(dc.phase) * 0.38;
+    if (dc.fishId) paintAnimal(ctx,paintings,dc.fishId,dc.x,dc.y,dc.ang,dc.size,dc.phase,Math.min(.56,dc.t));
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
     var dg = ctx.createRadialGradient(dc.x, dc.y, 0, dc.x, dc.y, 132 * dpul);
@@ -4679,6 +4743,7 @@ function showStagePanel(report, opts){
     var el = document.createElement('button');
     el.type = 'button';
     el.className = 'card';
+    if (c.color) el.style.borderColor = c.color;
     el.innerHTML = '<span class="t">' + c.name + '</span><span class="d">' + c.desc + '</span>';
     el.onclick = function(){ ovCards.classList.add('hide'); pickCard(c); };
     list.appendChild(el);

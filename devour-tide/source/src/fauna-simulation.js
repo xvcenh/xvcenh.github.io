@@ -2,7 +2,7 @@ import {WORLD} from './config.js';
 import {TAU, angLerp, clamp, dist, lerp, rand} from './utils.js';
 import {stepSwim} from './locomotion.js';
 import {indexSchools,schoolVelocity} from './schooling.js';
-import {huntShark} from './predator.js';
+import {steerPredator} from './predator.js';
 
 export function updateFauna({enemies, expedition, inks, decoy, time}, cameraY, alive, dt){
   const neighbourhood = indexSchools(enemies);
@@ -37,11 +37,12 @@ export function updateFauna({enemies, expedition, inks, decoy, time}, cameraY, a
 
     /* 诱饵浮标：优先级高于一切追踪 —— 它就是用来「把海引开」的 */
     var dec = decoy, lured = false;
-    if (dec && dec.t > 0){
+    if (dec && dec.t > 0 && e.beh==='chase' && e.hunt?.phase!=='tell' && e.hunt?.phase!=='lunge'){
       var ddx = dec.x - e.x, ddy = dec.y - e.y, dl = Math.hypot(ddx, ddy) || 1;
-      if (dl > e.size * 0.6 + 16){
-        tx = ddx / dl * e.speed * 1.45;
-        ty = ddy / dl * e.speed * 1.45;
+      if (dl < 490){
+        const pace=dl>e.size*.6+16 ? e.speed*1.28 : 0;
+        tx = ddx / dl * pace;
+        ty = ddy / dl * pace;
         lured = true;
       }
     }
@@ -64,40 +65,42 @@ export function updateFauna({enemies, expedition, inks, decoy, time}, cameraY, a
       }
     }
 
-    var hidden = p.stealthOn || p.schoolCoverT>0;
     var beh = e.beh;
-    if (hidden && beh === 'chase' && d > p.size * 2) beh = 'wander';
-    if (p.fearT > 0) beh = 'flee';      /* 恐惧信息素：连掠食者也会退 */
+    const frightened = p.fearT>0 && d<640;
+    const threatened = !e.whale && !e.chest && p.size>e.size*1.18 && d<Math.max(95,p.size*1.65);
+    if (frightened || threatened) beh='flee';
 
     const school = e.schoolId && expedition.shoals.find(s => s.id === e.schoolId);
     let huntResponse=0;
-    if (e.hunt && (lured || hidden || beh!=='chase' || e.size<=p.size*1.02)) e.hunt=null;
-    if (school && !lured && p.fearT <= 0){
+    if (e.hunt && (lured || beh!=='chase')) e.hunt=null;
+    const attack=beh==='chase' && !lured && !school ? steerPredator(e,alive,inks,dt) : null;
+    if (school && !lured && !frightened){
       const velocity = schoolVelocity(e,school,neighbourhood);
       tx = velocity.x; ty = velocity.y;
+      if (threatened && p.dashT>0) {
+        tx-=dx/d*45;
+        ty-=dy/d*45;
+      }
     } else if (lured){
       /* tx / ty 已由诱饵给出，不再做自身行为判定 */
-    } else if (e.sid==='shark' && beh==='chase' && e.size>p.size*1.02 && !hidden){
-      const hunt=huntShark(e,p,dt);
-      tx=hunt.x;ty=hunt.y;huntResponse=hunt.response;
-    } else if (beh === 'chase' && e.size > p.size * 1.02){
-      tx = dx/d * e.speed; ty = dy/d * e.speed;
-    } else if (beh === 'flee'){
-      var fleeR = p.fearT > 0 ? 640 : 320;
-      if (d < fleeR){ tx = -dx/d * e.speed * 1.2; ty = -dy/d * e.speed * 1.2; }
-      else {
-        e.wanderT -= dt;
-        if (e.wanderT <= 0){ e.wanderAng = rand(0, TAU); e.wanderT = rand(1.2, 3); }
-        tx = Math.cos(e.wanderAng) * e.speed * 0.55;
-        ty = Math.sin(e.wanderAng) * e.speed * 0.55;
-      }
-    } else if (beh === 'chase'){
-      tx = dx/d * e.speed * 0.9; ty = dy/d * e.speed * 0.9;
+    } else if (attack){
+      tx=attack.x;ty=attack.y;huntResponse=attack.response;
+    } else if (beh === 'flee' && d < (frightened ? 640 : 320)){
+      const px=dx+p.vx*.18,py=dy+p.vy*.18,len=Math.hypot(px,py)||1;
+      tx=-px/len*e.speed*1.2;ty=-py/len*e.speed*1.2;
     } else {
       e.wanderT -= dt;
       if (e.wanderT <= 0){ e.wanderAng = rand(0, TAU); e.wanderT = rand(1.0, 2.8); }
       tx = Math.cos(e.wanderAng) * e.speed * 0.6;
       ty = Math.sin(e.wanderAng) * e.speed * 0.6;
+    }
+
+    if (!school && !e.whale && !e.chest && e.hunt?.phase!=='lunge') {
+      const margin=Math.max(105,e.size*.9);
+      tx+=e.speed*clamp((margin-e.x)/margin,0,1);
+      tx-=e.speed*clamp((e.x-WORLD.w+margin)/margin,0,1);
+      ty+=e.speed*clamp((margin-e.y)/margin,0,1);
+      ty-=e.speed*clamp((e.y-WORLD.h+margin)/margin,0,1);
     }
 
     var speedMul = 1;

@@ -57,11 +57,11 @@ export function createContactSystem(G,{autoReach,eatEnemy,chompDamage,hitPlayer,
     var forward = dx * fx + dy * fy;
     var side = dy * fx - dx * fy;
     /* 留出正前方的吞食通道；侧翼鱼才会被水流拨开。 */
-    var width = clamp(38 + p.size * 0.8, 48, 105);
+    var width = clamp(38 + p.size * 0.8, 48, 105) * (p.wideWake ? 1.65 : 1);
     if (forward < -width * 0.45 || forward > length + width * 0.25 ||
         Math.abs(side) < p.size * 0.44 || Math.abs(side) >= width) return;
     var weight = clamp(p.size / e.size, 0.22, 1.35);
-    var force = (1 - Math.abs(side) / width) * 570 * weight;
+    var force = (1 - Math.abs(side) / width) * (p.wideWake ? 850 : 570) * weight;
     if (force < 30) return;
 
     (e.dashWakeHits ||= [])[p.id] = p.dashId;
@@ -72,7 +72,7 @@ export function createContactSystem(G,{autoReach,eatEnemy,chompDamage,hitPlayer,
     e.stunT = Math.max(e.stunT, 0.20 + 0.18 * weight);
     if (p.dashWakeFx !== p.dashId){
       p.dashWakeFx = p.dashId;
-      G.rings.push({ x:p.x, y:p.y, r:8, max:width * 1.4, color:p.c2, life:0.27, maxLife:0.27 });
+      G.rings.push({ x:p.x, y:p.y, r:8, max:width * 1.4, color:p.wideWake ? '#54e5ff' : p.c2, life:0.27, maxLife:0.27 });
       G.shake = Math.max(G.shake, 0.24);
     }
   }
@@ -118,7 +118,7 @@ export function createContactSystem(G,{autoReach,eatEnemy,chompDamage,hitPlayer,
           eatEnemy(p, e, i);
         } else if (p.dashT > 0){
           dashImpact(p, e, dx, dy);
-        } else {
+        } else if (!(e.stunT>0) && (e.beh !== 'chase' || e.hunt?.phase === 'lunge')){
           if (p.touchStun > 0 && Math.random() < p.touchStun * dt * 6){
             e.stunT = Math.max(e.stunT, 1);
             burst(e.x, e.y, '#e9d5ff', 10, 200);

@@ -1,4 +1,4 @@
-# 动漫版 0.3.0 构建
+# 动漫版 0.3.1 构建
 
 网页版、Android 和 Windows 使用同一份 Phaser 3 游戏代码。Android 应用的游戏文件随 APK 安装，Windows 版使用本机 WebView2 Runtime 读取随包文件。进度保存在每个应用自己的本地存储中。
 
@@ -14,7 +14,7 @@ node scripts/standalone.mjs PATH_TO_OFFLINE_HTML
 在本文件所在目录打包。
 
 ```shell
-python android/package.py Devour-Tide-0.3.0.apk
+python android/package.py Devour-Tide-0.3.1.apk
 python windows/package.py Devour-Tide-Windows-x64.zip
 ```
 
