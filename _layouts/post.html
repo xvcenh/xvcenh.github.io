@@ -2,8 +2,53 @@
 layout: default
 section: 文章
 ---
-<header class="post-intro"><div class="wrap reading"><a class="back" href="{{ '/issues/' | relative_url }}">← 文章档案</a><p class="eyebrow"><i></i> FIELDNOTES / {{ page.categories | first }}</p><h1>{{ page.title | escape }}</h1><div class="byline"><span>{{ page.author | default: site.author | escape }}</span><time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y.%m.%d" }}</time></div></div></header>
-<div class="wrap article-grid"><aside class="toc" hidden><details open><summary>文章目录</summary><nav aria-label="文章目录"></nav></details></aside><article class="article-content">{{ content }}
-<nav class="topic-nav" aria-label="文章分类">{% for topic in page.categories %}<a href="{{ '/categories/' | relative_url }}#topic-{{ topic | slugify }}">{{ topic }}</a>{% endfor %}</nav>
-<div class="read-next">{% if page.next %}<a href="{{ page.next.url | relative_url }}"><small>更新一篇 ↗</small>{{ page.next.title | escape }}</a>{% endif %}{% if page.previous %}<a href="{{ page.previous.url | relative_url }}"><small>更早一篇 ↗</small>{{ page.previous.title | escape }}</a>{% endif %}</div>
-</article></div><script defer src="{{ '/assets/js/article.js' | relative_url }}"></script>
+<link rel="stylesheet" href="{{ '/assets/css/reading.css' | relative_url }}">
+{% assign sections = content | split: '<h2 id="' %}
+{% assign section_count = sections.size | minus: 1 %}
+<header class="post-intro sky-sheet">
+  <div class="wrap post-lead">
+    <div class="lead-copy">
+      <a class="back" href="{{ '/issues/' | relative_url }}">← 文章档案</a>
+      <p class="eyebrow"><i></i> FIELDNOTES / {{ page.categories | first | escape }}</p>
+      <h1>{{ page.title | escape }}</h1>
+      <div class="byline">
+        <span>{{ page.author | default: site.author | escape }}</span>
+        <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%Y.%m.%d" }}</time>
+        {% if section_count > 0 %}<span>{{ section_count }} 节</span>{% endif %}
+      </div>
+    </div>
+    <div class="orbital-print" aria-hidden="true">
+      <div class="plot-ring"></div><div class="plot-ring"></div><div class="plot-ring"></div>
+      <div class="plot-ring"></div><div class="plot-planet"></div><div class="plot-moon"></div>
+    </div>
+  </div>
+</header>
+<div class="wrap article-grid reading-grid">
+  {% if section_count > 0 %}
+  <aside class="toc reading-rail">
+    <details open>
+      <summary>文章目录 <span class="rail-count">{{ section_count }} 节</span></summary>
+      <nav aria-label="文章目录">
+        {% for section in sections offset:1 %}
+          {% assign anchor = section | split: '"' | first %}
+          {% assign opening = anchor | append: '">' %}
+          {% assign label = section | split: '</h2>' | first | remove_first: opening | strip_html %}
+          <a href="#{{ anchor | escape }}">{{ label }}</a>
+        {% endfor %}
+      </nav>
+    </details>
+    <div class="reading-meter" hidden><span>阅读进度</span><span class="reading-percent" aria-hidden="true">0%</span><progress max="100" value="0" aria-label="阅读进度"></progress></div>
+  </aside>
+  {% endif %}
+  <article class="article-content reading-body">
+    <div class="post-text">{{ content }}</div>
+    {% if page.categories.size > 0 %}
+    <nav class="topic-nav" aria-label="文章分类">{% for topic in page.categories %}<a href="{{ '/categories/' | relative_url }}#topic-{{ topic | slugify }}">{{ topic | escape }}</a>{% endfor %}</nav>
+    {% endif %}
+    <div class="read-next">
+      {% if page.next %}<a href="{{ page.next.url | relative_url }}"><small>更新一篇 ↗</small>{{ page.next.title | escape }}</a>{% endif %}
+      {% if page.previous %}<a href="{{ page.previous.url | relative_url }}"><small>更早一篇 ↗</small>{{ page.previous.title | escape }}</a>{% endif %}
+    </div>
+  </article>
+</div>
+<script defer src="{{ '/assets/js/article.js' | relative_url }}"></script>

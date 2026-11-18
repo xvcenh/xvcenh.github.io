@@ -2,6 +2,8 @@
   id: linkage
   group: playground
   image: lab-linkage.webp
+  preview_order: 2
+  image_alt: 网格坐标中的五连杆闭环，五个关节用彩色杆件相连
   tag: ROBOTICS
   caption: 拖动关节角度，实时对照闭环机构和等效串联臂的正向与逆向解。
   demo: /fivebar-linkage/
@@ -9,6 +11,8 @@
   id: tide
   group: playground
   image: lab-tide.webp
+  preview_order: 3
+  image_alt: 水下峡谷中，玩家操控的小鱼在鱼群间游动
   tag: CANVAS GAME
   caption: 在六个海域觅食和进化，支持单人远征与双人同屏。
   demo: /devour-tide/
@@ -16,6 +20,8 @@
   id: interface
   group: playground
   image: lab-interface.webp
+  preview_order: 4
+  image_alt: 深色粒子背景上的炫技实验室首页
   tag: INTERACTION
   caption: 从 Win98 桌面到黑客终端，逐个体验十种可操作的界面风格。
   demo: /super-blog/
@@ -23,6 +29,8 @@
   id: graph
   group: playground
   image: lab-graph.webp
+  preview_order: 5
+  image_alt: 技术星图中从 ROS 2 连到 Python、Linux、C/C++ 和 CAN 的路径
   tag: VISUALIZATION
   caption: 在可拖动的关系图上探索语言、工具以及它们共同支撑的项目。
   demo: /tech-graph/
@@ -30,6 +38,8 @@
   id: galaxy
   group: playground
   image: lab-galaxy.webp
+  preview_order: 1
+  image_alt: 蓝色中心天体与环状轨道，各颗行星沿轨道排开
   tag: THREE.JS / PARTICLES
   caption: 进入旧版首页的三维轨道，聚焦行星或重放 XVCENH 霓虹拼字动画。
   demo: /galaxy/
@@ -37,18 +47,22 @@
   id: scene
   group: repositories
   image: lab-scene.webp
+  preview_order: 6
+  image_alt: 矢量酒馆场景中的吟游诗人与商人
   tag: JAVASCRIPT / SVG
   caption: 免密钥体验 12 个场景模板，或接入模型，将描述转换成动画和分层场景。
   demo: https://xvcenh.github.io/svg-scene-engine/
   repo: https://github.com/xvcenh/svg-scene-engine
 - name: ClaudeScan
   id: scan
+  mark: CLI
   group: repositories
   tag: PYTHON / CLI
   caption: 扫描仓库中的语言、框架与工具，生成项目专用的 AI 编程助手配置。
   repo: https://github.com/xvcenh/claudescan
 - name: SVG Asset Library
   id: assets
+  mark: SVG
   group: repositories
   tag: SVG / SMIL
   caption: 按图层与关键词检索 200 个奇幻 SVG，预览角色、下载素材，分享筛选结果。
@@ -56,6 +70,7 @@
   repo: https://github.com/xvcenh/svg-asset-library
 - name: LilTown
   id: town
+  mark: TTY
   group: repositories
   tag: PYTHON / TERMINAL
   caption: 在终端观察多个 AI 角色生活、互动与对话的村庄模拟器。
@@ -63,6 +78,7 @@
 
 - name: WheelLeg
   id: wheel-leg
+  mark: ROS
   group: repositories
   tag: ROBOTICS / ROS 2
   caption: 轮腿机器人的全栈遥测系统，从 STM32 和 CAN 总线到 ROS 2 与实时 Web 仪表盘。

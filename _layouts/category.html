@@ -2,5 +2,29 @@
 layout: default
 section: 文章
 ---
-{% include intro.html kicker="SUBJECT INDEX" heading=page.title %}
-<div class="wrap page-body"><div class="section-toolbar"><p>{{ site.categories[page.topic].size }} 篇文章</p><a href="{{ '/categories/' | relative_url }}">所有主题 ↗</a></div><ul class="post-list">{% for post in site.categories[page.topic] %}{% include post-row.html post=post %}{% endfor %}</ul></div>
+{% assign posts = site.categories[page.topic] | sort: 'date' | reverse %}
+{% assign topic_pages = site.pages | where: 'layout', 'category' %}
+{% capture topic_terms %}{% for post in posts %}{{ post.keywords | join: '|' }}|{% endfor %}{% endcapture %}
+{% assign terms = topic_terms | split: '|' | uniq %}
+{% capture instrument %}
+  {% if terms.size > 0 %}<div class="keyword-index">
+    <span class="entry-label">相关关键词</span>
+    <nav aria-label="搜索本主题关键词">{% for term in terms limit: 6 %}{% unless term == empty %}
+      <a href="{{ '/search/' | relative_url }}?q={{ term | url_encode }}">{{ term | escape }}</a>
+    {% endunless %}{% endfor %}</nav>
+  </div>{% endif %}
+{% endcapture %}
+{% capture summary %}收录 {{ posts.size }} 篇与{{ page.topic | escape }}相关的手记，按发表时间从近到远排列。{% endcapture %}
+{% include archive-mast.html tab='topics' kicker='SUBJECT INDEX' heading=page.title summary=summary instrument=instrument %}
+<div class="wrap index-body index-columns">
+  <aside class="index-sidebar"><h2>切换主题</h2><nav aria-label="切换主题">
+    {% assign topics = site.categories | sort %}
+    {% for group in topics %}{% assign other = topic_pages | where: 'topic', group[0] | first %}
+      {% if other %}<a href="{{ other.url | relative_url }}"{% if page.topic == group[0] %} aria-current="page"{% endif %}>{{ group[0] | escape }} <small>{{ group[1].size }} 篇</small></a>{% endif %}
+    {% endfor %}
+  </nav></aside>
+  <div class="index-content"><div class="index-rule"><h2>收录文章</h2><span>{{ posts.size }} 篇</span></div>
+    <ul class="post-list">{% for post in posts %}{% include post-row.html post=post %}{% endfor %}</ul>
+    <a class="all-topics" href="{{ '/categories/' | relative_url }}">← 返回主题索引</a>
+  </div>
+</div>

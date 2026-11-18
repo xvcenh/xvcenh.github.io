@@ -31,38 +31,20 @@
   let seed = 731;
   let skySize, stage, stars, planet, rings, letters;
 
-  // Shade a sphere once. The animated tracers and rings run independently of this texture.
-  function gasGiant() {
-    const texture = document.createElement("canvas");
-    texture.width = texture.height = 480;
-    const brush = texture.getContext("2d");
-    const pixels = brush.createImageData(480, 480);
-    for (let y = 0; y < 480; y++) {
-      for (let x = 0; x < 480; x++) {
-        const nx = (x - 239.5) / 239, ny = (y - 239.5) / 239;
-        const depth = 1 - nx*nx - ny*ny;
-        if (depth <= 0) continue;
-        const nz = Math.sqrt(depth);
-        const latitude = ny * .93 + nx * .22 + nz * .15;
-        const longitude = Math.atan2(nx, nz);
-        const turbulence = Math.sin(longitude*6+latitude*12)*.7 + Math.sin(longitude*13-latitude*18)*.24;
-        const band = .5 + .5*Math.sin(latitude*21 + turbulence);
-        const fine = Math.sin(latitude*130 + turbulence*3)*4 + Math.sin(latitude*82-turbulence)*3;
-        const golden = Math.max(0,Math.sin(latitude*12-1.3))**2;
-        const light = Math.max(0, -.69*nx - .46*ny + .46*nz);
-        const shade = .19 + .94*Math.pow(light,.72);
-        const rim = Math.pow(1-nz,5)*(.35+light)*90;
-        const i = (y*480+x)*4;
-        pixels.data[i] = (49 + 40*band + 68*golden + fine)*shade + rim;
-        pixels.data[i+1] = (114 + 30*band + 22*golden + fine)*shade + rim;
-        pixels.data[i+2] = (125 + 30*band - 24*golden + fine)*shade + rim;
-        pixels.data[i+3] = Math.min(255, depth*32000);
-      }
-    }
-    brush.putImageData(pixels,0,0);
-    return texture;
+  let surface;
+  const shaderUrl = new URL("planet-worker.js", document.currentScript.src);
+
+  function shadePlanet() {
+    if (!window.Worker) return;
+    const worker = new Worker(shaderUrl);
+    worker.onmessage = ({data}) => {
+      surface = document.createElement("canvas");
+      surface.width = surface.height = data.size;
+      surface.getContext("2d").putImageData(new ImageData(data.pixels, data.size, data.size), 0, 0);
+      if (visible && !document.hidden) draw();
+    };
+    worker.postMessage(skySize.width < 680 ? 360 : 480);
   }
-  const surface = gasGiant();
 
   function random() {
     seed = (seed * 1664525 + 1013904223) >>> 0;
@@ -93,10 +75,13 @@
     }
     return dots;
   }
+  let lastCompact;
   function resize() {
     skySize = fit(sky, skyCtx);
     stage = fit(object, ctx);
     const compact = skySize.width < 680;
+    if (compact === lastCompact) { draw(); return; }
+    lastCompact = compact;
     seed = 731;
     stars = Array.from({length: compact ? 85 : 220}, () => ({
       x: random(), y: random(), size: .45 + random() ** 3 * 1.35, phase: random() * 6.28, depth: random()
@@ -158,6 +143,7 @@
     const sinP = Math.sin(pitch), cosP = Math.cos(pitch);
     const axis = -.29, sinA = Math.sin(axis), cosA = Math.cos(axis);
     const inverse = 1 - morph;
+    const spread = Math.sin(morph * Math.PI);
     function ring(front) {
       if (inverse < .005) return;
       const incline = .30 + tilt * .40;
@@ -191,7 +177,7 @@
       ctx.globalAlpha = inverse;
       ctx.fillStyle = atmosphere;
       ctx.beginPath(); ctx.arc(cx,cy,radius*1.2,0,Math.PI*2); ctx.fill();
-      ctx.drawImage(surface,cx-radius,cy-radius,radius*2,radius*2);
+      if (surface) ctx.drawImage(surface,cx-radius,cy-radius,radius*2,radius*2);
     }
     for (let i = 0; i < planet.length; i++) {
       const p = planet[i];
@@ -201,7 +187,6 @@
       const depth = rz * cosP + p.y * sinP;
       if (depth < 0 && morph < .001) continue;
       const dest = letters[i % letters.length];
-      const spread = Math.sin(morph * Math.PI);
       const x = cx + (rx*cosA - ry*sinA)*radius*inverse + dest[0]*labelScale*morph + p.z*radius*spread*.43;
       const y = cy + (rx*sinA + ry*cosA)*radius*inverse + dest[1]*labelScale*morph + p.x*radius*spread*.25;
       const light = Math.min(1,Math.max(.16,.48 - rx*.26 - ry*.30 + depth*.31));
@@ -251,6 +236,7 @@
   pause.hidden = false;
   resize();
   select(mode);
+  shadePlanet();
   switcher.addEventListener("click", event => { if (event.target.dataset.scene) select(event.target.dataset.scene); });
   pause.addEventListener("click", () => { stopped = !stopped; morph = targetMorph; draw(); playback(); });
   reduced.addEventListener("change", () => { stopped = reduced.matches; morph = targetMorph; draw(); playback(); });

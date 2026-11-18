@@ -1,0 +1,158 @@
+/* The observatory console and the adjoining print-style design archive. */
+.lab-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 73% 42%, #24453d 0, #102a26 53%, #0d211e 95%);
+  color: var(--paper);
+  border-bottom: 5px solid #bedf80;
+}
+.lab-hero::before, .lab-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+.lab-hero::before {
+  inset: 0;
+  opacity: .55;
+  background-image: radial-gradient(1.4px 1.4px at 9% 18%, #c7e9a0 95%, transparent),
+    radial-gradient(1px 1px at 33% 81%, #d4db8e 95%, transparent),
+    radial-gradient(1.4px 1.4px at 78% 68%, #a5d1b9 95%, transparent),
+    radial-gradient(1px 1px at 67% 5%, #f0e7b9 95%, transparent);
+  background-size: 187px 139px, 225px 183px, 273px 197px, 319px 201px;
+}
+.lab-hero::after {
+  width: 76vw;
+  height: 26vw;
+  border: 1px solid #87b3a330;
+  box-shadow: 0 0 0 19px #8cb89b08, 0 0 0 20px #8cb89b19, 0 0 0 63px #acc8b305, 0 0 0 64px #8cb89b15;
+  border-radius: 50%;
+  left: 14%;
+  bottom: -28%;
+  transform: rotate(-18deg);
+}
+.lab-hero-inner { display: grid; grid-template-columns: .83fr 1.17fr; align-items: center; gap: clamp(32px, 7vw, 105px); padding-block: clamp(35px, 4.5vw, 69px); }
+.lab-overline, .lab-monitor-top, .lab-item-copy small, .lab-monogram, .lab-frame small, .journal-compare figcaption small {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+}
+.lab-overline, .lab-monitor-top, .lab-monitor-top > span:first-child { display: flex; align-items: center; }
+.lab-overline { gap: 11px; color: var(--lime); }
+.lab-overline > span { width: 24px; height: 8px; background: repeating-linear-gradient(120deg, currentColor 0 2px, transparent 2px 5px); }
+.lab-intro h1, .journal-head h1 { margin: 17px 0 0; font-size: clamp(42px, 4.65vw, 74px); font-weight: 750; letter-spacing: -.055em; line-height: 1.14; }
+.lab-intro h1 span { color: var(--lime); }
+.lab-script { color: #d9edb9; font: italic 500 clamp(27px, 3.1vw, 46px)/1.15 "STIX Two Text", Georgia, serif; letter-spacing: -.035em; }
+.lab-lede { margin-top: 19px; color: #c5d5ca; font-size: 15px; max-width: 31em; line-height: 1.95; }
+.lab-jump { width: fit-content; margin-top: 25px; display: inline-flex; align-items: center; gap: 24px; padding: 9px 15px; border: 1px solid #b7cf9f; color: #e2f2d0; font-size: 14px; font-weight: 700; }
+.lab-jump:hover { background: var(--lime); color: var(--pine); }
+.lab-monitor { min-width: 0; align-self: center; border: 1px solid #637c68; background: #12251f; padding: 0 11px 10px; box-shadow: 7px 7px 0 #081c1765; }
+.lab-monitor-top { justify-content: space-between; gap: 10px; color: #c5d2bf; padding-block: 8px; font-size: 10px; }
+.lab-monitor-top > span:first-child { gap: 7px; letter-spacing: .055em; }
+.lab-monitor-top i { width: 6px; height: 6px; background: #d2ef8d; border-radius: 50%; }
+.lab-screen { display: block; position: relative; overflow: hidden; background: #0b1614; border: 1px solid #46574b; aspect-ratio: 2.35; }
+.lab-screen img, .lab-item-visual img { width: 100%; height: 100%; object-fit: cover; }
+.lab-corners { position: absolute; inset: 8px; color: #eef5d2b8; pointer-events: none; background: linear-gradient(currentColor,currentColor) left top/11px 1px, linear-gradient(currentColor,currentColor) left top/1px 11px, linear-gradient(currentColor,currentColor) right bottom/11px 1px, linear-gradient(currentColor,currentColor) right bottom/1px 11px; background-repeat: no-repeat; }
+.lab-frame figcaption { display: flex; justify-content: space-between; gap: 12px; align-items: end; padding: 10px 3px; }
+.lab-frame small { display: block; color: #b3c3ab; font-size: 9px; }
+.lab-frame h2 { font-size: clamp(18px, 1.75vw, 25px); line-height: 1.35; }
+.lab-frame h2 a:hover { color: var(--lime); }
+.lab-frame h2 span { color: var(--lime); font-size: .78em; }
+.lab-frame-index { align-self: center; font: 12px var(--mono); color: #cad2bd; letter-spacing: .07em; }
+.lab-channel-list { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.lab-channel-list button { min-width: 0; min-height: 29px; border: 1px solid #516650; color: #cbd7c6; background: #172f27; font: 11px var(--mono); }
+.lab-channel-list button[aria-pressed="true"] { background: var(--lime); color: var(--pine); border-color: var(--lime); font-weight: 700; }
+.lab-channel-list button:hover { border-color: var(--lime); }
+.lab-monitor :focus-visible, .lab-jump:focus-visible { outline-color: #ddfa8b; outline-offset: 2px; }
+.lab-directory { padding-block: clamp(34px, 5vw, 73px) clamp(50px, 7vw, 92px); }
+.lab-directory-head { display: flex; justify-content: space-between; align-items: end; gap: 15px; margin-bottom: 19px; }
+.lab-directory-head h2 { font-size: clamp(26px, 3vw, 40px); letter-spacing: -.055em; line-height: 1.3; }
+.lab-filter { display: flex; flex-wrap: wrap; gap: 5px; }
+.lab-filter button { background: transparent; color: #354b40; border: 1px solid #a1ae9d; padding: 7px 12px; font-size: 13px; }
+.lab-filter button b { font: 11px var(--mono); margin-left: 3px; }
+.lab-filter button[aria-pressed="true"] { color: var(--paper); background: var(--pine); border-color: var(--pine); }
+.lab-filter button:hover { box-shadow: inset 0 -2px currentColor; }
+.lab-index-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: clamp(22px, 4vw, 58px); border-top: 2px solid var(--ink); }
+.lab-item { min-width: 0; display: grid; grid-template-columns: clamp(75px, 8.5vw, 125px) minmax(0, 1fr); gap: clamp(14px, 1.6vw, 23px); padding-block: 23px; border-bottom: 1px solid var(--rule); align-items: start; }
+.lab-item-visual { overflow: hidden; position: relative; aspect-ratio: 1.36; border: 1px solid #9daa9c; background: #122b21; }
+.lab-monogram { position: absolute; inset: 0; display: grid; place-items: center; font-size: clamp(17px, 2vw, 28px); letter-spacing: -.09em; color: #f1f2d5; background-image: radial-gradient(#ffffff38 .8px, transparent .8px); background-size: 5px 5px; }
+.lab-monogram-scan { background-color: #485d53; }.lab-monogram-assets { background-color: #734d40; }.lab-monogram-town { background-color: #425a67; }.lab-monogram-wheel-leg { background-color: #605b41; }
+.lab-item-copy small { display: block; color: #576549; font-size: 9px; overflow-wrap: anywhere; }
+.lab-item h3 { margin-top: 4px; font-size: clamp(18px, 1.7vw, 25px); line-height: 1.25; letter-spacing: -.035em; }
+.lab-item h3 a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.lab-item p { margin-top: 8px; color: #506054; font-size: 13px; line-height: 1.8; }
+.lab-links, .journal-actions { display: flex; flex-wrap: wrap; column-gap: 18px; }
+.lab-links { margin-top: 6px; }
+.lab-links a, .journal-link { display: inline-flex; align-items: center; gap: 5px; padding-block: 4px; color: #304b35; font-weight: 650; font-size: 13px; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: #9ba890; }
+.lab-links a:hover, .journal-link:hover { text-decoration-color: currentColor; color: #1e562b; }
+.lab-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.journal { padding-block: clamp(36px, 5vw, 72px) 80px; }
+.journal-head { display: grid; grid-template-columns: 1.3fr .7fr; align-items: end; gap: clamp(20px, 6vw, 95px); margin-bottom: 26px; }
+.journal-head h1 { margin-top: 8px; font-size: clamp(38px, 4.6vw, 68px); }
+.journal-head h1 span { color: #6e884a; }
+.journal-head > p { color: var(--muted); max-width: 34em; font-size: 15px; line-height: 1.9; }
+.journal-compare { border: 1px solid #6a7b65; background: var(--pine); color: var(--paper); padding: 9px 9px 0; }
+.journal-comparison-images { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.journal-image { min-width: 0; position: relative; overflow: hidden; background: #13291e; }
+.journal-image img { width: 100%; height: 100%; aspect-ratio: 2.2; object-fit: cover; object-position: center; }
+.journal-new img { object-position: center top; }
+.journal-image span { position: absolute; top: 11px; color: #f1f7e8; background: #10271ef0; border: 1px solid #9ab196; padding: 3px 10px; font: 12px/1.55 var(--sans); }
+.journal-old span { left: 11px; }.journal-new span { right: 11px; }
+.journal-compare.is-interactive .journal-comparison-images { display: block; aspect-ratio: 3.02; }
+.journal-compare.is-interactive .journal-image { position: absolute; inset: 0; }
+.journal-compare.is-interactive .journal-old { z-index: 1; clip-path: inset(0 calc(100% - var(--split, 48%)) 0 0); }
+.journal-compare.is-interactive .journal-new { clip-path: inset(0 0 0 var(--split, 48%)); }
+.journal-divider { position: absolute; left: clamp(0px, var(--split, 48%), calc(100% - 1px)); top: 0; bottom: 0; width: 1px; background: #d7f99a; z-index: 2; pointer-events: none; }
+.journal-divider b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); min-width: 38px; min-height: 38px; display: grid; place-items: center; border-radius: 50%; background: var(--lime); border: 1px solid #203f2b; color: #132b1e; font: 700 19px var(--mono); box-shadow: 0 3px 12px #07160c80; }
+.journal-range { cursor: ew-resize; z-index: 3; position: absolute; inset: 0; appearance: none; -webkit-appearance: none; margin: 0; padding: 0; width: 100%; height: 100%; background: transparent; opacity: 0; }
+.journal-range::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 1px; height: 100%; }
+.journal-range::-moz-range-thumb { width: 1px; height: 100%; border: 0; }
+.journal-comparison-images:has(.journal-range:focus-visible) { outline: 3px solid var(--lime); outline-offset: 2px; }
+.journal-compare figcaption { padding: 8px 2px; display: flex; justify-content: space-between; gap: 12px; align-items: center; font-size: 12px; }
+.journal-compare figcaption small { font-size: 9px; color: #b6c4ae; }
+.journal-reading { display: grid; grid-template-columns: minmax(140px, .35fr) minmax(0, 1fr); gap: clamp(35px, 7vw, 105px); margin-top: clamp(35px, 5vw, 65px); }
+.journal-nav { align-self: start; position: sticky; top: 18px; display: grid; border-top: 2px solid var(--ink); }
+.journal-nav h2 { font-size: 15px; margin: 13px 0 8px; }
+.journal-nav a { width: fit-content; padding: 5px 0; color: var(--muted); font-size: 14px; }
+.journal-nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.journal-text { max-width: 750px; }
+.journal-text section { padding-block: 21px 35px; border-top: 1px solid var(--rule); }
+.journal-text section:first-child { border-top: 2px solid var(--ink); }
+.journal-text h2 { margin-top: 6px; font-size: clamp(25px, 2.7vw, 38px); font-weight: 700; line-height: 1.4; letter-spacing: -.045em; }
+.journal-text p:not(.section-code) { margin: 13px 0; font-size: 16px; line-height: 1.95; color: #384b3f; }
+.journal-link { font-size: 14px; }
+
+@media (max-width: 800px) {
+  .lab-hero-inner { gap: 25px; grid-template-columns: .9fr 1.1fr; }
+  .lab-script { font-size: 26px; }
+  .lab-item { grid-template-columns: 69px minmax(0, 1fr); }
+  .journal-head { grid-template-columns: 1.1fr .9fr; }
+}
+@media (max-width: 640px) {
+  .lab-hero-inner, .journal-head, .journal-reading { grid-template-columns: 1fr; }
+  .lab-hero-inner { padding-block: 30px; gap: 20px; }
+  .lab-intro h1 { margin-top: 8px; }
+  .lab-lede { margin-top: 10px; font-size: 14px; }
+  .lab-jump { margin-top: 12px; padding: 5px 13px; }
+  .lab-channel-list button { min-height: 36px; }
+  .lab-directory-head { display: grid; gap: 13px; }
+  .lab-index-grid { grid-template-columns: 1fr; }
+  .lab-item { grid-template-columns: 77px minmax(0, 1fr); padding-block: 17px; }
+  .lab-filter button { min-height: 40px; padding-inline: 9px; }
+  .journal { padding-block: 30px 44px; }
+  .journal-head { gap: 13px; margin-bottom: 17px; }
+  .journal-compare.is-interactive .journal-comparison-images { aspect-ratio: 1.62; }
+  .journal-compare:not(.is-interactive) .journal-comparison-images { grid-template-columns: 1fr; }
+  .journal-compare figcaption small { font-size: 8px; }
+  .journal-reading { gap: 18px; }
+  .journal-nav { display: flex; flex-wrap: wrap; gap: 4px 14px; position: static; align-items: center; padding-top: 7px; }
+  .journal-nav h2 { margin: 0; }
+  .journal-text section { padding-block: 14px 26px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lab-screen img { transition: transform .35s ease; }
+  .lab-screen:hover img { transform: scale(1.025); }
+}

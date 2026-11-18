@@ -3,11 +3,38 @@ layout: default
 title: 搜索文章
 section: 文章
 permalink: /search/
+description: 检索工程手记的标题、分类、关键词与正文。
 ---
-{% include intro.html kicker="SEARCH THE JOURNAL" heading="搜索文章" description="搜索标题、关键词或正文，找到需要的那一段经验。" %}
-<div class="wrap page-body search-page">
-<form id="search-form" action="{{ '/search/' | relative_url }}" role="search"><label class="sr-only" for="query">搜索关键词</label>{% include icon.html name='search' %}<input type="search" name="q" id="query" placeholder="输入关键词，例如 Nginx、性能、Git…" autocomplete="off"><button class="button dark-button" type="submit">搜索</button></form>
-<nav class="topic-nav" aria-label="常用搜索">{% assign terms = 'Nginx,Python,GitHub Actions,数据库,Docker' | split: ',' %}{% for term in terms %}<a href="?q={{ term | url_encode }}">{{ term }}</a>{% endfor %}</nav>
-<p class="result-count" id="result-count" aria-live="polite">全部 {{ site.posts.size }} 篇手记</p><noscript><p>启用 JavaScript 可按关键词筛选，以下是完整目录。</p></noscript>
-<ul class="post-list" id="search-results">{% for post in site.posts %}{% include post-row.html post=post %}{% endfor %}</ul><p id="empty-result" hidden>没有匹配的文章。可以缩短关键词，或<a href="{{ '/categories/' | relative_url }}">按主题浏览</a>。</p>
-</div><script defer src="{{ '/assets/js/search.js' | relative_url }}"></script>
+{% capture instrument %}
+  <div class="search-console">
+    <form id="search-form" action="{{ '/search/' | relative_url }}" role="search">
+      <label class="sr-only" for="query">搜索文章关键词</label>{% include icon.html name='search' %}
+      <input type="search" name="q" id="query" placeholder="搜索标题、标签或正文" autocomplete="off" enterkeyhint="search">
+      <button type="submit">搜索</button>
+    </form>
+    <div class="query-suggestions"><span>试试</span>
+      {% assign terms = 'Nginx,Docker,GitHub Actions' | split: ',' %}{% for term in terms %}<a href="?q={{ term | url_encode }}">{{ term }}</a>{% endfor %}
+    </div>
+  </div>
+{% endcapture %}
+{% include archive-mast.html tab='search' kicker='FULL TEXT SEARCH' heading=page.title summary='输入一个或多个关键词，用空格分隔。标题和关键词匹配会优先显示。' instrument=instrument %}
+<div class="wrap index-body search-page">
+  <div class="index-rule">
+    <h2 id="result-count" aria-live="polite">全部 {{ site.posts.size }} 篇手记</h2>
+    <button id="clear-search" class="index-clear" type="button" hidden>清除搜索 ×</button>
+  </div>
+  <p id="search-notice" class="index-notice" role="status" hidden></p>
+  <noscript><p>启用 JavaScript 可按关键词筛选。以下是完整文章目录。</p></noscript>
+  <ul class="matches-list" id="search-results">
+    {% for post in site.posts %}
+    <li data-topics="{{ post.categories | join: ' ' | escape }} {{ post.keywords | join: ' ' | escape }}">
+      <a href="{{ post.url | relative_url }}">
+        <div class="match-meta"><time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: '%Y.%m.%d' }}</time><span>{{ post.categories | join: ' / ' }}</span><span class="match-field" hidden></span></div>
+        <strong class="match-title">{{ post.title | escape }}</strong>
+        <p class="match-preview" hidden></p>
+      </a>
+    </li>{% endfor %}
+  </ul>
+  <div id="empty-result" hidden><h3>没有找到匹配文章</h3><p>可以尝试更短的关键词，或<a href="{{ '/categories/' | relative_url }}">按主题浏览</a>。</p></div>
+</div>
+<script defer src="{{ '/assets/js/search.js' | relative_url }}"></script>

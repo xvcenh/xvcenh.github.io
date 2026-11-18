@@ -3,8 +3,36 @@ layout: default
 title: 主题分类
 section: 文章
 permalink: /categories/
+description: 按主题和关键词查找工程手记。
 ---
-{% include intro.html kicker="SUBJECT INDEX" heading="主题分类" description="从软件调试到硬件实践，按主题寻找相关的工程记录。" %}
-<div class="wrap page-body">
-<nav class="topic-nav" aria-label="跳至分类">{% assign topics = site.categories | sort %}{% for group in topics %}<a href="#topic-{{ group[0] | slugify }}">{{ group[0] }} <b>{{ group[1].size }}</b></a>{% endfor %}</nav>
-{% for group in topics %}<section class="archive-group" id="topic-{{ group[0] | slugify }}"><h2>{{ group[0] }}</h2><ul class="post-list">{% for post in group[1] %}{% include post-row.html post=post %}{% endfor %}</ul></section>{% endfor %}</div>
+{% assign topics = site.categories | sort %}
+{% assign topic_pages = site.pages | where: 'layout', 'category' %}
+{% capture instrument %}
+  {% assign newest = site.posts | first %}
+  {% if newest %}<a class="latest-entry" href="{{ newest.url | relative_url }}">
+    <span class="entry-label">最近收录 <time>{{ newest.date | date: '%Y.%m.%d' }}</time></span>
+    <strong>{{ newest.title | escape }} <span aria-hidden="true">↗</span></strong>
+    <span class="entry-topics">{{ newest.categories | join: ' / ' }}</span>
+  </a>{% endif %}
+{% endcapture %}
+{% capture summary %}{{ site.posts.size }} 篇手记，{{ topics.size }} 个主题。每张索引卡都列出了该主题最近收录的文章。{% endcapture %}
+{% include archive-mast.html tab='topics' kicker='SUBJECT INDEX' heading=page.title summary=summary instrument=instrument %}
+<div class="wrap index-body">
+  <div class="index-rule"><h2>全部主题</h2>
+    <label class="sort-control" id="sort-control" hidden>排列
+      <select id="topic-sort"><option value="name">按名称</option><option value="count">按文章数</option></select>
+    </label>
+  </div>
+  <div class="index-cards" id="topic-cards">
+    {% for group in topics %}
+      {% assign topic = group[0] %}{% assign posts = group[1] %}{% assign latest = posts | sort: 'date' | reverse | first %}
+      {% assign topic_page = topic_pages | where: 'topic', topic | first %}
+      {% capture topic_url %}{% if topic_page %}{{ topic_page.url | relative_url }}{% else %}{{ '/search/' | relative_url }}?q={{ topic | url_encode }}{% endif %}{% endcapture %}
+      <section class="topic-card" id="topic-{{ topic | slugify }}" data-count="{{ posts.size }}">
+        <h3><a href="{{ topic_url }}">{% include icon.html name='folder' %}<span>{{ topic | escape }}</span><small>{{ posts.size }} 篇</small></a></h3>
+        <a class="topic-latest" href="{{ latest.url | relative_url }}"><time datetime="{{ latest.date | date_to_xmlschema }}">{{ latest.date | date: '%Y.%m.%d' }}</time><span>{{ latest.title | escape }}</span></a>
+      </section>
+    {% endfor %}
+  </div>
+</div>
+<script defer src="{{ '/assets/js/archive.js' | relative_url }}"></script>

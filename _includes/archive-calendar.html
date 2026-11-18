@@ -1,0 +1,29 @@
+{% assign latest_month = include.months | first %}
+<div class="calendar-panel">
+  <div class="calendar-title">
+    <span>发文日历</span>
+    <label hidden id="calendar-switch"><span class="sr-only">选择发文月份</span>
+      <select id="calendar-month">{% for month in include.months %}<option value="{{ month.name }}">{{ month.name | replace: '-', ' / ' }}</option>{% endfor %}</select>
+    </label>
+    <span id="calendar-default">{{ latest_month.name | replace: '-', ' / ' }}</span>
+  </div>
+  {% assign weekdays = '一,二,三,四,五,六,日' | split: ',' %}
+  <div class="calendar-week" aria-hidden="true">{% for day in weekdays %}<span>{{ day }}</span>{% endfor %}</div>
+  {% for month in include.months %}
+    {% assign month_start = month.name | append: '-01' %}
+    {% assign start_weekday = month_start | date: '%u' %}
+    {% assign next_month = month_start | date: '%s' | plus: 2764800 | date: '%Y-%m-01' %}
+    {% assign last_date = next_month | date: '%s' | minus: 86400 | date: '%d' | plus: 0 %}
+    {% assign days = month.items | group_by_exp: 'post', "post.date | date: '%d' | plus: 0" %}
+    <div id="calendar-{{ month.name }}" class="calendar-grid" style="--start-day: {{ start_weekday }}"{% unless forloop.first %} hidden{% endunless %}>
+      {% for number in (1..last_date) %}
+        {% assign number_text = number | append: '' %}
+        {% assign posting_day = days | where: 'name', number_text | first %}
+        {% if posting_day %}
+          {% assign date_key = posting_day.items.first.date | date: '%Y-%m-%d' %}
+          <a href="#date-{{ date_key }}" aria-label="{{ date_key }}，{{ posting_day.items.size }} 篇文章" title="{{ posting_day.items.size }} 篇文章">{{ number }}</a>
+        {% else %}<span>{{ number }}</span>{% endif %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>

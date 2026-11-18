@@ -4,5 +4,20 @@ title: 页面未找到
 permalink: /404.html
 sitemap: false
 ---
-{% include intro.html kicker="HTTP / 404" heading="页面未找到" description="这个地址没有对应的页面。可以从文章档案或站内搜索继续。" %}
-<div class="wrap page-body hero-actions"><a class="button dark-button" href="{{ '/issues/' | relative_url }}">文章档案 →</a><a class="text-link" href="{{ '/search/' | relative_url }}">站内搜索 ↗</a></div>
+<link rel="stylesheet" href="{{ '/assets/css/lost.css' | relative_url }}">
+<section class="lost">
+  <div class="wrap lost-inner">
+    <div class="lost-copy">
+      <p class="eyebrow"><i></i> HTTP 404</p>
+      <h1>这条轨道<br>没有页面<span>.</span></h1>
+      <p>可以搜索文章标题、分类或正文关键词，找回你要的那篇手记。</p>
+      <form action="{{ '/search/' | relative_url }}" role="search">
+        <label class="sr-only" for="lost-query">搜索工程手记</label>
+        <input id="lost-query" type="search" name="q" placeholder="搜索工程手记" required>
+        <button type="submit">搜索 {% include icon.html name='arrow' %}</button>
+      </form>
+      <div class="lost-links"><a href="{{ '/' | relative_url }}">返回首页</a><a href="{{ '/issues/' | relative_url }}">浏览文章档案 ↗</a><a href="{{ '/projects/' | relative_url }}">探索项目 ↗</a></div>
+    </div>
+    <div class="lost-art" aria-hidden="true"><div class="lost-orbit"></div><div class="lost-orbit small"></div><div class="lost-beacon"><span></span></div></div>
+  </div>
+</section>

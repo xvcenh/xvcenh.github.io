@@ -1,15 +1,63 @@
 ---
 layout: default
 title: 项目实验室
+description: 浏览徐辰的交互实验与开源项目，预览运行画面，进入演示或阅读源代码。
 permalink: /projects/
 ---
-{% include intro.html kicker="PROJECT LAB" heading="项目实验室" description="从运动学模拟到终端里的 AI 村庄，在浏览器里动手试，或到 GitHub 阅读源码。" %}
-<div class="wrap page-body">
-{% assign sections = "playground,repositories" | split: "," %}{% for section in sections %}
-<div class="section-head{% unless forloop.first %} separated{% endunless %}"><div>
-{% if section == "playground" %}<p class="section-code"><span></span> PLAYGROUND</p><h2>在线实验</h2>{% else %}<p class="section-code"><span></span> OPEN SOURCE</p><h2>开源项目</h2>{% endif %}
-</div></div><div class="project-grid">
-{% assign projects = site.data.projects | where: "group", section %}{% for project in projects %}
-{% if project.demo contains '://' %}{% assign demo = project.demo %}{% else %}{% assign demo = project.demo | relative_url %}{% endif %}
-<article class="project">{% if project.image %}<a class="project-photo" href="{{ demo }}" aria-label="打开 {{ project.name }} 演示"><img src="{{ '/assets/img/' | append: project.image | relative_url }}" width="700" height="360" loading="lazy" alt="{{ project.name }} 运行画面"></a>{% endif %}<div class="project-folio"><span>{{ project.tag }}</span><span>/ 0{{ forloop.index }}</span></div><h3>{{ project.name }}</h3><p>{{ project.caption }}</p><div class="project-links">{% if project.demo %}<a href="{{ demo }}">打开实验 ↗</a>{% endif %}{% if project.repo %}<a href="{{ project.repo }}">GitHub 源码 ↗</a>{% endif %}</div></article>
-{% endfor %}</div>{% endfor %}</div>
+<link rel="stylesheet" href="{{ '/assets/css/laboratory.css' | relative_url }}">
+{% assign experiments = site.data.projects | where: "group", "playground" %}
+{% assign repositories = site.data.projects | where: "group", "repositories" %}
+{% assign previews = site.data.projects | where_exp: "project", "project.image" | sort: "preview_order" %}
+<section class="lab-hero" aria-labelledby="lab-title">
+  <div class="wrap lab-hero-inner">
+    <div class="lab-intro">
+      <p class="lab-overline"><span aria-hidden="true"></span> PROJECT LAB</p>
+      <h1 id="lab-title">项目实验室<span>.</span></h1>
+      <p class="lab-script" lang="en">Experiments in orbit</p>
+      <p class="lab-lede">把代码接到真实的界面上。这里有可以亲手操作的模拟器、小游戏，也有可以拆开阅读的开源工具。</p>
+      <a class="lab-jump" href="#directory">浏览项目目录 <span aria-hidden="true">↓</span></a>
+    </div>
+    <section class="lab-monitor" aria-label="项目运行画面预览" data-preview>
+      <header class="lab-monitor-top"><span><i aria-hidden="true"></i> 运行画面</span><span lang="en">VIEWFINDER</span></header>
+      {% for project in previews %}
+        {% if project.demo contains '://' %}{% assign target = project.demo %}{% else %}{% assign target = project.demo | relative_url %}{% endif %}
+        <figure id="frame-{{ project.id }}" class="lab-frame"{% unless forloop.first %} hidden{% endunless %}>
+          <a class="lab-screen" href="{{ target }}" aria-label="进入{{ project.name | escape }}">
+            <img src="{{ '/assets/img/' | append: project.image | relative_url }}" alt="{{ project.image_alt | escape }}" width="700" height="360"{% if forloop.first %} fetchpriority="high"{% else %} loading="lazy"{% endif %}>
+            <span class="lab-corners" aria-hidden="true"></span>
+          </a>
+          <figcaption><div><small>{{ project.tag }}</small><h2><a href="{{ target }}">{{ project.name }} <span aria-hidden="true">↗</span></a></h2></div><span class="lab-frame-index">0{{ forloop.index }} / 0{{ previews.size }}</span></figcaption>
+        </figure>
+      {% endfor %}
+      <div class="lab-channel-list" role="group" aria-label="切换运行画面，可使用左右方向键" hidden>
+        {% for project in previews %}<button type="button" data-frame="frame-{{ project.id }}" aria-controls="frame-{{ project.id }}" aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}" aria-label="预览{{ project.name | escape }}" title="{{ project.name | escape }}"><span>0{{ forloop.index }}</span></button>{% endfor %}
+      </div>
+    </section>
+  </div>
+</section>
+<section class="wrap lab-directory" id="directory" aria-labelledby="directory-title" data-directory>
+  <header class="lab-directory-head"><div><p class="section-code"><span></span> DIRECTORY</p><h2 id="directory-title">项目目录</h2></div>
+    <div class="lab-filter" role="group" aria-label="筛选项目" hidden>
+      <button type="button" data-group="all" aria-pressed="true">全部 <b>{{ site.data.projects.size }}</b></button>
+      <button type="button" data-group="playground" aria-pressed="false">在线实验 <b>{{ experiments.size }}</b></button>
+      <button type="button" data-group="repositories" aria-pressed="false">开源仓库 <b>{{ repositories.size }}</b></button>
+    </div>
+  </header>
+  <div class="lab-index-grid">
+    {% for project in site.data.projects %}
+      {% if project.demo contains '://' %}{% assign target = project.demo %}{% elsif project.demo %}{% assign target = project.demo | relative_url %}{% else %}{% assign target = project.repo %}{% endif %}
+      <article class="lab-item" id="project-{{ project.id }}" data-kind="{{ project.group }}">
+        <div class="lab-item-visual" aria-hidden="true">
+          {% if project.image %}<img src="{{ '/assets/img/' | append: project.image | relative_url }}" width="700" height="360" loading="lazy" alt="">
+          {% else %}<span class="lab-monogram lab-monogram-{{ project.id }}">{{ project.mark }}</span>{% endif %}
+        </div>
+        <div class="lab-item-copy">
+          <small>{{ project.tag }}</small><h3><a href="{{ target }}">{{ project.name | escape }}</a></h3><p>{{ project.caption }}</p>
+          <div class="lab-links">{% if project.demo %}<a href="{{ target }}">打开实验 <span aria-hidden="true">↗</span></a>{% endif %}{% if project.repo %}<a href="{{ project.repo }}">GitHub 源码 <span aria-hidden="true">↗</span></a>{% endif %}</div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+  <p class="lab-sr" role="status" data-filter-status></p>
+</section>
+<script defer src="{{ '/assets/js/laboratory.js' | relative_url }}"></script>

@@ -1,0 +1,16 @@
+<link rel="stylesheet" href="{{ '/assets/css/archive.css' | relative_url }}">
+<header class="index-mast">
+  <div class="wrap index-mast-inner">
+    <div class="index-heading">
+      <p class="eyebrow"><i></i>{{ include.kicker }}</p>
+      <h1>{{ include.heading | escape }}</h1>
+      <p>{{ include.summary }}</p>
+    </div>
+    <div class="index-instrument">{{ include.instrument }}</div>
+  </div>
+  <nav class="index-tabs" aria-label="文章浏览方式"><div class="wrap">
+    <a href="{{ '/issues/' | relative_url }}"{% if include.tab == 'archive' %} aria-current="page"{% endif %}>{% include icon.html name='book' %}按日期</a>
+    <a href="{{ '/categories/' | relative_url }}"{% if include.tab == 'topics' %} aria-current="{% if page.layout == 'category' %}true{% else %}page{% endif %}"{% endif %}>{% include icon.html name='layers' %}按主题</a>
+    <a href="{{ '/search/' | relative_url }}"{% if include.tab == 'search' %} aria-current="page"{% endif %}>{% include icon.html name='search' %}全文搜索</a>
+  </div></nav>
+</header>
