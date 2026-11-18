@@ -3,7 +3,7 @@
 扮演逃出实验室的 T-07。从珊瑚浅海进入六片海域，吞食、冲撞或跟随鱼群，决定如何面对人类的追踪和最后的蓝鲸。
 
 - [在线游玩](https://xvcenh.github.io/devour-tide/anime/)
-- [Android 安装包](download/Devour-Tide-0.1.1.apk)
+- [Android 安装包](download/Devour-Tide-0.2.0.apk)
 - [Windows x64 压缩包](download/Devour-Tide-Windows-x64.zip)
 - [开发源码、原画和打包工具](https://github.com/xvcenh/xvcenh.github.io/tree/codex/devour-tide-local/devour-tide)
 
