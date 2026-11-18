@@ -47,8 +47,9 @@
      border:1px solid rgba(120,200,255,.3);transition:.15s;}
   .card:hover{transform:translateY(-5px);border-color:#ffd166;
      box-shadow:0 10px 34px rgba(255,209,102,.24);}
-  .card .t{font-weight:700;font-size:15px;color:#eaf7ff;margin-bottom:7px;}
-  .card .d{font-size:12.5px;color:#8fb4d0;line-height:1.6;}
+  .card .t{display:block;font-weight:700;font-size:15px;color:#eaf7ff;margin-bottom:7px;}
+  .card .d{display:block;font-size:12.5px;color:#8fb4d0;line-height:1.6;}
+  #ovCards [hidden]{display:none;}
   .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:16px 0;}
   .stat div{background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;
      border:1px solid rgba(120,200,255,.12);}
@@ -313,13 +314,14 @@ body{background:#051024;color:var(--cream)}
     <div class="start-actions">
       <button class="btn" id="btnResume" hidden>继续下潜</button>
       <button class="btn" id="btnSingle">单 人 下 潜</button>
+      <button class="btn" id="btnEndless" hidden>无尽深潜</button>
       <button class="btn coop" id="btnCoop">双 人 合 作</button>
     </div>
 
     <div class="look-controls"><label>实时画风 <select data-filter></select></label>
       <label>特效 <select data-quality><option value="auto">自动</option><option value="light">省电</option></select></label></div>
     <nav id="platformDownloads" class="platform-downloads" aria-label="下载游戏" hidden>
-      <a href="./download/Devour-Tide-0.2.1.apk" download>下载 Android 版</a>
+      <a href="./download/Devour-Tide-0.3.0.apk" download>下载 Android 版</a>
       <a href="./download/Devour-Tide-Windows-x64.zip" download>下载 Windows 版</a>
     </nav>
     <details><summary>操作与海域</summary>

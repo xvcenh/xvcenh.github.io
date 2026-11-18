@@ -9,18 +9,19 @@ const sites = [
 const shoalSkins = ['anchovy','needle','chromis','wrasse','anthias','cardinal'];
 
 function near(player, site, point, radius) {
-  return Math.hypot(player.x - site.x - point.x, player.y - site.y - point.y) < radius;
+  const scale = site.scale || 1;
+  return Math.hypot((player.x - site.x)/scale - point.x, (player.y - site.y)/scale - point.y) < radius;
 }
 
-export function diveSite(stage, playerX, playerY) {
-  const index = (stage - 1) % sites.length;
+export function diveSite(stage, playerX, playerY, kind) {
+  const index = kind ? sites.findIndex(site => site.kind === kind) : (stage - 1) % sites.length;
   const points = [
     [{x:-58,y:0},{x:58,y:0}],
     [{x:-74,y:-46},{x:82,y:0},{x:0,y:100}],
     [{x:0,y:0}]
   ][index];
   return { ...sites[index], stage, points, x:clamp(playerX, 140, WORLD.w - 140),
-    y:clamp(Math.max((stage - 1) * STAGE_DEPTH + 480, playerY + 168), 180, WORLD.h - 300),
+    y:clamp(kind ? playerY + 320 : Math.max((stage - 1) * STAGE_DEPTH + 480, playerY + 168), 180, WORLD.h - 300),
     phase:0, done:false, hits:[], cursor:0, timer:0, read:0 };
 }
 
@@ -34,7 +35,7 @@ export function tickSite(site, players, dt, pulse, finish) {
       if (site.hits.includes(i)) return;
       if (!divers.some(p => p.dashT > 0 && near(p, site, point, 23 + Math.min(32,p.size)))) return;
       site.hits.push(i);
-      pulse(site.x + point.x, site.y, site.color);
+      pulse(site.x + point.x*(site.scale || 1), site.y, site.color);
     });
     if (site.hits.length === site.points.length) finishSite();
   } else if (site.kind === 'relay') {
@@ -43,13 +44,13 @@ export function tickSite(site, players, dt, pulse, finish) {
     if (divers.some(p => near(p,site,point,27 + Math.min(20,p.size * 0.4)))) {
       if (!site.cursor) site.timer = 6;
       site.cursor++;
-      pulse(site.x + point.x,site.y + point.y,site.color);
+      pulse(site.x + point.x*(site.scale || 1),site.y + point.y*(site.scale || 1),site.color);
       if (site.cursor === site.points.length) finishSite();
     }
   } else {
     const scanner = Math.sin(site.phase * 1.45) * 92;
     // A wide scan traverses the box. Moving to its far side keeps the download alive.
-    const safe = divers.some(p => near(p, site, site.points[0], 55) && Math.abs(p.x - site.x - scanner) > 18);
+    const safe = divers.some(p => near(p, site, site.points[0], 55) && Math.abs((p.x - site.x)/(site.scale || 1) - scanner) > 18);
     site.read = clamp(site.read + dt * (safe ? 1 : -0.65), 0, 2.5);
     if (site.read >= 2.5) finishSite();
   }

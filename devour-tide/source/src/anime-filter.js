@@ -1,5 +1,5 @@
-// The world is composited before HUD and touch controls. Keep at most one small
-// WebGL surface; Canvas 2D still supplies the tone, paper and screen patterns.
+// Composite at the game's backing resolution to preserve edges on high-DPI screens.
+// For large frames the native Canvas 2D blend keeps that resolution without a GPU copy.
 const modes = ['cel','ink','sunset','original'];
 const labels = ['赛璐璐','蓝墨漫画','夕照剧场','原画'];
 const vertex = 'attribute vec2 pos;varying vec2 uv;void main(){uv=vec2(pos.x*.5+.5,.5-pos.y*.5);gl_Position=vec4(pos,0.,1.);}';
@@ -103,17 +103,17 @@ export function createAnimeFilter(){
     info(){return {mode:selected,quality,path};},
     render(ctx,w,h,low){
       if(selected==='original'){path='原画';return;}
-      if(quality==='auto' && !low){
+      const {width:sw,height:sh}=ctx.canvas;
+      if(quality==='auto' && !low && sw*sh<=2000000){
         if(!attempted){
           attempted=true;try{drawGpu=makeGpu(surface);}catch{drawGpu=null;}
         }
         if(drawGpu){
-          const scale=Math.min(1,Math.sqrt(1000000/(w*h)));
-          const sw=Math.max(1,Math.round(w*scale)),sh=Math.max(1,Math.round(h*scale));
           if(surface.width!==sw || surface.height!==sh){surface.width=sw;surface.height=sh;}
           try{
             if(drawGpu(ctx.canvas,modes.indexOf(selected))){
-              ctx.drawImage(surface,0,0,w,h);path='WebGL';return;
+              ctx.save();ctx.setTransform(1,0,0,1,0,0);
+              ctx.drawImage(surface,0,0);ctx.restore();path='WebGL';return;
             }
           }catch{drawGpu=null;}
         }

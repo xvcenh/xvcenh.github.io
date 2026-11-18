@@ -20,6 +20,7 @@ import {updateFauna} from './fauna-simulation.js';
 import {createContactSystem} from './contacts.js';
 import { drawDiveSite, drawSiteLabel, drawTideEffects, drawSlipstreams, drawWake } from './expedition-art.js';
 import { clearCheckpoint, hydrateCheckpoint, readCheckpoint, writeCheckpoint } from './checkpoint.js';
+import { RIFT_LENGTH, endlessUnlocked, isGuardRoute, riftChoices, riftObjective, riftRoute, unlockEndless } from './endless.js';
 
 (function(){
 'use strict';
@@ -118,7 +119,7 @@ function layoutTouch(){
 }
 
 function resize(){
-  DPR = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 2, Math.sqrt(4800000 / Math.max(1, window.innerWidth * window.innerHeight)));
+  DPR = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt(4800000 / Math.max(1, window.innerWidth * window.innerHeight)));
   W = window.innerWidth; H = window.innerHeight;
   const pixelW = Math.max(1, Math.round(W * DPR)), pixelH = Math.max(1, Math.round(H * DPR));
   if (engine?.isBooted) engine.scale.resize(pixelW, pixelH);
@@ -611,6 +612,14 @@ function spawnEnemy(forceId, forceSmall){
   var rr = Math.random();
   if (rr < rare){ tier = 1; size *= 1.12; }
   else if (rr < rare + elite){ tier = 2; size *= 1.32; }
+  if (G.story?.rift && !forceSmall) {
+    // Keep room to read threats during a late-game run. Most residents remain
+    // small prey, while the few large fish fill a distinct predator role.
+    const threatCutoff = Math.max(.83,.94-G.story.rift.floor*.004);
+    if (roll < .68) { size = psize*rand(.16,.46); tier = 0; }
+    else if (roll < threatCutoff) size = psize*rand(.48,.82);
+    else { size = psize*rand(1.08,1.35); tier = 2; }
+  }
   /* 硬顶：蓝鲸之上没有生物。这一行就是「称霸」能被兑现的原因 */
   size = clamp(size, 7, WHALE);
 
@@ -887,7 +896,7 @@ function hasChestFish(){
    换海域不是换壁纸：每一片海都改一条你的移动或站位规则。
    ============================================================ */
 function updateHazards(dt){
-  var sea = seaOf(G.stage);
+  var sea = activeSea();
   var v = viewRect();
   G.hazT -= dt;
 
@@ -1161,7 +1170,7 @@ function doChomp(p){
   p.chompAnim = 0.22;
 
   const mecha = G.boss;
-  if (mecha?.idx === 5 && G.story?.whale === 'resonate'){
+  if (mecha?.idx === 5 && G.story?.whale === 'resonate' && !G.story.endless){
     const range = mecha.size * 1.6 + p.size;
     if (dist(mecha.x, mecha.y, p.x, p.y) > range) return;
     mecha.hp -= mecha.maxHp / 3 + 1;
@@ -1239,18 +1248,19 @@ function rewardSplit(p,e){
    ============================================================ */
 
 
-function startBoss(isElite, secondRuins = false){
+function startBoss(isElite, secondRuins = false, rift = null){
   /* 段 1-2→鲨 · 3-4→霜鲸 · 5-6→魟 · 7-8→鳝 · 9-10→水母后 · 11-12→熔岩 */
-  var idx = clamp(Math.floor((G.stage - 1) / 2), 0, BOSS_DEFS.length - 1);
+  var idx = rift ? riftRoute(rift.id).boss : clamp(Math.floor((G.stage - 1) / 2), 0, BOSS_DEFS.length - 1);
   var def = BOSS_DEFS[idx];
   var tier = clamp(Math.floor(idx / 2), 0, 2);
   var hp = Math.round((260 + idx * 120) * (isElite ? 0.62 : (G.coop ? 1.75 : 1)));
   const band = alertBand(G.story?.alert ?? 0);
   hp = Math.round(hp * (1 + Math.max(0, band - 1) * .2) *
     (idx === 5 && (G.story?.ruinsBypass || G.story?.whale === 'devour') ? 1.2 : 1));
+  if (rift) hp = Math.round((230 + playerRefSize()*2.6*clamp(G.p.hunt,1,3)) * (1 + Math.min(rift.floor-1,30)*.037) * (G.coop ? 1.6 : 1));
   G.boss = {
-    name: secondRuins ? '遗迹型追猎潜航器' : (idx === 5 && G.story?.whale === 'resonate' ? '深潜机甲 · 等待应答' : def.name), def: def, tier: tier, idx: idx, secondRuins,
-    x: WORLD.w/2, y: cam.y - (H / cam.zoom) * 0.34,
+    name: secondRuins ? '遗迹型追猎潜航器' : (!rift && idx === 5 && G.story?.whale === 'resonate' ? '深潜机甲 · 等待应答' : def.name), def: def, tier: tier, idx: idx, secondRuins,
+    x: rift ? G.p.x : WORLD.w/2, y: rift ? G.p.y+260 : cam.y - (H / cam.zoom) * 0.34,
     size: (58 + playerRefSize() * 0.42) * def.sizeMul,
     hp: hp, maxHp: hp,
     state:'enter', timer:1.8, vx:0, vy:0, flash:0,
@@ -1275,6 +1285,10 @@ function killBoss(){
     p.size = Math.min(p.maxSize, p.size * 1.22);
   }
   codexMark('eaten', bossDrawKey(b.idx));
+  if (G.story.endless) {
+    finishRift();
+    return;
+  }
   if (G.story) {
     G.story.defeated.add(b.idx);
     if (b.idx < 5) raiseAlert(G.story, 10);
@@ -1692,10 +1706,11 @@ function resolveEvent(idx){
 let checkpointDue = 2;
 document.getElementById('platformDownloads').hidden =
   !/^https?:$/.test(location.protocol) || ['appassets.androidplatform.net','devour-tide.example'].includes(location.hostname);
-function startRun(coop, fishA, fishB, saved = null){
+function startRun(coop, fishA, fishB, saved = null, endless = false){
   toggleCodex(false);
   Audio2.init();
   G.coop = !!coop;
+  G.paused = false;
   G.mode = 'play';
   G.trans = { t: 0.45, dur: 1.05, cb: null, fired: true, label: '下潜 · 珊瑚浅海' };
   G.stage = 1; G.stageT = 0; G.eatenStage = 0;
@@ -1750,10 +1765,23 @@ function startRun(coop, fishA, fishB, saved = null){
   checkpointDue = saved ? saved.state.time + 8 : 2;
   if (saved){
     hydrateCheckpoint(saved,G,ITEM_TYPES,BOSS_DEFS);
+    if (G.story.endless) unlockEndless();
     WORLD.h = saved.height;
     cam.x = G.p.x; cam.y = G.p.y;
     hideAll();
     floater(G.p.x,G.p.y-45,'已恢复下潜','#b2f5d5');
+  } else if (endless) {
+    G.stage = TOTAL_STAGES; G.reefCleared = true;
+    G.story.endless = true; G.story.ending = 'endless';
+    G.trans = null;
+    for (const p of G.players) {
+      p.y = TOTAL_STAGES*STAGE_DEPTH - 600;
+      p.size = 170;
+    }
+    G.stageStartSize = G.stats.peak = G.p.size;
+    cam.y = G.p.y;
+    if (!coop) clearCheckpoint();
+    chooseRift(G.p);
   } else {
     if (!coop) clearCheckpoint();
     openStory('prologue');
@@ -1799,6 +1827,7 @@ function completeStage(doneStage){
 
 function pickCard(card){
   if (G.trans && !G.trans.fired) return;
+  if (card.route) { enterRift(card.route); return; }
   for (var i = 0; i < G.players.length; i++) card.apply(G.players[i]);
   Audio2.card();
   /* 没有航路图了：选完卡，原地下潜继续 */
@@ -1839,6 +1868,101 @@ function buildZones(){
   return zs;
 }
 
+function activeSea(){
+  const route = riftRoute(G.story?.rift?.id);
+  return route ? SEAS[route.sea] : seaOf(G.stage);
+}
+
+function riftZoomLimit(size){
+  return Math.min(W,H)*.47/(size*3.15);
+}
+
+function chooseRift(p){
+  const previous = G.story.rift;
+  const floor = (previous?.floor || 0) + 1;
+  const options = riftChoices(floor,previous?.id).map(route => ({
+    name:route.name, desc:route.goal + ' · ' + route.reward, route
+  }));
+  G.mode = 'cards';
+  showStagePanel({
+    title:'无尽深潜 · 第 ' + floor + ' 层', detail:floor % 3 === 0 ? '选择本层守卫' : '选择航路和通关奖励',
+    rank:previous ? stageRank() : '—', from:G.stageStartSize, to:p.size,
+    grow:(p.size/G.stageStartSize-1)*100, eaten:G.eatenStage, bites:G.stageBites || 0,
+    combo:G.stageBestCombo || 0, dmg:G.stageDmg, evo:G.stageEvo || [], sea:activeSea()
+  },options);
+}
+
+function enterRift(route){
+  const p = alivePlayers()[0];
+  const floor = (G.story.rift?.floor || 0) + 1;
+  const rift = { id:route.id, floor, start:p.y, done:false, remaining:18, wave:2 };
+  G.story.rift = rift;
+  WORLD.h = Math.max(WORLD.h, rift.start + RIFT_LENGTH + 1100);
+  G.enemies = []; G.hazards = []; G.foods = []; G.items = []; G.zones = [];
+  G.expedition.shoals = []; G.expedition.nextShoal = 1;
+  G.expedition.site = isGuardRoute(route) || route.id === 'survive'
+    ? null : diveSite(G.stage,p.x,p.y,route.id);
+  if (G.expedition.site) G.expedition.site.scale = clamp(playerRefSize()/125,1.2,3.4);
+  G.chase.form = CHASE_FORMS[route.sea];
+  G.chase.y = p.y - (route.id === 'survive' ? 570 : 1150);
+  G.stageStartSize = p.size; G.eatenStage = 0;
+  G.stageDmg = 0; G.stageBites = 0; G.stageBestCombo = 0; G.stageEvo = [];
+  G.boss = null; G.bossDelay = 0; G.hazT = 0;
+  for (const diver of alivePlayers()) {
+    diver.vy = 0;
+    diver.invuln = Math.max(diver.invuln,1.2);
+  }
+  cam.zoom = Math.min(cam.zoom,riftZoomLimit(playerRefSize()));
+  if (isGuardRoute(route)) startBoss(false,false,rift);
+  G.mode = 'play';
+  hideAll();
+  showBanner(route.name,route.goal);
+  writeCheckpoint(G,WORLD.h);
+}
+
+function finishRift(){
+  const rift = G.story.rift;
+  if (!rift || rift.done) return;
+  rift.done = true;
+  for (const p of alivePlayers()) {
+    if (rift.id === 'net') p.shield = Math.min(5,p.shield+1);
+    else if (rift.id === 'relay') p.dashCdMul = Math.min(p.dashCdMul,Math.max(.30,p.dashCdMul*.92));
+    else if (rift.id === 'cache') p.chompMul = Math.max(p.chompMul,Math.min(3,p.chompMul*1.12));
+    else if (rift.id === 'survive') p.size = Math.min(p.maxSize,p.size*1.20);
+    else p.hunt = Math.max(p.hunt,Math.min(4,p.hunt*1.15));
+    p.score += 600 + rift.floor*120;
+  }
+  showBanner('航路完成', riftRoute(rift.id).reward);
+  writeCheckpoint(G,WORLD.h);
+}
+
+function updateRift(dt,p){
+  const rift = G.story.rift;
+  if (!rift) { chooseRift(p); return; }
+  const end = rift.start + RIFT_LENGTH;
+  if (rift.id === 'survive' && !rift.done) {
+    rift.remaining = Math.max(0,rift.remaining-dt);
+    rift.wave -= dt;
+    if (rift.wave <= 0) {
+      rift.wave = Math.max(1.7,3.7-rift.floor*.08);
+      spawnEnemyNear(p.x+rand(-440,440),p.y+rand(250,530),false);
+      const predator = G.enemies[G.enemies.length-1];
+      predator.beh = 'chase';
+      predator.size = Math.min(WHALE,p.size*1.16);
+    }
+    if (rift.remaining === 0) finishRift();
+  }
+  if (p.y < end) return;
+  if (rift.done) {
+    chooseRift(p);
+  } else {
+    for (const diver of alivePlayers()) {
+      diver.y = Math.min(diver.y,end);
+      diver.vy = Math.min(diver.vy,0);
+    }
+  }
+}
+
 function updateDescent(dt){
   var p0 = alivePlayers()[0];
   if (!p0) return;
@@ -1854,53 +1978,57 @@ function updateDescent(dt){
     }
   }
   const story = G.story;
-  if (story.endless && p0.y > WORLD.h - 1500) WORLD.h += STAGE_DEPTH;
-  const st = stageForY(p0.y);
-  if (!story.seen.has('boat') && (p0.y < 180 || p0.y > 780)) { openStory('boat'); return; }
-  if (st >= 3 && !story.seen.has('net')) { openStory('net'); return; }
-  if (st >= 6 && !story.seen.has('ice')) { openStory('ice'); return; }
-  if (st >= 7 && !story.seen.has('venom')) { openStory('venom'); return; }
-  if (G.boss?.idx === 4 && st >= 11) {
-    for (const player of alivePlayers()) {
-      player.y = Math.min(player.y, 10 * STAGE_DEPTH - 56);
-      player.vy = Math.min(player.vy, 0);
+  if (story.endless) {
+    updateRift(dt,p0);
+    if (G.mode !== 'play') return;
+  } else {
+    const st = stageForY(p0.y);
+    if (!story.seen.has('boat') && (p0.y < 180 || p0.y > 780)) { openStory('boat'); return; }
+    if (st >= 3 && !story.seen.has('net')) { openStory('net'); return; }
+    if (st >= 6 && !story.seen.has('ice')) { openStory('ice'); return; }
+    if (st >= 7 && !story.seen.has('venom')) { openStory('venom'); return; }
+    if (G.boss?.idx === 4 && st >= 11) {
+      for (const player of alivePlayers()) {
+        player.y = Math.min(player.y, 10 * STAGE_DEPTH - 56);
+        player.vy = Math.min(player.vy, 0);
+      }
+      return;
     }
-    return;
-  }
-  if (st >= 11 && !story.seen.has('whale')) { openStory('whale'); return; }
-  if (st > G.stage){
-    var prevSea = seaIdxForStage(G.stage);
-    if (st > G.stage && G.boss && (G.boss.idx === 1 || G.boss.idx === 3)
-      && seaIdxForStage(st) > prevSea) {
-      story.bypassed++;
-      G.boss = null;
+    if (st >= 11 && !story.seen.has('whale')) { openStory('whale'); return; }
+    if (st > G.stage){
+      var prevSea = seaIdxForStage(G.stage);
+      if (st > G.stage && G.boss && (G.boss.idx === 1 || G.boss.idx === 3)
+        && seaIdxForStage(st) > prevSea) {
+        story.bypassed++;
+        G.boss = null;
+      }
+      G.stage = st;
+      var seaIdx = seaIdxForStage(st);
+      if (seaIdx !== prevSea){
+        var sN = SEAS[seaIdx];
+        G.seaBanner = { name: sN.name, mech: sN.mech, tag: sN.tag, t: 3.8 };
+        G.slowT = 0.5;
+        Audio2.mutate();
+        if (G.time >= story.radioUntil) tellRadio(transmissions[seaIdx]);
+      } else {
+        floater(p0.x, p0.y - 90, '第 ' + st + ' 段 · ' + depthM(p0.y) + 'm', '#7de8ff', true);
+      }
+      if (G.chase) G.chase.form = CHASE_FORMS[seaIdx];
+      if (BOSS_STAGES.includes(st) && !G.boss && story.skipBossStage !== st && !story.endless){
+        G.bossDelay = 1.1;      /* Boss 段：追赶者让位，Boss 登场 */
+      } else if (!(prevSea === 0 && st === 3 && G.reefCleared)) {
+        completeStage(st - 1);  /* 已领取守卫奖励的海域出口不重复结算 */
+      }
     }
-    G.stage = st;
-    var seaIdx = seaIdxForStage(st);
-    if (seaIdx !== prevSea){
-      var sN = SEAS[seaIdx];
-      G.seaBanner = { name: sN.name, mech: sN.mech, tag: sN.tag, t: 3.8 };
-      G.slowT = 0.5;
-      Audio2.mutate();
-      if (G.time >= story.radioUntil) tellRadio(transmissions[seaIdx]);
-    } else {
-      floater(p0.x, p0.y - 90, '第 ' + st + ' 段 · ' + depthM(p0.y) + 'm', '#7de8ff', true);
-    }
-    if (G.chase) G.chase.form = CHASE_FORMS[seaIdx];
-    if (BOSS_STAGES.includes(st) && !G.boss && story.skipBossStage !== st && !story.endless){
-      G.bossDelay = 1.1;      /* Boss 段：追赶者让位，Boss 登场 */
-    } else if (!(prevSea === 0 && st === 3 && G.reefCleared)) {
-      completeStage(st - 1);  /* 已领取守卫奖励的海域出口不重复结算 */
-    }
-  }
 
-  /* ── Boss 延迟登场 ── */
-  if (G.bossDelay > 0){
-    G.bossDelay -= dt;
-    if (G.bossDelay <= 0){
-      /* 只在 Boss 段当场生效；玩家已经潜过这段了就作废 */
-      if (!G.boss && G.mode === 'play' && BOSS_STAGES.indexOf(G.stage) >= 0) startBoss(false);
-      G.bossDelay = 0;
+    /* ── Boss 延迟登场 ── */
+    if (G.bossDelay > 0){
+      G.bossDelay -= dt;
+      if (G.bossDelay <= 0){
+        /* 只在 Boss 段当场生效；玩家已经潜过这段了就作废 */
+        if (!G.boss && G.mode === 'play' && BOSS_STAGES.indexOf(G.stage) >= 0) startBoss(false);
+        G.bossDelay = 0;
+      }
     }
   }
 
@@ -1913,7 +2041,9 @@ function updateDescent(dt){
     var gap = p0.y - c.y;
     /* 橡皮筋：玩家下潜神速时会追回来，但永不反超；封顶避免从远处砸回来 */
     var spd = Math.min(420, base + (gap > 1800 ? (gap - 1800) * 0.35 : 0));
-    c.y = Math.min(c.y + spd * dt, WORLD.h - 200);
+    const site = story.rift && G.expedition.site;
+    const chaseLimit = site && !site.done ? site.y - 290*(site.scale || 1) : WORLD.h - 200;
+    c.y = Math.min(c.y + spd * dt, chaseLimit);
     /* 追上：整条横向危险带，碰到就持续掉体型（走 hitPlayer 的无敌帧节奏） */
     var band = 130;
     for (var k = 0; k < G.players.length; k++){
@@ -1978,7 +2108,7 @@ function update(dt){
     floater(p.x,p.y-32,'借流加速 · 冲刺就绪','#c7fff1',true);
     tellRadio('声呐只扫到迁徙鱼群。目标信号消失。');
   });
-  if (!G.expedition.site || G.stage !== G.expedition.site.stage){
+  if (!G.story.endless && (!G.expedition.site || G.stage !== G.expedition.site.stage)){
     const lead = alivePlayers()[0];
     if (lead) G.expedition.site = diveSite(G.stage,lead.x,lead.y);
   }
@@ -1996,6 +2126,7 @@ function update(dt){
     tideEffect(site.x,site.y,'reward',130);
     floater(site.x,site.y-35,site.name+'完成  +300',site.color,true);
     Audio2.revive();
+    if (G.story.endless) finishRift();
   });
   for (let i=G.tideFx.length-1;i>=0;i--){
     G.tideFx[i].age += dt;
@@ -2026,7 +2157,8 @@ function update(dt){
   if (G.coop && !alivePlayers().length) { endRun('两人都被啃光了'); return; }
 
   G.spawnT -= dt;
-  var maxE = Math.round((32 + G.stage * 2.4) * (G.coop ? 1.45 : 1));
+  const ecologyCap = G.story.rift ? Math.min(32,18 + G.story.rift.floor) : 32 + G.stage*2.4;
+  var maxE = Math.round(ecologyCap * (G.coop ? 1.45 : 1));
   if (G.spawnT <= 0 && G.enemies.length < maxE){
     spawnEnemy();
     G.spawnT = Math.max(0.12, 0.52 - G.stage * 0.022);
@@ -2036,7 +2168,7 @@ function update(dt){
 
   /* 宝箱鱼：一段最多同时存在一只，死了才会再刷 */
   /* 蓝鲸：只在深渊出现，一段最多一条，且不与宝箱鱼抢刷新 */
-  if (G.stage >= 11 && !hasWhale() && Math.random() < dt * 0.035) spawnWhale();
+  if (!G.story.endless && G.stage >= 11 && !hasWhale() && Math.random() < dt * 0.035) spawnWhale();
 
   G.chestT -= dt;
   if (G.chestT <= 0){
@@ -2058,10 +2190,11 @@ function update(dt){
     }
     cx /= alive.length; cy /= alive.length;
   }
-  var zTarget = clamp(1.18 - maxSize * 0.0016, 0.62, 1.18) * camCtl.zoom * seaOf(G.stage).zoom * viewFit();
+  var zTarget = clamp(1.18 - maxSize * 0.0016, 0.62, 1.18) * camCtl.zoom * activeSea().zoom * viewFit();
   if (anyEye) zTarget *= 1.22;
   if (G.coop) zTarget *= 0.88;   /* 双人拉远一点，两边都看得见 */
   cam.zoom = lerp(cam.zoom, zTarget, Math.min(1, dt * 2.2));
+  if (G.story.endless) cam.zoom = Math.min(cam.zoom,riftZoomLimit(maxSize));
 
   var vw = W / cam.zoom, vh = H / cam.zoom;
   cam.x = lerp(cam.x, cx, Math.min(1, dt * 4));
@@ -2109,6 +2242,7 @@ function update(dt){
     if (G.mutFlash.t <= 0) G.mutFlash = null;
   }
   if (G.bannerT > 0) G.bannerT -= dt;
+  if (G.banner?.t > 0) G.banner.t -= dt;
   if (G.seaBanner && G.seaBanner.t > 0) G.seaBanner.t -= dt;
   if (G.mileBanner && G.mileBanner.t > 0) G.mileBanner.t -= dt;
 
@@ -2229,7 +2363,12 @@ function drawBackground(){
    ============================================================ */
 function drawChase(view){
   const chase = G.chase;
-  if (chase && chase.y >= view.y - 60) drawPaperPursuit(ctx, view, chase.y + 16, chase.form, G.time);
+  if (chase && chase.y >= view.y - 60) {
+    ctx.save();
+    if (G.story.rift) ctx.globalAlpha *= .55;
+    drawPaperPursuit(ctx, view, chase.y + 16, chase.form, G.time);
+    ctx.restore();
+  }
 }
 
 /* ============================================================
@@ -3144,8 +3283,9 @@ function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
   if (paintings) {
-    const sea = seaIdxForStage(G.stage);
-    paintSea(ctx,paintings,W,H,cam,sea);
+    const rift = G.story?.rift;
+    const sea = rift ? riftRoute(rift.id).sea : seaIdxForStage(G.stage);
+    paintSea(ctx,paintings,W,H,cam,sea,rift);
   } else {
     drawBackground();
     drawReef(ctx,W,H,cam.y,cam.x,menuT);
@@ -3172,8 +3312,9 @@ function render(){
   drawDiveSite(ctx,G.expedition.site,paintings,v);
   drawSlipstreams(ctx,G.expedition.shoals,v);
   drawTideEffects(ctx,G.tideFx);
-  const reefGateY = STAGE_DEPTH * 2 - 56;
-  if (!G.reefCleared && reefGateY > v.y && reefGateY < v.y + v.h){
+  const rift = G.story.rift;
+  const reefGateY = rift ? rift.start + RIFT_LENGTH : STAGE_DEPTH * 2 - 56;
+  if ((rift ? !rift.done : !G.reefCleared) && reefGateY > v.y && reefGateY < v.y + v.h){
     ctx.save();
     ctx.strokeStyle = 'rgba(255,214,151,.6)';
     ctx.lineWidth = 2;
@@ -3185,7 +3326,7 @@ function render(){
     ctx.fillStyle = '#ffe2b4';
     ctx.font = 'bold 16px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('击败珊瑚守卫后开启', cam.x, reefGateY - 15);
+    ctx.fillText(rift ? riftObjective(rift) : '击败珊瑚守卫后开启', cam.x, reefGateY - 15);
     ctx.restore();
   }
 
@@ -3425,9 +3566,9 @@ function render(){
   ctx.restore();
 
   /* 海域视觉压力：幽暗 / 深渊是实打实看不清 */
-  var seaNow = seaOf(G.stage);
+  var seaNow = activeSea();
   if (seaNow.mod === 'abyss' || seaNow.mod === 'dark'){
-    var darkA = seaNow.mod === 'abyss' ? 0.84 : 0.52;
+    var darkA = seaNow.mod === 'abyss' ? 0.56 : 0.38;
     var vgn = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.16, W / 2, H / 2, Math.max(W, H) * 0.60);
     vgn.addColorStop(0, 'rgba(0,0,0,0)');
     vgn.addColorStop(1, 'rgba(0,0,0,' + darkA + ')');
@@ -3465,7 +3606,7 @@ function render(){
 
   animeFilter.render(ctx,W,H,LOWQ);
   const site = G.expedition.site;
-  if (site && !G.paused && G.mode === 'play') drawSiteLabel(ctx,site,W/2+ox+(site.x-cam.x)*punchZoom,H/2+oy+(site.y-cam.y)*punchZoom,W,H,punchZoom);
+  if (site && !G.paused && G.mode === 'play') drawSiteLabel(ctx,site,W/2+ox+(site.x-cam.x)*punchZoom,H/2+oy+(site.y-cam.y)*punchZoom,W,H,punchZoom,!!rift);
   drawBanners();
   if (G.chestAnim) drawChestAnim();
   drawHUD();
@@ -3820,11 +3961,14 @@ function drawHUD(){
   ctx.textAlign = 'left';
   ctx.font = (MOBILE ? 'bold 12px ' : 'bold 15px ') + '"PingFang SC",system-ui,sans-serif';
   ctx.fillStyle = '#fff0cf';
-  ctx.fillText(seaOf(G.stage).name + ' · 第 ' + G.stage + ' 段/' + G.totalStages + (G.coop ? '  ·  双人' : ''), 22, 34, hudWidth - 17);
+  const rift = G.story.rift;
+  const title = rift ? '无尽 ' + rift.floor + ' · ' + riftRoute(rift.id).name
+    : activeSea().name + ' · 第 ' + G.stage + ' 段/' + G.totalStages;
+  ctx.fillText(title + (G.coop ? '  ·  双人' : ''), 22, 34, hudWidth - 17);
 
   ctx.font = '13px "PingFang SC",system-ui,sans-serif';
   ctx.fillStyle = 'rgba(143,180,208,0.95)';
-  ctx.fillText('深度 ' + depthM(G.p.y) + ' m' + (G.boss ? '  ·  ⚠ 击败 Boss' : ''), 22, 56, hudWidth - 17);
+  ctx.fillText('深度 ' + depthM(G.p.y) + ' m' + (!rift && G.boss ? '  ·  ⚠ 击败 Boss' : ''), 22, 56, hudWidth - 17);
 
   /* 追击距离：这是本作唯一的「倒计时」 */
   if (G.chase){
@@ -3846,7 +3990,7 @@ function drawHUD(){
     ctx.arc(26, 94, 3.2, 0, TAU);
     ctx.fill();
     ctx.font = '11px system-ui,sans-serif';
-    ctx.fillText('信号追踪', 35, 98);
+    ctx.fillText(rift ? riftObjective(rift) : '信号追踪', 35, 98, hudWidth - 25);
   }
   if (G.story?.radio && G.time < G.story.radioUntil && !G.paused && G.mode === 'play'){
     const landscape=MOBILE && W>H;
@@ -3919,7 +4063,7 @@ function drawHUD(){
   }
 
   /* 右上：深海柱小地图（体型条下面，竖条总览） */
-  drawMinimap(yy + 64);
+  if (!rift) drawMinimap(yy + 64);
 
   /* 左下：器官槽位 */
   var bx = MOBILE ? 14 : 20;
@@ -4368,9 +4512,8 @@ function chooseStory(id, key, radio) {
     hideAll();
     if (key === 'endless') {
       story.endless = true;
-      WORLD.h += STAGE_DEPTH;
-      G.mode = 'play';
-      showBanner('无尽深潜', '下方还有更深的海');
+      unlockEndless();
+      chooseRift(G.p);
     } else {
       const labels = { rest: '安息', symbiosis: '共生', revenge: '复仇' };
       doEndRun(labels[key] + ' · ' + radio);
@@ -4496,19 +4639,21 @@ window.addEventListener('resize', function(){
 function showStagePanel(report, opts){
   ovCards.classList.remove('hide');
 
-  document.getElementById('cardTitle').textContent = report.stage === 2 && G.reefCleared
+  document.getElementById('cardTitle').textContent = report.title || (report.stage === 2 && G.reefCleared
     ? '珊瑚浅海 · 守卫击败'
-    : '第 ' + (report.stage || G.stage) + ' 段 通过';
+    : '第 ' + (report.stage || G.stage) + ' 段 通过');
   var badge = document.getElementById('rankBadge');
+  badge.hidden = !!report.title;
   badge.textContent = report.rank;
   badge.className = 'rank ' + report.rank;
 
   document.getElementById('cardSub').textContent =
-    report.sea.name + ' · ' + report.sea.tag + (G.coop ? ' · 双人' : '');
+    (report.detail || report.sea.name + ' · ' + report.sea.tag) + (G.coop ? ' · 双人' : '');
 
   /* 战报：让「我变强了」变成几个能读的数字 */
   var rg = document.getElementById('reportGrid');
   var upCls = report.grow >= 0 ? 'up' : '';
+  rg.hidden = !!report.title;
   rg.innerHTML =
     '<div><b class="' + upCls + '">' + Math.round(report.from) + ' → ' + Math.round(report.to) +
       '</b><span>体型 ' + (report.grow >= 0 ? '+' : '') + report.grow.toFixed(0) + '%</span></div>' +
@@ -4518,6 +4663,7 @@ function showStagePanel(report, opts){
     '<div><b class="' + (report.dmg === 0 ? 'up' : '') + '">' + report.dmg + '</b><span>受伤</span></div>';
 
   var ev = document.getElementById('evoLine');
+  ev.hidden = !!report.title;
   ev.innerHTML = report.evo.length
     ? '本段长出的器官：<br>' + report.evo.join('<br>')
     : '本段没有器官进化 —— 盯着同一类鱼吃，而且要吃够分量的。';
@@ -4525,9 +4671,10 @@ function showStagePanel(report, opts){
   var list = document.getElementById('cardList');
   list.innerHTML = '';
   opts.forEach(function(c){
-    var el = document.createElement('div');
+    var el = document.createElement('button');
+    el.type = 'button';
     el.className = 'card';
-    el.innerHTML = '<div class="t">' + c.name + '</div><div class="d">' + c.desc + '</div>';
+    el.innerHTML = '<span class="t">' + c.name + '</span><span class="d">' + c.desc + '</span>';
     el.onclick = function(){ ovCards.classList.add('hide'); pickCard(c); };
     list.appendChild(el);
   });
@@ -4537,7 +4684,7 @@ function showEndPanel(reason){
   ovEnd.classList.remove('hide');
   document.getElementById('endTitle').textContent = reason;
   document.getElementById('endSub').textContent =
-    '抵达第 ' + G.stage + ' 段 · 存活 ' + Math.round(G.stageT) + ' 秒' +
+    (G.story.rift ? '抵达无尽第 ' + G.story.rift.floor + ' 层' : '抵达第 ' + G.stage + ' 段') + ' · 存活 ' + Math.round(G.stageT) + ' 秒' +
     (G.coop ? ' · 救起队友 ' + G.stats.revives + ' 次' : '');
 
   var total = 0;
@@ -4596,12 +4743,12 @@ document.getElementById('btnCoop').onclick = function(){
 };
 document.getElementById('btnAgain').onclick = function(){
   ovEnd.classList.add('hide');
-  startRun(false, selFish);
+  startRun(false, G.story.endless ? G.p.fishId : selFish, null, null, G.story.endless);
 };
 document.getElementById('btnAgainCoop').onclick = function(){
   if (MOBILE) return;
   ovEnd.classList.add('hide');
-  startRun(true, selFish, nextFish(selFish));
+  startRun(true, selFish, nextFish(selFish), null, G.story.endless);
 };
 
 /* 手机模式：把键盘说明换成触屏说明，双人按钮置灰 */
@@ -4714,7 +4861,10 @@ for (var bi = 0; bi < 90; bi++){
 G.motes = [];
 
 const resumeButton = document.getElementById('btnResume');
+const endlessButton = document.getElementById('btnEndless');
+endlessButton.onclick = () => startRun(false,selFish,null,null,true);
 function refreshResume(){
+  endlessButton.hidden = !endlessUnlocked();
   const saved = readCheckpoint();
   resumeButton.hidden = !saved;
   if (saved) resumeButton.textContent = '继续下潜 · ' + depthM(saved.player.y) + ' 米';
@@ -4768,6 +4918,7 @@ if (/[?&]debug=1/.test(location.search)){
       narrative: G.story && { scene: document.getElementById('ovStory').dataset.scene, alert: G.story.alert, ending: G.story.ending, whale: G.story.whale },
       player: G.p && { id: G.p.fishId, x: Math.round(G.p.x), y: Math.round(G.p.y), size: +G.p.size.toFixed(2), dashing: G.p.dashT > 0, dashCooldown: +Math.max(0, G.p.dashCd).toFixed(2) },
       scattered: G.p ? G.enemies.filter(e => e.dashWakeHits?.[G.p.id] === G.p.dashId && G.p.dashId).length : 0,
+      rift: G.story?.rift || null,
       eaten: G.stats?.eaten ?? 0,
       food: G.stats?.food ?? 0,
       boss: G.boss && { name: G.boss.name, hp: Math.ceil(G.boss.hp), phase: G.boss.state }

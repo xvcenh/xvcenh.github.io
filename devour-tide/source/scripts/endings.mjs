@@ -69,7 +69,13 @@ try {
     }));
     assert.equal(state.ending, route.ending);
     assert.equal(state.endless, route.ending === 'endless');
-    assert.equal(state.mode === 'play', state.endless);
+    assert.equal(state.mode, state.endless ? 'cards' : 'end');
+    if (state.endless) {
+      await page.locator('#cardList button').first().click();
+      const rift = await page.evaluate(() => window.__DT.G.story.rift);
+      assert.equal(rift.floor, 1);
+      assert.equal(rift.done, false);
+    }
     console.log(route.whale, route.ending, state.mode);
   }
   assert.deepEqual(errors, []);

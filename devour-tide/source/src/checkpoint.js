@@ -1,3 +1,5 @@
+import { riftRoute } from './endless.js';
+
 const slot = 'devour-tide.dive.v1';
 const keys = [
   'time','stage','stageT','eatenStage','stageStartSize','stageDmg','stageBites','stageEvo','stageSea',
@@ -60,6 +62,13 @@ export function hydrateCheckpoint(data,G,types,bosses){
   G.p.sealed = lookup.get(data.sealed) ?? null;
   G.story = { ...data.story, seen:new Set(data.story.seen), defeated:new Set(data.story.defeated) };
   G.boss = data.boss && bosses[data.boss.idx] ? { ...data.boss, def:bosses[data.boss.idx] } : null;
+  const rift = G.story.rift;
+  if (rift && (!G.story.endless || !riftRoute(rift.id) || !Number.isInteger(rift.floor) ||
+      rift.floor < 1 || !Number.isFinite(rift.start) || !Number.isFinite(rift.remaining) ||
+      !Number.isFinite(rift.wave) || typeof rift.done !== 'boolean')) {
+    delete G.story.rift;
+    G.boss = null;
+  }
   G.items = data.items.filter(i=>lookup.has(i.type)).map(i=>({ ...i, type:lookup.get(i.type) }));
   G.p.invuln = Math.max(1.5,G.p.invuln);
   G.p.dashT = 0; G.p.vx = 0; G.p.vy = 0;

@@ -116,18 +116,25 @@ export function drawDiveSite(ctx, site, texture, view) {
   if (!site || site.done || site.x < view.x - 180 || site.x > view.x + view.w + 180 ||
       site.y < view.y - 170 || site.y > view.y + view.h + 170) return;
   ctx.save(); ctx.translate(site.x,site.y);ctx.textAlign='center';ctx.font='bold 14px system-ui';
+  ctx.scale(site.scale || 1, site.scale || 1);
   if (site.kind === 'net') drawNet(ctx,site,texture);
   else if (site.kind === 'relay') drawRelay(ctx,site,texture);
   else drawCache(ctx,site,texture);
   ctx.restore();
 }
 
-export function drawSiteLabel(ctx,site,x,y,w,h,zoom) {
-  if (!site || site.done || x < -12 || x > w+12 || y < 40 || y > h+12) return;
+export function drawSiteLabel(ctx,site,x,y,w,h,zoom,tracked = false) {
+  if (!site || site.done) return;
+  const offscreen = x < 18 || x > w-18 || y < 110 || y > h-115;
+  if (offscreen && !tracked && (x < -12 || x > w+12 || y < 40 || y > h+12)) return;
   ctx.save();ctx.textAlign='center';ctx.font='bold 14px system-ui';
-  const hint = site.kind === 'relay' && site.cursor ? '剩余 '+site.timer.toFixed(1)+' 秒' : site.hint;
+  const arrow = y < 110 ? '↑' : y > h-115 ? '↓' : x < 18 ? '←' : '→';
+  const hint = offscreen && tracked ? arrow + ' 前往目标'
+    : site.kind === 'relay' && site.cursor ? '剩余 '+site.timer.toFixed(1)+' 秒' : site.hint;
   const width = Math.max(108,ctx.measureText(hint).width + 24);
-  ctx.translate(Math.min(w-width/2-6,Math.max(width/2+6,x)),Math.max(42,y-(site.kind==='relay'?82:42)*zoom));
+  const labelY = y-(site.kind==='relay'?82:42)*zoom*(site.scale || 1);
+  ctx.translate(Math.min(w-width/2-6,Math.max(width/2+6,x)),
+    offscreen && tracked ? Math.min(Math.max(110,h-145),Math.max(110,labelY)) : Math.max(42,labelY));
   ctx.fillStyle='#071e2de8';ctx.fillRect(-width/2,-25,width,40);
   ctx.fillStyle=site.color;ctx.fillRect(-width/2,-25,3,40);ctx.fillText(site.name,0,-9);
   ctx.font='12px system-ui';ctx.fillStyle='#e2eff4';ctx.fillText(hint,0,7);
