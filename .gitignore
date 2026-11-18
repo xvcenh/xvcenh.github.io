@@ -14,3 +14,4 @@ Gemfile.lock
 # devour-tide 的 Vite 依赖，不入库
 node_modules/
 devour-tide/source/node_modules/
+__pycache__/

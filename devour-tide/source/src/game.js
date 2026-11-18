@@ -1,12 +1,23 @@
-import { STAGE_DEPTH, TOTAL_STAGES, WORLD, BOSS_STAGES, CHASE_FORMS, stageForY, seaIdxForStage, depthM, WHALE, SIZE_GAIN, STAGE_SCALE, ECO_CAP_MUL, ecoScale, GENE_GATE, GENE_MIN_RATIO, CHOMP_GENE_MUL, RARE_W, MAX_SLOTS, CHOMP_CD, CHOMP_RECOVER, SPECIES, SP_KEYS, SEAS, SEA_SPAN, seaOf, START_FISH, ITEM_RARITY, ITEM_TYPES, rollItem, MILESTONES, BOSS_DEFS } from './config.js';
+import { STAGE_DEPTH, TOTAL_STAGES, WORLD, BOSS_STAGES, CHASE_FORMS, stageForY, seaIdxForStage, depthM, WHALE, SIZE_GAIN, STAGE_SCALE, ECO_CAP_MUL, ecoScale, GENE_GATE, GENE_MIN_RATIO, CHOMP_GENE_MUL, RARE_W, MAX_SLOTS, CHOMP_CD, CHOMP_RECOVER, SPECIES, SP_KEYS, SEAS, SEA_SPAN, seaOf, START_FISH, ITEM_RARITY, rollItem, MILESTONES, BOSS_DEFS } from './config.js';
 import { TAU, rand, pick, clamp, lerp, rgba, angLerp, dist } from './utils.js';
 import { Audio2 } from './audio.js';
-import escapeArt from './paper-escape.webp?inline';
+import escapeArt from './illustrations/escape.webp';
 
 document.documentElement.style.setProperty('--escape-art', 'url("' + escapeArt + '")');
 import { drawReef, drawSpecimen, drawPaperGuardian, drawPaperPickup, drawPaperPursuit } from './field-guide.js';
 import { alertBand, encounters, endingChoices, newStory, raiseAlert, transmissions } from './story.js';
 
+import { createItems } from './items.js';
+import { paintAnimal, paintSea } from './illustrations.js';
+import { startOceanScene } from './engine.js';
+import { createAnimeFilter } from './anime-filter.js';
+import { diveSite, tickSite, newExpedition, spawnShoal, tickShoals, schoolVelocity, lightSlipstream, followSlipstreams } from './expedition.js';
+import {stepSwim, swimResponse, sampleWake} from './locomotion.js';
+import { drawDiveSite, drawSiteLabel, drawTideEffects, drawTideGarden, drawSlipstreams, drawWake } from './expedition-art.js';
+import { clearCheckpoint, hydrateCheckpoint, readCheckpoint, writeCheckpoint } from './checkpoint.js';
+
+(function(){
+'use strict';
 /* 强化卡牌：apply 引用 game 层的 gainGene，故留在本模块 */
 var CARDS = [
   { name:'锐利牙齿', desc:'吞食获得的体型 +20%',              apply:function(p){ p.sizeGainMul *= 1.20; } },
@@ -29,14 +40,15 @@ var CARDS = [
     } }
 ];
 
-(function(){
-'use strict';
 
 /* ============================================================
    基础工具
    ============================================================ */
 var cv = document.getElementById('cv');
+let engine;
+let paintings;
 var ctx = cv.getContext('2d');
+const animeFilter = createAnimeFilter();
 var W = 0, H = 0, DPR = 1;
 
 /* ============================================================
@@ -92,17 +104,20 @@ function layoutTouch(){
     { id:'skill', x:cx - 4 * s,        y:cy - R - r - gap,  r:r, glyph:'技' },
     { id:'seal',  x:cx - R - r - gap,  y:cy - R - r - gap,  r:r, glyph:'封' }
   ];
-  var tp = 15 * s;
+  var tp = 22;
+  const topCenter=Math.max(W/2,Math.min(W-115,205));
   TC.top = [
-    { id:'pause', x:W / 2 - tp - 14 * s, y:SAFE.t + tp, r:14 * s, glyph:'‖' },
-    { id:'codex', x:W / 2 + tp + 14 * s, y:SAFE.t + tp, r:14 * s, glyph:'≡' }
+    { id:'pause', x:topCenter - tp - 3, y:SAFE.t + tp+3, r:tp, glyph:'‖' },
+    { id:'codex', x:topCenter + tp + 3, y:SAFE.t + tp+3, r:tp, glyph:'≡' }
   ];
 }
 
 function resize(){
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  DPR = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 2, Math.sqrt(4800000 / Math.max(1, window.innerWidth * window.innerHeight)));
   W = window.innerWidth; H = window.innerHeight;
-  cv.width = Math.floor(W * DPR); cv.height = Math.floor(H * DPR);
+  const pixelW = Math.max(1, Math.round(W * DPR)), pixelH = Math.max(1, Math.round(H * DPR));
+  if (engine?.isBooted) engine.scale.resize(pixelW, pixelH);
+  else { cv.width = pixelW; cv.height = pixelH; }
   cv.style.width = W + 'px'; cv.style.height = H + 'px';
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   if (MOBILE){ readSafe(); layoutTouch(); }
@@ -134,6 +149,7 @@ var G = {
   stats: { eaten:0, bestCombo:0, dmg:0, peak:18, bites:0, food:0, revives:0, chests:0, items:0 },
   paused: false, totalStages: TOTAL_STAGES
 };
+const ITEM_TYPES = createItems({ G, spawnEnemyNear, burst, floater, availSpecies, gainGene });
 var cam = { x: WORLD.w/2, y: WORLD.h/2, zoom: 1 };
 /* 视角控制：滚轮缩放 / +- 微调 / 0 复位（对应豪华版的「视野大小」设置） */
 var camCtl = { zoom: 1 };
@@ -164,11 +180,21 @@ var touch = { active:false, x:0, y:0, dx:0, dy:0, bite:false };
 
 window.addEventListener('keydown', function(e){
   var k = e.key.toLowerCase();
+  if (G.mode !== 'play') return;
+  if (G.paused && !G.codexOpen && k !== 'v'){
+    if (k === 'escape') { G.paused=false; e.preventDefault(); }
+    return;
+  }
+  if (e.target instanceof HTMLSelectElement && k !== 'escape') return;
+  if (k === 'v' && !e.repeat){
+    floater(G.p.x,G.p.y-G.p.size-20,animeFilter.cycle(),'#bce9ee');
+    return;
+  }
   keys[k] = true;
   if (k === ' ' || k === 'shift' || k === 'enter' || k === 'arrowup' ||
       k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright' || k === '/') e.preventDefault();
   if (k === 'tab' && G.mode === 'play'){ e.preventDefault(); toggleCodex(); }
-  if (k === 'escape' && G.mode === 'play'){
+  if (k === 'escape' && G.mode === 'play' && !e.repeat){
     if (G.codexOpen) toggleCodex(false);
     else G.paused = !G.paused;
   }
@@ -213,7 +239,7 @@ cv.addEventListener('touchend', function(e){
 var mIn = {
   joy:false, bx:0, by:0, mx:0, my:0,
   bite:false, biteT:0, bitePulse:0,
-  dash:false, skillPulse:0, releasePulse:0,
+  dash:false, dashPulse:0, skillPulse:0, releasePulse:0,
   ptr:{}, down:{}
 };
 
@@ -235,7 +261,7 @@ function btnVisible(b){
 function pressBtn(id){
   mIn.down[id] = true;
   if (id === 'chomp'){ mIn.bite = true; mIn.biteT = 0; mIn.bitePulse = 0.07; }
-  else if (id === 'dash') mIn.dash = true;
+  else if (id === 'dash'){ mIn.dash = true; mIn.dashPulse = 0.10; }
   else if (id === 'skill') mIn.skillPulse = 0.12;
   else if (id === 'seal') mIn.releasePulse = 0.12;
 }
@@ -329,6 +355,7 @@ function tickTouch(dt){
     if (mIn.biteT >= 0.26){ mIn.biteT = 0; mIn.bitePulse = 0.07; }
   }
   if (mIn.bitePulse > 0) mIn.bitePulse -= dt;
+  if (mIn.dashPulse > 0) mIn.dashPulse -= dt;
   if (mIn.skillPulse > 0) mIn.skillPulse -= dt;
   if (mIn.releasePulse > 0) mIn.releasePulse -= dt;
 }
@@ -350,7 +377,7 @@ function inputFor(p){
     /* 手机模式：触屏输入叠加在键盘之上，接了外接键盘也能用 */
     if (MOBILE && !G.coop){
       if (mIn.mx || mIn.my){ ax = mIn.mx; ay = mIn.my; }
-      dash    = dash    || mIn.dash;
+      dash    = dash    || mIn.dash || mIn.dashPulse > 0;
       bite    = bite    || mIn.bitePulse > 0;
       skill   = skill   || mIn.skillPulse > 0;
       release = release || mIn.releasePulse > 0;
@@ -390,11 +417,17 @@ function floater(x, y, text, color, big){
    玩家的手和眼睛会同时「感觉到」这一下是硬的。
    ------------------------------------------------------------ */
 function hitImpact(x, y, color, shake, big){
+  tideEffect(x,y,big ? 'blast' : 'impact',big ? 95 : 52);
   G.hitStop = Math.max(G.hitStop, big ? 0.075 : 0.032);
   G.shake = Math.max(G.shake, shake || 0.4);
   G.punch = Math.max(G.punch, big ? 1 : 0.45);
   G.rings.push({ x:x, y:y, r:6, max: big ? 165 : 82, color: color || '#fff', life:0.34, maxLife:0.34 });
   if (big) G.flashT = Math.max(G.flashT, 0.10);
+}
+
+function tideEffect(x,y,frame,radius){
+  if (!G.tideFx || G.tideFx.length >= 32) return;
+  G.tideFx.push({x,y,frame,radius,angle:rand(0,TAU),age:0,life:0.52});
 }
 
 /* ============================================================
@@ -735,7 +768,7 @@ function spawnItemFrom(t, x, y){
     r: 13, t0: rand(0, TAU), life: 15
   });
 }
-function spawnItem(x, y){ spawnItemFrom(rollItem(), x, y); }
+function spawnItem(x, y){ spawnItemFrom(rollItem(ITEM_TYPES), x, y); }
 
 function updateItems(dt){
   for (var i = G.items.length - 1; i >= 0; i--){
@@ -961,7 +994,7 @@ function eatEnemy(p, e, idx, viaChomp){
   /* 宝箱鱼：必吐两个道具，并播一段抽奖动画 */
   if (e.chest){
     G.stats.chests++;
-    var loot = [rollItem(), rollItem()];
+    var loot = [rollItem(ITEM_TYPES), rollItem(ITEM_TYPES)];
     for (var ci = 0; ci < loot.length; ci++) spawnItemFrom(loot[ci], e.x + rand(-26, 26), e.y + rand(-26, 26));
     G.chestAnim = { t: 0, dur: 2.5, items: loot, x: e.x, y: e.y };
     burst(e.x, e.y, '#ffd166', 30, 340, 7);
@@ -1181,8 +1214,8 @@ function doChomp(p){
 
 function dashImpact(p, e, dx, dy){
   /* 一次冲刺对同一个敌鱼只结算一次，否则冲刺的每一帧都会重复砍一刀 */
-  if (e.lastDashId === p.dashId) return;
-  e.lastDashId = p.dashId;
+  if (e.dashHits?.[p.id] === p.dashId) return;
+  (e.dashHits ||= [])[p.id] = p.dashId;
 
   var m0 = Math.hypot(dx, dy) || 1;
 
@@ -1225,6 +1258,48 @@ function dashImpact(p, e, dx, dy){
   Audio2.hurt();
 }
 
+function scatterDashWake(p, e){
+  if (e.whale || e.chest || e.dashHits?.[p.id] === p.dashId ||
+      e.dashWakeHits?.[p.id] === p.dashId) return;
+  var fx = Math.cos(p.dashAng), fy = Math.sin(p.dashAng);
+  var dx = e.x - p.dashFromX, dy = e.y - p.dashFromY;
+  var length = Math.max(0, (p.x - p.dashFromX) * fx + (p.y - p.dashFromY) * fy);
+  var forward = dx * fx + dy * fy;
+  var side = dy * fx - dx * fy;
+  /* 留出正前方的吞食通道；侧翼鱼才会被水流拨开。 */
+  var width = clamp(38 + p.size * 0.8, 48, 105);
+  if (forward < -width * 0.45 || forward > length + width * 0.25 ||
+      Math.abs(side) < p.size * 0.44 || Math.abs(side) >= width) return;
+  var weight = clamp(p.size / e.size, 0.22, 1.35);
+  var force = (1 - Math.abs(side) / width) * 570 * weight;
+  if (force < 30) return;
+
+  (e.dashWakeHits ||= [])[p.id] = p.dashId;
+  if (e.schoolId) rewardSplit(p,e);
+  var lateral = side < 0 ? -force : force;
+  e.vx = e.vx * 0.35 + fx * force * 0.24 - fy * lateral;
+  e.vy = e.vy * 0.35 + fy * force * 0.24 + fx * lateral;
+  e.stunT = Math.max(e.stunT, 0.20 + 0.18 * weight);
+  if (p.dashWakeFx !== p.dashId){
+    p.dashWakeFx = p.dashId;
+    G.rings.push({ x:p.x, y:p.y, r:8, max:width * 1.4, color:p.c2, life:0.27, maxLife:0.27 });
+    G.shake = Math.max(G.shake, 0.24);
+  }
+}
+
+function rewardSplit(p,e){
+  p.splitHits++;
+  G.expedition.bestSplit = Math.max(G.expedition.bestSplit, p.splitHits);
+  if (p.splitHits === 3 || p.splitHits === 6){
+    const points = p.splitHits * 40;
+    p.score += points;
+    floater(e.x,e.y-30,'破浪 ×'+p.splitHits+'  +'+points,'#caffdf',true);
+    tideEffect(e.x,e.y,'wake',100);
+    if (p.splitHits===3 && lightSlipstream(G.expedition.shoals.find(s=>s.id===e.schoolId)))
+      floater(e.x,e.y-57,'循着青色水纹，随鱼群游动','#c2fff2',true);
+  }
+}
+
 function collisions(dt){
   for (var pi = 0; pi < G.players.length; pi++){
     var p = G.players[pi];
@@ -1239,7 +1314,10 @@ function collisions(dt){
       if (!e) continue;
       var dx = e.x - p.x, dy = e.y - p.y;
       var rr = p.size * 0.82 + e.size * 0.82;
-      if (dx*dx + dy*dy > rr*rr) continue;
+      if (dx*dx + dy*dy > rr*rr){
+        if (p.dashT > 0) scatterDashWake(p, e);
+        continue;
+      }
 
       /* 蓝鲸不吃你 —— 它吃磷虾。碰到它只会被它的分量推开。
          它是海里的「尺度」，不是敌人。 */
@@ -1515,13 +1593,14 @@ function updateBoss(dt){
 /* ============================================================
    玩家更新
    ============================================================ */
-function tryDash(p){
+function tryDash(p, ax, ay){
   /* 啃咬后摇期间不能冲刺：一口咬下去的代价是短暂失去逃生手段 */
   if (p.chompRecover > 0 || p.dashCd > 0 || p.stunT > 0) return;
   var moving = Math.hypot(p.vx, p.vy) > 40;
-  p.dashAng = moving ? Math.atan2(p.vy, p.vx) : p.ang;
+  p.dashAng = Math.hypot(ax,ay)>.1 ? Math.atan2(ay,ax) : moving ? Math.atan2(p.vy,p.vx) : p.ang;
   p.dashT = 0.2;
   p.dashId = (p.dashId || 0) + 1;
+  p.splitHits = 0;
   p.dashCd = 1.4 * p.dashCdMul;
   p.invuln = Math.max(p.invuln, p.glide ? 0.8 : p.dashT + 0.1);
   if (p.dashGhost) p.dashGhostT = 1.2;
@@ -1685,7 +1764,7 @@ function updatePlayer(p, dt){
     }
   }
 
-  if (inp.dash) tryDash(p);
+  if (inp.dash) tryDash(p,ax,ay);
 
   var m = Math.hypot(ax, ay);
   if (m > 1){ ax /= m; ay /= m; }
@@ -1705,16 +1784,20 @@ function updatePlayer(p, dt){
     p.vx = Math.cos(p.dashAng) * 760 * p.dashPow;
     p.vy = Math.sin(p.dashAng) * 760 * p.dashPow;
   } else {
-    p.vx = lerp(p.vx, ax * sp, Math.min(1, dt * 7));
-    p.vy = lerp(p.vy, ay * sp, Math.min(1, dt * 7));
+    const response = 1-Math.exp(-dt*swimResponse(p.fishId));
+    p.vx = lerp(p.vx, ax * sp, response);
+    p.vy = lerp(p.vy, ay * sp, response);
   }
 
+  p.dashFromX = p.x; p.dashFromY = p.y;
   p.x += p.vx * dt; p.y += p.vy * dt;
   p.x = clamp(p.x, p.size, WORLD.w - p.size);
   p.y = clamp(p.y, p.size, WORLD.h - p.size);
 
   var spd = Math.hypot(p.vx, p.vy);
   if (spd > 12) p.ang = angLerp(p.ang, Math.atan2(p.vy, p.vx), Math.min(1, dt * 9));
+  stepSwim(p,p.fishId,dt,sp,p.dashT>0);
+  sampleWake(p,dt);
 
   if (p.comboT > 0){
     p.comboT -= dt;
@@ -1763,11 +1846,13 @@ function updateEnemies(dt){
       G.enemies.splice(i, 1); continue;
     }
     if (e.flash > 0) e.flash -= dt;
+    stepSwim(e,e.skin || e.sid,dt,e.speed);
 
     if (e.stunT > 0){
       e.stunT -= dt;
       e.vx *= 1 - dt * 5; e.vy *= 1 - dt * 5;
-      e.x += e.vx * dt; e.y += e.vy * dt;
+      e.x = clamp(e.x + e.vx * dt, 0, WORLD.w);
+      e.y = clamp(e.y + e.vy * dt, 0, WORLD.h);
       continue;
     }
 
@@ -1816,7 +1901,11 @@ function updateEnemies(dt){
     if (hidden && beh === 'chase' && d > p.size * 2) beh = 'wander';
     if (p.fearT > 0) beh = 'flee';      /* 恐惧信息素：连掠食者也会退 */
 
-    if (lured){
+    const school = e.schoolId && G.expedition.shoals.find(s => s.id === e.schoolId);
+    if (school && !lured && p.fearT <= 0){
+      const velocity = schoolVelocity(e,school,G.enemies);
+      tx = velocity.x; ty = velocity.y;
+    } else if (lured){
       /* tx / ty 已由诱饵给出，不再做自身行为判定 */
     } else if (beh === 'chase' && e.size > p.size * 1.02){
       tx = dx/d * e.speed; ty = dy/d * e.speed;
@@ -1926,7 +2015,10 @@ function resolveEvent(idx){
   hideAll();
 }
 
-function startRun(coop, fishA, fishB){
+let checkpointDue = 2;
+document.getElementById('platformDownloads').hidden =
+  !/^https?:$/.test(location.protocol) || ['appassets.androidplatform.net','devour-tide.example'].includes(location.hostname);
+function startRun(coop, fishA, fishB, saved = null){
   toggleCodex(false);
   Audio2.init();
   G.coop = !!coop;
@@ -1941,6 +2033,8 @@ function startRun(coop, fishA, fishB){
   G.hazards = []; G.hazT = 0; G.slowT = 0; G.mileIdx = 0; G.mileBanner = null;
   G.hitStop = 0; G.punch = 0; G.flashT = 0; G.chestAnim = null; G.rings = [];
   G.chestT = 16;
+  G.expedition = newExpedition();
+  G.tideFx = [];
   G.decoy = null; G.stasisT = 0; G.curseStage = 0;
   G.boss = null; G.mutFlash = null; G.shake = 0; G.time = 0;
   G.stats = { eaten:0, bestCombo:0, dmg:0, peak:18, bites:0, food:0, revives:0, chests:0, items:0 };
@@ -1979,7 +2073,17 @@ function startRun(coop, fishA, fishB){
   for (var k = 0; k < 22; k++) spawnEnemy(null, k < 8);
   for (var f0 = 0; f0 < 50; f0++) spawnFood();
 
-  openStory('prologue');
+  checkpointDue = saved ? saved.state.time + 8 : 2;
+  if (saved){
+    hydrateCheckpoint(saved,G,ITEM_TYPES,BOSS_DEFS);
+    WORLD.h = saved.height;
+    cam.x = G.p.x; cam.y = G.p.y;
+    hideAll();
+    floater(G.p.x,G.p.y-45,'已恢复下潜','#b2f5d5');
+  } else {
+    if (!coop) clearCheckpoint();
+    openStory('prologue');
+  }
 }
 
 function stageRank(){
@@ -2033,6 +2137,7 @@ function endRun(reason){
   transTo(function(){ doEndRun(reason); });
 }
 function doEndRun(reason){
+  if (!G.coop) clearCheckpoint();
   G.mode = 'end';
   if (G.story && !G.story.ending) reason = '信号消失 · ' + reason;
   Audio2.over();
@@ -2187,6 +2292,41 @@ function update(dt){
   if (G.particles.length > pcap) G.particles.splice(0, G.particles.length - pcap);
 
   for (var i = 0; i < G.players.length; i++) updatePlayer(G.players[i], dt);
+  tickShoals(G,spawnEnemy,dt);
+  followSlipstreams(G,dt,p=>{
+    p.dashCd=0;p.itemSpdT=Math.max(p.itemSpdT,3.5);
+    G.expedition.escorts=(G.expedition.escorts || 0)+1;
+    if (G.expedition.shelteredStage!==G.stage) {
+      G.expedition.shelteredStage=G.stage;raiseAlert(G.story,-4);
+    }
+    tideEffect(p.x,p.y,'reward',90);
+    Audio2.escort();
+    floater(p.x,p.y-32,'借流加速 · 冲刺就绪','#c7fff1',true);
+    tellRadio('声呐只扫到迁徙鱼群。目标信号消失。');
+  });
+  if (!G.expedition.site || G.stage !== G.expedition.site.stage){
+    const lead = alivePlayers()[0];
+    if (lead) G.expedition.site = diveSite(G.stage,lead.x,lead.y);
+  }
+  tickSite(G.expedition.site,G.players,dt,(x,y,color) => {
+    tideEffect(x,y,'blast',85);
+    burst(x,y,color,8,170);
+  },site => {
+    G.expedition.completed++;
+    if (site.kind === 'net'){
+      G.expedition.released++;
+      lightSlipstream(spawnShoal(G,spawnEnemy,site.x,site.y+22,8));
+    }
+    spawnItemFrom(ITEM_TYPES.find(item=>item.id===site.reward),site.x,site.y);
+    for (const p of alivePlayers()) p.score += 300;
+    tideEffect(site.x,site.y,'reward',130);
+    floater(site.x,site.y-35,site.name+'完成  +300',site.color,true);
+    Audio2.revive();
+  });
+  for (let i=G.tideFx.length-1;i>=0;i--){
+    G.tideFx[i].age += dt;
+    if (G.tideFx[i].age >= G.tideFx[i].life) G.tideFx.splice(i,1);
+  }
 
   /* 时间凝滞：只慢敌人和 Boss，玩家一帧都不慢 —— 这才叫「你的时间」 */
   if (G.stasisT > 0) G.stasisT -= dt;
@@ -4174,7 +4314,8 @@ function cgLin(key, x0, y0, x1, y1, stops){
 
 /* 统一入口：按 sid 画矢量鱼。返回 false 表示该 sid 无矢量画法（回落旧画法）。
    视觉长度 ≈ 体型 × 2.55，与碰撞半径保持同一比例语义。 */
-function drawCodexFish(key, x, y, ang, size, phase, bob, t, alpha, flash){
+function drawCodexFish(key, x, y, ang, size, phase, bob, t, alpha, flash, motion){
+  if (paintAnimal(ctx,paintings,key,x,y,ang,size,t + phase*.13,alpha,flash,motion)) return true;
   const guardian = BOSS_DRAW.findIndex(entry => entry.key === key);
   if (guardian >= 0) {
     drawPaperGuardian(ctx, guardian, x, y, ang, size, t, alpha, flash);
@@ -4333,6 +4474,7 @@ function refreshCodex(){
 buildCodexPanel();
 
 function drawFishShape(x, y, ang, size, shape, color, glow, t, phase, alpha, flash){
+  if (shape?.startsWith('p_') && paintAnimal(ctx,paintings,shape.slice(2),x,y,ang,size,t+phase,alpha,flash)) return;
   if (shape?.startsWith('p_') && drawSpecimen(ctx, shape.slice(2), x, y, ang, size, t + phase, alpha ?? 1)) return;
   if (shape === 'jelly'){ drawJellyShape(x, y, size, color, glow, t, phase, alpha, flash); return; }
 
@@ -4604,6 +4746,7 @@ function drawPlayer(p){
     return;
   }
 
+  drawWake(ctx,p);
   if (p.chompAnim > 0){
     /* 啃咬的瞬间：一道扇形咬痕 */
     var t01 = 1 - p.chompAnim / 0.22;
@@ -4635,8 +4778,12 @@ function drawPlayer(p){
   }
 
   var alpha = 1;
-  if (p.invuln > 0) alpha = 0.55 + Math.sin(G.time * 40) * 0.28;
-  if (p.stealthOn) alpha = 0.28;
+  if (p.invuln > 0) alpha = 0.86 + Math.sin(G.time * 15) * 0.12;
+  if (p.stealthOn) {
+    alpha=.64;
+    ctx.save();ctx.strokeStyle='#b2f7dfb8';ctx.lineWidth=1.4;ctx.setLineDash([2,5]);
+    ctx.beginPath();ctx.ellipse(p.x,p.y+p.size*.35,p.size*1.15,p.size*.68,0,0,TAU);ctx.stroke();ctx.restore();
+  }
 
   for (var i = 0; i < p.slots.length; i++){
     var sid = p.slots[i];
@@ -4662,7 +4809,17 @@ function drawPlayer(p){
     ctx.restore();
   }
 
-  drawFishShape(p.x, p.y, p.ang, p.size, 'p_' + p.fishId, p.c1, p.c2, G.time, p.id * 2.1, alpha, false);
+  ctx.save();
+  ctx.shadowColor='#091e36';ctx.shadowBlur=4;
+  if (!paintAnimal(ctx,paintings,p.fishId,p.x,p.y,p.ang,p.size*1.1,G.time,alpha,false,p.swim))
+    drawFishShape(p.x, p.y, p.ang, p.size, 'p_' + p.fishId, p.c1, p.c2, G.time, p.id * 2.1, alpha, false);
+  ctx.restore();
+  if (G.time<5.5 && !G.coop) {
+    ctx.save();ctx.translate(p.x,p.y-p.size*1.65);
+    ctx.globalAlpha=Math.min(1,5.5-G.time);ctx.fillStyle='#fff2bd';ctx.strokeStyle='#183545';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-5,-5);ctx.lineTo(5,-5);ctx.lineTo(0,1);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.restore();
+  }
 
   /* P2 头顶标记，避免双人时认错自己 */
   if (G.coop){
@@ -4724,8 +4881,8 @@ function drawEnemy(e){
     ctx.restore();
   }
 
-  if (!drawCodexFish(e.sid, e.x, e.y, e.ang, e.size, e.phase, e.phase * 0.7, G.time,
-      e.stunT > 0 ? 0.72 : 1, e.flash > 0))
+  if (!drawCodexFish(e.skin || e.sid, e.x, e.y, e.ang, e.size, e.phase, e.phase * 0.7, G.time,
+      e.stunT > 0 ? 0.72 : 1, e.flash > 0, e.swim))
     drawFishShape(e.x, e.y, e.ang, e.size, e.shape, e.c1, e.c2,
       G.time, e.phase, e.stunT > 0 ? 0.72 : 1, e.flash > 0);
 
@@ -4781,8 +4938,14 @@ function drawBoss(){
 function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  drawBackground();
-  drawReef(ctx, W, H, cam.y, cam.x, menuT + G.time);
+  if (paintings) {
+    const sea = seaIdxForStage(G.stage);
+    paintSea(ctx,paintings,W,H,cam,sea,menuT);
+    if (G.p) drawTideGarden(ctx,paintings,W,H,cam,sea,G.time);
+  } else {
+    drawBackground();
+    drawReef(ctx,W,H,cam.y,cam.x,menuT);
+  }
 
   if (!G.p) return;
 
@@ -4802,6 +4965,9 @@ function render(){
   /* 追赶者与水下据点：都画在世界层，压在鱼群之下 */
   drawChase(v);
   drawZones(v);
+  drawDiveSite(ctx,G.expedition.site,paintings,v);
+  drawSlipstreams(ctx,G.expedition.shoals,v);
+  drawTideEffects(ctx,G.tideFx);
   const reefGateY = STAGE_DEPTH * 2 - 56;
   if (!G.reefCleared && reefGateY > v.y && reefGateY < v.y + v.h){
     ctx.save();
@@ -5077,7 +5243,6 @@ function render(){
     }
   }
 
-  drawBanners();
 
   for (var bp = 0; bp < G.players.length; bp++){
     if (G.players[bp].chompAnim <= 0) continue;
@@ -5094,9 +5259,11 @@ function render(){
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* 宝箱抽奖动画 */
+  animeFilter.render(ctx,W,H,LOWQ);
+  const site = G.expedition.site;
+  if (site && !G.paused && G.mode === 'play') drawSiteLabel(ctx,site,W/2+ox+(site.x-cam.x)*punchZoom,H/2+oy+(site.y-cam.y)*punchZoom,W,H,punchZoom);
+  drawBanners();
   if (G.chestAnim) drawChestAnim();
-
   drawHUD();
 }
 
@@ -5369,6 +5536,7 @@ function drawTouchButtons(){
     ctx.globalAlpha = ready ? 0.97 : 0.66;
 
     ctx.beginPath(); ctx.arc(b.x, b.y, rad, 0, TAU);
+    ctx.fillStyle='#092635d6';ctx.fill();
     if (ready){
       var gg = ctx.createRadialGradient(b.x, b.y - rad * 0.45, rad * 0.1, b.x, b.y, rad);
       gg.addColorStop(0, rgba(main, 0.36));
@@ -5400,7 +5568,7 @@ function drawTouchButtons(){
       ctx.fillText(cd.toFixed(1), b.x, b.y + 1);
     } else {
       ctx.font = 'bold ' + Math.round(b.r * 0.62) + 'px "PingFang SC",system-ui,sans-serif';
-      ctx.fillStyle = ready ? '#04121f' : 'rgba(170,200,220,0.72)';
+      ctx.fillStyle = ready ? '#f5f4d9' : 'rgba(170,200,220,0.85)';
       ctx.fillText(b.glyph, b.x, b.y + 1);
     }
     ctx.restore();
@@ -5477,8 +5645,11 @@ function drawHUD(){
     ctx.fillText('信号追踪', 35, 98);
   }
   if (G.story?.radio && G.time < G.story.radioUntil && !G.paused && G.mode === 'play'){
-    const width = Math.min(W - 36, 370);
-    const row = MOBILE ? H - 147 : H - 90;
+    const landscape=MOBILE && W>H;
+    const width = Math.min(landscape ? W*.43 : W-36, 370);
+    const row = MOBILE ? landscape ? H-SAFE.b-54 : H-Math.max(202,H*.27) : H-90;
+    ctx.save();
+    if(landscape)ctx.translate((W-width)/2-18,0);
     ctx.fillStyle = 'rgba(5,18,42,.88)';
     ctx.fillRect(18, row, width, 43);
     ctx.fillStyle = '#ff805f';
@@ -5489,6 +5660,7 @@ function drawHUD(){
     ctx.font = '12px system-ui,sans-serif';
     ctx.fillStyle = '#fbefd2';
     ctx.fillText(G.story.radio, 30, row + 33, width - 23);
+    ctx.restore();
   }
 
   /* 右上：体型 */
@@ -5792,6 +5964,8 @@ function drawHUD(){
     /* 手机：就绪与冷却直接画在按键上，这里不再重复一遍文字 */
   } else if (!G.coop){
     var P1 = G.players[0];
+    const extra = P1.stealthOn ? 36 : P1.skillKind === 'inflate' ? 18 : 0;
+    ctx.fillStyle='#061a2ad9';roundRect(cx2-58,dy-34-extra,116,46+extra,8);ctx.fill();
     ctx.font = '11px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = P1.dashCd <= 0 ? 'rgba(125,232,255,0.95)' : 'rgba(120,150,175,0.55)';
     ctx.fillText(P1.dashCd <= 0 ? '冲刺 就绪' : '冲刺 ' + P1.dashCd.toFixed(1) + 's', cx2, dy + 4);
@@ -5876,7 +6050,7 @@ function drawHUD(){
     ctx.fillText(b.name + (b.weakT > 0 ? ' · 弱点暴露！' : ''), W/2, byB - 8);
   }
 
-  if (G.paused){
+  if (G.paused && G.codexOpen){
     ctx.fillStyle = 'rgba(2,8,18,0.62)';
     ctx.fillRect(-SAFE.l, -SAFE.t, SW, SH);
     ctx.textAlign = 'center';
@@ -5886,15 +6060,6 @@ function drawHUD(){
     ctx.font = '13px "PingFang SC",system-ui,sans-serif';
     ctx.fillStyle = 'rgba(143,180,208,0.9)';
     ctx.fillText(MOBILE ? '点击屏幕继续' : '按 Esc 继续', W/2, H/2 + 24);
-  }
-
-  /* 竖屏提示：这游戏是横向视野，竖着玩会被挤成一条缝 */
-  if (MOBILE && H > W && G.stage === 1 && G.stageT < 7 && !G.paused){
-    var oa = clamp((7 - G.stageT) / 2, 0, 1);
-    ctx.textAlign = 'center';
-    ctx.font = '12px "PingFang SC",system-ui,sans-serif';
-    ctx.fillStyle = 'rgba(183,243,255,' + (0.75 * oa) + ')';
-    ctx.fillText('横过来玩视野更宽', W/2, H * 0.72);
   }
 
   ctx.restore();
@@ -6035,11 +6200,12 @@ var FISH_SHAPE = {
 
 /* 把鱼画到小 canvas 上：临时把全局 ctx 指过去，画完换回来 */
 function drawFishThumb(cvEl, fish, t){
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = Math.min(window.devicePixelRatio || 1, MOBILE ? 1.5 : 2);
   var w = cvEl.clientWidth || 132;
   var h = cvEl.clientHeight || 58;
-  cvEl.width = Math.max(1, Math.round(w * dpr));
-  cvEl.height = Math.max(1, Math.round(h * dpr));
+  const pixelW = Math.max(1, Math.round(w*dpr)), pixelH = Math.max(1, Math.round(h*dpr));
+  if (cvEl.width !== pixelW) cvEl.width = pixelW;
+  if (cvEl.height !== pixelH) cvEl.height = pixelH;
   var g = cvEl.getContext('2d');
   if (!g) return;
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -6067,7 +6233,10 @@ function buildFishPicker(){
   thumbList = [];
   for (var i = 0; i < START_FISH.length; i++){
     (function(f){
-      var d = document.createElement('div');
+      var d = document.createElement('button');
+      d.type = 'button';
+      d.setAttribute('aria-pressed',String(f.id === selFish));
+      d.setAttribute('aria-label',f.name+'，'+f.passive);
       d.className = 'fishcard' + (f.id === selFish ? ' sel' : '');
 
       var thumb = document.createElement('canvas');
@@ -6078,14 +6247,15 @@ function buildFishPicker(){
       b.style.color = f.glow;
       d.appendChild(b);
 
-      var i2 = document.createElement('i');
-      i2.textContent = f.passive;
-      d.appendChild(i2);
-
-      d.onclick = function(){ selFish = f.id; buildFishPicker(); };
+      d.onclick = function(){ selFish = f.id; buildFishPicker(); el.querySelector('[aria-pressed="true"]')?.focus({preventScroll:true}); };
       el.appendChild(d);
 
       thumbList.push({ cv:thumb, fish:f });
+      if (f.id===selFish) {
+        document.getElementById('specimenName').textContent=f.name;
+        document.getElementById('specimenTrait').textContent=MOBILE ? f.passive.replace('按 K','按「技」') : f.passive;
+        thumbList.push({cv:document.getElementById('specimenPortrait'),fish:f});
+      }
     })(START_FISH[i]);
   }
   drawThumbs(menuT);
@@ -6176,7 +6346,9 @@ function showEndPanel(reason){
     '<div><b>' + G.stats.bestCombo + '</b><span>最高连击</span></div>' +
     '<div><b>' + G.stats.bites + '</b><span>啃咬吞食</span></div>' +
     '<div><b>' + G.stats.chests + '</b><span>宝箱鱼</span></div>' +
-    '<div><b>' + G.stats.items + '</b><span>道具拾取</span></div>';
+    '<div><b>' + G.stats.items + '</b><span>道具拾取</span></div>' +
+    '<div><b>' + G.expedition.completed + '</b><span>海底任务</span></div>' +
+    '<div><b>' + G.expedition.bestSplit + '</b><span>一次冲散</span></div>';
 
   var ml = document.getElementById('endMuts');
   ml.innerHTML = '';
@@ -6234,7 +6406,7 @@ if (MOBILE){
   if (kvsEl) kvsEl.innerHTML =
     '<span><b>左下摇杆</b> 游动</span>' +
     '<span><b>咬</b> 啃咬</span>' +
-    '<span><b>冲</b> 冲刺</span>' +
+    '<span><b>冲</b> 冲散鱼群</span>' +
     '<span><b>技</b> 技能</span>' +
     '<span><b>封</b> 释放封印</span>';
   var snEl = document.querySelector('#ovStart .sbox-note');
@@ -6250,46 +6422,27 @@ if (MOBILE){
 /* ============================================================
    主循环
    ============================================================ */
-var lastT = performance.now();
 let manualClock = false;
-function loop(now, manual = false){
-  if (manualClock && !manual) return;
-  var raw = Math.min(0.05, (now - lastT) / 1000);
-  lastT = now;
+let lastThumbPaint = -1;
+function stepWorld(raw){
   tickTouch(raw);
 
   /* 宝箱抽奖：暂停游戏，只播动画 */
   if (G.chestAnim){
     G.chestAnim.t += raw;
     if (G.chestAnim.t >= G.chestAnim.dur) G.chestAnim = null;
-    render();
-    if (!manual) requestAnimationFrame(loop);
     return;
   }
 
   /* 顿帧：命中瞬间把时间停住，这一下才是「硬的」 */
   if (G.hitStop > 0){
     G.hitStop -= raw;
-    render();
-    if (!manual) requestAnimationFrame(loop);
     return;
   }
 
   var dt = raw;
   menuT += raw;
   if (G.slowT > 0){ G.slowT -= dt; dt *= 0.35; }
-
-  /* 帧率采样（0.7s 一次）：连续掉帧才降级，连续流畅才恢复，避免来回抖 */
-  PERF.acc += raw; PERF.frames++;
-  if (PERF.acc >= 0.7){
-    PERF.fps = PERF.frames / PERF.acc;
-    if (PERF.fps < 45){ PERF.bad++; PERF.good = 0; }
-    else if (PERF.fps > 56){ PERF.good++; PERF.bad = 0; }
-    else { PERF.bad = 0; PERF.good = 0; }
-    if (!LOWQ && PERF.bad >= 3) setLowQ(true);
-    else if (LOWQ && PERF.good >= 6) setLowQ(false);
-    PERF.acc = 0; PERF.frames = 0;
-  }
 
   if (G.trans){
     var tr0 = G.trans;
@@ -6302,9 +6455,21 @@ function loop(now, manual = false){
     }
     if (tr0.t >= tr0.dur) G.trans = null;
   }
-  if (G.mode === 'play' && !G.paused) update(dt);
+  if (G.mode === 'play' && !G.paused) {
+    update(dt);
+    if (G.time >= checkpointDue && G.mode === 'play' && !G.trans && !G.chestAnim){
+      writeCheckpoint(G,WORLD.h);
+      checkpointDue = G.time + 8;
+    }
+  }
   else updateAmbient(dt);
-  if (G.mode === 'menu' && thumbList.length) drawThumbs(menuT);
+}
+function paintWorld(){
+  document.getElementById('pauseMenu').hidden = !G.paused || G.mode !== 'play' || G.codexOpen;
+  if (G.mode === 'menu'){
+    if (thumbList.length && menuT-lastThumbPaint>=1/12){drawThumbs(menuT);lastThumbPaint=menuT;}
+    return;
+  }
   render();
   if (G.trans){
     /* save/restore 必须成对：这里以前泄漏 globalAlpha（淡出尾帧残留 ~0.04），
@@ -6334,7 +6499,7 @@ function loop(now, manual = false){
     }
     ctx.restore();
   }
-  if (!manual) requestAnimationFrame(loop);
+
 }
 
 G.bubbles = [];
@@ -6344,12 +6509,50 @@ for (var bi = 0; bi < 90; bi++){
 }
 G.motes = [];
 
+const resumeButton = document.getElementById('btnResume');
+function refreshResume(){
+  const saved = readCheckpoint();
+  resumeButton.hidden = !saved;
+  if (saved) resumeButton.textContent = '继续下潜 · ' + depthM(saved.player.y) + ' 米';
+}
+refreshResume();
+resumeButton.onclick = () => {
+  const saved = readCheckpoint();
+  if (saved) startRun(false,saved.player.fishId,null,saved); else refreshResume();
+};
+document.getElementById('unpause').onclick = () => { G.paused = false; };
+document.getElementById('returnMenu').onclick = () => {
+  writeCheckpoint(G,WORLD.h);
+  G.mode = 'menu'; G.paused = false; G.p=null; G.trans=null; G.chestAnim=null;
+  G.players=[]; G.boss=null;
+  hideAll();refreshResume();ovStart.classList.remove('hide');
+};
+function suspendDive(){
+  if (G.mode !== 'play') return;
+  writeCheckpoint(G,WORLD.h);
+  keys = {}; touch.active = false; touch.bite = false;
+  Object.assign(mIn,{joy:false,mx:0,my:0,bite:false,bitePulse:0,dash:false,dashPulse:0,skillPulse:0,releasePulse:0,ptr:{},down:{}});
+  G.paused = true;
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) suspendDive(); });
+window.addEventListener('pagehide', suspendDive);
+window.addEventListener('devour-suspend',suspendDive);
+window.addEventListener('devour-back',event=>{
+  if (G.mode==='play') {
+    event.preventDefault();
+    if (G.codexOpen) toggleCodex(false);
+    else if (G.paused) G.paused=false;
+    else suspendDive();
+  }
+});
+
 /* 调试钩子：?debug=1 时才挂，方便自动化测触屏（普通访问拿不到内部状态） */
 if (/[?&]debug=1/.test(location.search)){
   window.advanceTime = function(ms) {
     manualClock = true;
     const steps = Math.max(1, Math.round(ms / (1000 / 60)));
-    for (let i = 0; i < steps; i++) loop(lastT + 1000 / 60, true);
+    for (let i = 0; i < steps; i++) stepWorld(1 / 60);
+    paintWorld();
   };
   window.render_game_to_text = function() {
     return JSON.stringify({
@@ -6359,15 +6562,43 @@ if (/[?&]debug=1/.test(location.search)){
       stage: G.stage,
       reefCleared: !!G.reefCleared,
       narrative: G.story && { scene: document.getElementById('ovStory').dataset.scene, alert: G.story.alert, ending: G.story.ending, whale: G.story.whale },
-      player: G.p && { id: G.p.fishId, x: Math.round(G.p.x), y: Math.round(G.p.y), size: +G.p.size.toFixed(2) },
+      player: G.p && { id: G.p.fishId, x: Math.round(G.p.x), y: Math.round(G.p.y), size: +G.p.size.toFixed(2), dashing: G.p.dashT > 0, dashCooldown: +Math.max(0, G.p.dashCd).toFixed(2) },
+      scattered: G.p ? G.enemies.filter(e => e.dashWakeHits?.[G.p.id] === G.p.dashId && G.p.dashId).length : 0,
       eaten: G.stats?.eaten ?? 0,
       food: G.stats?.food ?? 0,
       boss: G.boss && { name: G.boss.name, hp: Math.ceil(G.boss.hp), phase: G.boss.state }
     });
   };
   window.__DT = { G:G, TC:TC, mIn:mIn, cam:cam, WORLD:WORLD,
+    items: ITEM_TYPES, cards: CARDS, spawnItemFrom, releaseSeal, filterInfo: animeFilter.info,
     relayout:function(){ layoutTouch(); }, update: update };
 }
 
-requestAnimationFrame(loop);
+engine = startOceanScene({
+  canvas: cv,
+  step: stepWorld,
+  paint: paintWorld,
+  manual: () => manualClock,
+  sampleFrame(raw) {
+  /* 帧率采样（0.7s 一次）：连续掉帧才降级，连续流畅才恢复，避免来回抖 */
+  PERF.acc += raw; PERF.frames++;
+  if (PERF.acc >= 0.7){
+    PERF.fps = PERF.frames / PERF.acc;
+    if (PERF.fps < 45){ PERF.bad++; PERF.good = 0; }
+    else if (PERF.fps > 56){ PERF.good++; PERF.bad = 0; }
+    else { PERF.bad = 0; PERF.good = 0; }
+    if (!LOWQ && PERF.bad >= 3) setLowQ(true);
+    else if (LOWQ && PERF.good >= 6) setLowQ(false);
+    PERF.acc = 0; PERF.frames = 0;
+  }
+
+  },
+  ready(art) {
+    paintings = art;
+    buildFishPicker();
+    buildCodexPanel();
+    resize();
+    document.documentElement.dataset.engine = 'phaser';
+  }
+});
 })();

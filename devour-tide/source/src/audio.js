@@ -35,6 +35,11 @@ var Audio2 = (function(){
     init: init,
     eat: function(c){ tone(320 + Math.min(c, 20) * 26, 0.09, 'triangle', 0.055, 620); },
     dash: function(){ tone(180, 0.16, 'sawtooth', 0.04, 460); },
+    escort: function(){
+      tone(294,.24,'sine',.048,330);
+      setTimeout(()=>tone(440,.34,'sine',.042,494),95);
+      setTimeout(()=>tone(587,.5,'sine',.032,660),210);
+    },
     hurt: function(){ tone(150, 0.24, 'square', 0.06, 60); },
     zap: function(){ tone(900, 0.1, 'square', 0.035, 300); },
     mutate: function(){
