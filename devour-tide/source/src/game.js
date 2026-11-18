@@ -10,6 +10,7 @@ import { alertBand, encounters, endingChoices, newStory, raiseAlert, transmissio
 
 import { createItems } from './items.js';
 import { paintAnimal, paintSea } from './illustrations.js';
+import { paintDiveLight, paintNearWater, paintWaterVolume } from './water-scene.js';
 import { startOceanScene } from './engine.js';
 import { createAnimeFilter } from './anime-filter.js';
 import { diveSite, tickSite, newExpedition, spawnShoal, tickShoals, lightSlipstream, followSlipstreams } from './expedition.js';
@@ -1749,6 +1750,7 @@ let checkpointDue = 2;
 document.getElementById('platformDownloads').hidden =
   !/^https?:$/.test(location.protocol) || ['appassets.androidplatform.net','devour-tide.example'].includes(location.hostname);
 function startRun(coop, fishA, fishB, saved = null, endless = false){
+  if (paintings) { paintings.landscape = null; paintings.previousSea = null; }
   toggleCodex(false);
   Audio2.init();
   G.coop = !!coop;
@@ -3350,10 +3352,13 @@ function drawBoss(){
 function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, W, H);
+  const rift = G.story?.rift;
+  const sea = rift ? riftRoute(rift.id).sea : seaIdxForStage(G.stage);
+  const waterDepth = clamp((cam.y - (rift ? rift.start : sea*SEA_SPAN*STAGE_DEPTH)) /
+    (rift ? RIFT_LENGTH : SEA_SPAN*STAGE_DEPTH),0,1);
   if (paintings) {
-    const rift = G.story?.rift;
-    const sea = rift ? riftRoute(rift.id).sea : seaIdxForStage(G.stage);
-    paintSea(ctx,paintings,W,H,cam,sea,rift);
+    paintSea(ctx,paintings,W,H,cam,sea,rift,G.time);
+    paintWaterVolume(ctx,W,H,cam,sea,G.time,waterDepth,LOWQ);
   } else {
     drawBackground();
     drawReef(ctx,W,H,cam.y,cam.x,menuT);
@@ -3364,10 +3369,17 @@ function render(){
   var sh = G.shake > 0 ? G.shake : 0;
   var ox = (Math.random() - 0.5) * sh * 26;
   var oy = (Math.random() - 0.5) * sh * 26;
+  var punchZoom = cam.zoom * (1 + Math.max(0, G.punch) * 0.028);
+  const light = G.p.dead ? null : {
+    x:W/2+ox+(G.p.x-cam.x)*punchZoom,
+    y:H/2+oy+(G.p.y-cam.y)*punchZoom,
+    ang:G.p.ang, radius:Math.min(W,H)*(G.p.eyeT>0?.55:.42),
+    effort:G.p.dashT>0 ? 1 : clamp(Math.hypot(G.p.vx,G.p.vy)/470,0,.65)
+  };
+  if (light && paintings) paintDiveLight(ctx,sea,G.time,light);
 
   ctx.save();
   ctx.translate(W/2 + ox, H/2 + oy);
-  var punchZoom = cam.zoom * (1 + Math.max(0, G.punch) * 0.028);
   ctx.scale(punchZoom, punchZoom);
   ctx.translate(-cam.x, -cam.y);
 
@@ -3380,7 +3392,6 @@ function render(){
   drawDiveSite(ctx,G.expedition.site,paintings,v);
   drawSlipstreams(ctx,G.expedition.shoals,v);
   drawTideEffects(ctx,G.tideFx);
-  const rift = G.story.rift;
   const reefGateY = rift ? rift.start + RIFT_LENGTH : STAGE_DEPTH * 2 - 56;
   if ((rift ? !rift.done : !G.reefCleared) && reefGateY > v.y && reefGateY < v.y + v.h){
     ctx.save();
@@ -3634,10 +3645,15 @@ function render(){
 
   ctx.restore();
 
+  if (paintings) {
+    const divers = alivePlayers().map(p=>W/2+ox+(p.x-cam.x)*punchZoom);
+    paintNearWater(ctx,W,H,cam,sea,G.time,waterDepth,light,divers,LOWQ,paintings.landscape?.image);
+  }
+
   /* 海域视觉压力：幽暗 / 深渊是实打实看不清 */
   var seaNow = activeSea();
   if (seaNow.mod === 'abyss' || seaNow.mod === 'dark'){
-    var darkA = seaNow.mod === 'abyss' ? 0.56 : 0.38;
+    var darkA = seaNow.mod === 'abyss' ? 0.34 : 0.24;
     var vgn = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.16, W / 2, H / 2, Math.max(W, H) * 0.60);
     vgn.addColorStop(0, 'rgba(0,0,0,0)');
     vgn.addColorStop(1, 'rgba(0,0,0,' + darkA + ')');

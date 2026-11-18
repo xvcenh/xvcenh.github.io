@@ -25,3 +25,5 @@ B 风格更新：采用发光纸雕开场图、Canvas 纸雕场景与主角、CS
 0.3.0 将无尽深潜改成随机航路、目标门禁和逐层奖励。每三层选择一名守卫，通关后解锁从菜单开新一轮。旧无尽存档保留在原深度，从新系统的第一层开始。测试覆盖 31 公里存档、破网、跨层门禁、恢复存档、熔岩生存和遗迹守卫。手机画布最高使用两倍像素，滤镜在画布原分辨率处理，大画布使用 2D 混合路径。
 
 0.3.1 比对经典版、A/B 离线版、C 的 SVG 样张和现版 Phaser。把经典版的冲刺冲击波、诱饵分身、毒刺和吞食提速接进现版，配合 A/B 的体型、器官和水流系统。关卡牌组优先给至少一种尚未取得的能力。无尽亮环和黑匣分别强化冲刺、啃咬。捕食者用有限感知、上一次发现的位置、侧向逼近和固定攻击方向。声呐样张启发了统一的攻击预警线。[Craig Reynolds 的转向与预判](https://www.red3d.com/cwr/steer/PursueEvade.html) · [Epic 的感知、丢失目标与巡游示例](https://dev.epicgames.com/documentation/en-us/unreal-engine/behavior-tree-in-unreal-engine---quick-start-guide)
+
+0.4.0 增加远景缓动过渡、分层鱼影、深度雾和软边光束。近处岩壁以更快速度掠过，附着体素断面、原画石材、漂动的海草和焦散。主角的游向及冲刺影响近处光照。前景靠近玩家时淡出，省电模式保留各层并减少细节绘制。[《ABZÛ》的水下美术演讲](https://gdcvault.com/play/1024409/Creating-the-Art-of-ABZU) · [Godot 2D 视差](https://docs.godotengine.org/en/stable/tutorials/2d/2d_parallax.html) · [GPU Gems 的水下焦散](https://developer.nvidia.com/gpugems/gpugems/part-i-natural-effects/chapter-2-rendering-water-caustics)

@@ -76,14 +76,8 @@ export function paintAnimal(ctx, art, id, x, y, angle, size, time, alpha=1, flas
   return true;
 }
 
-export function paintSea(ctx,art,w,h,cam,sea,rift) {
-  const frame = art.biomes.get('sea'+sea);
-  if (art.landscape?.index !== sea) {
-    const image = new Image();
-    art.landscape = {index:sea,image};
-    image.src = regionFiles['./illustrations/sea-'+regions[sea]+'.webp'];
-  }
-  const image=art.landscape.image;
+function paintPanorama(ctx,art,w,h,cam,{index,image,depth}){
+  const frame=art.biomes.get('sea'+index);
   const full=image.complete && image.naturalWidth>0;
   const source=full ? image : frame.source.image;
   const srcW=full ? image.naturalWidth : frame.cutWidth;
@@ -94,13 +88,32 @@ export function paintSea(ctx,art,w,h,cam,sea,rift) {
   const travelY = h * .8;
   const scale = Math.max((w + travelX)/srcW,(h + travelY)/srcH);
   const width = srcW*scale, height = srcH*scale;
-  const seaDepth = rift ? RIFT_LENGTH : SEA_SPAN * STAGE_DEPTH;
-  const seaStart = rift ? rift.start : sea * seaDepth;
   const across = Math.max(0, Math.min(1, cam.x / WORLD.w));
-  const depth = Math.max(0, Math.min(1, (cam.y - seaStart) / seaDepth));
   ctx.drawImage(source,full ? 0 : frame.cutX,full ? 0 : frame.cutY,srcW,srcH,
     (w-width)/2 + (.5-across)*travelX,
     (h-height)/2 + (.5-depth)*travelY,width,height);
-  ctx.fillStyle=sea===0 ? 'rgba(5,28,39,.15)' : 'rgba(4,13,24,.14)';
+}
+
+export function paintSea(ctx,art,w,h,cam,sea,rift,time) {
+  if (art.landscape?.index !== sea) {
+    const image=new Image();
+    art.previousSea=art.landscape;
+    art.landscape={index:sea,image,entered:time,depth:0};
+    image.src=regionFiles['./illustrations/sea-'+regions[sea]+'.webp'];
+  }
+  const seaDepth=rift ? RIFT_LENGTH : SEA_SPAN*STAGE_DEPTH;
+  const seaStart=rift ? rift.start : sea*seaDepth;
+  art.landscape.depth=Math.max(0,Math.min(1,(cam.y-seaStart)/seaDepth));
+  const blend=Math.max(0,Math.min(1,(time-art.landscape.entered)/.75));
+  ctx.save();
+  if (art.previousSea && blend<1) {
+    paintPanorama(ctx,art,w,h,cam,art.previousSea);
+    ctx.globalAlpha=blend*blend*(3-2*blend);
+  } else {
+    art.previousSea=null;
+  }
+  paintPanorama(ctx,art,w,h,cam,art.landscape);
+  ctx.restore();
+  ctx.fillStyle=sea===0 ? 'rgba(5,28,39,.08)' : 'rgba(4,13,24,.09)';
   ctx.fillRect(0,0,w,h);
 }
